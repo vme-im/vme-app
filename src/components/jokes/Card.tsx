@@ -19,9 +19,9 @@ interface JokeCardProps {
  * 段子卡片组件
  * 职责：展示单个段子的内容、作者信息和互动数据
  */
-export default function JokeCard({ 
-  item, 
-  initialReactionDetails = [], 
+export default function JokeCard({
+  item,
+  initialReactionDetails = [],
   initialReactionNodes = [],
   waitForBatchData = false
 }: JokeCardProps) {

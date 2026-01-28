@@ -131,20 +131,20 @@ export default function SubmitForm() {
 
   if (!session) {
     return (
-      <div className="max-w-2xl mx-auto p-4 bg-white rounded-lg shadow-lg md:p-6">
-        <h2 className="text-xl font-bold text-center mb-4 text-gray-800 md:text-2xl">
-          上交我的疯四文案
+      <div className="mx-auto max-w-2xl border-4 border-black bg-white p-6 shadow-neo-xl md:p-8">
+        <h2 className="mb-4 text-center text-3xl font-black italic uppercase text-black md:text-4xl">
+          上交我的<span className="ml-2 text-kfc-red underline decoration-4 underline-offset-4">疯四文案</span>
         </h2>
-        <p className="text-gray-600 text-center mb-6">
+        <p className="mb-6 text-center font-bold text-gray-600">
           请先登录 GitHub 账号以提交您的创意
         </p>
         <div className="flex justify-center">
           <button
             onClick={handleLoginClick}
-            className="flex min-h-[44px] items-center gap-2 rounded-full bg-kfc-yellow px-4 py-2 text-sm font-bold text-kfc-red transition-all duration-300 hover:bg-kfc-lightYellow hover:shadow-lg"
+            className="flex min-h-[48px] items-center gap-2 border-3 border-black bg-kfc-yellow px-6 py-2 text-lg font-black uppercase text-black shadow-neo transition-all hover:-translate-y-1 hover:bg-black hover:text-white hover:shadow-neo-lg"
           >
             <svg
-              className="h-5 w-5"
+              className="h-6 w-6"
               fill="currentColor"
               viewBox="0 0 24 24"
               aria-hidden="true"
@@ -155,7 +155,7 @@ export default function SubmitForm() {
                 clipRule="evenodd"
               />
             </svg>
-            登录
+            GitHub 登录
           </button>
         </div>
       </div>
@@ -212,11 +212,10 @@ export default function SubmitForm() {
         </div>
 
         {message && (
-          <div className={`border-2 border-black p-4 font-bold shadow-neo-sm ${
-            message.type === 'success'
+          <div className={`border-2 border-black p-4 font-bold shadow-neo-sm ${message.type === 'success'
               ? 'bg-green-100 text-green-800'
               : 'bg-red-100 text-red-800'
-          }`}>
+            }`}>
             {message.text}
           </div>
         )}

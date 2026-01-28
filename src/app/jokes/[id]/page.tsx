@@ -1,14 +1,16 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
+import { getAllKfcItems, getRandomKfcItem } from '@/lib/server-utils'
 import { authOptions } from '@/lib/auth'
-import { getAllKfcItems } from '@/lib/server-utils'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
 import CopyButton from '@/components/shared/CopyButton'
 import InteractiveReactions from '@/components/reactions/Interactive'
 import Link from 'next/link'
+import NeoButton from '@/components/shared/NeoButton'
 import { IKfcItem } from '@/types'
+
 
 interface PageProps {
   params: {
@@ -143,13 +145,17 @@ export default async function JokeDetailPage({ params }: PageProps) {
   const totalReactions = joke.reactions?.totalCount || 0
   const isHot = totalReactions >= 10
 
+  // 获取随机段子用于"再来一条"
+  const randomJoke = await getRandomKfcItem()
+  const nextJokeUrl = randomJoke ? `/jokes/${randomJoke.id}` : '/jokes'
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* 返回按钮 */}
       <div className="mb-6">
         <a
           href="/jokes"
-          className="group inline-flex items-center text-sm font-medium text-gray-500 transition-colors duration-300 hover:text-kfc-red"
+          className="group inline-flex items-center text-sm font-black uppercase text-gray-500 transition-colors duration-300 hover:text-kfc-red"
         >
           <i className="fa fa-arrow-left mr-2 transition-transform duration-300 group-hover:-translate-x-1"></i>
           <span>返回文案库</span>
@@ -158,10 +164,10 @@ export default async function JokeDetailPage({ params }: PageProps) {
 
       {/* 段子详情卡片 */}
       <div className="mx-auto max-w-4xl">
-        <article className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <article className="relative border-4 border-black bg-white shadow-neo-xl">
           {/* 热门标签 */}
           {isHot && (
-            <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600 md:text-sm">
+            <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 border-2 border-black bg-kfc-red px-3 py-1 text-xs font-black text-white shadow-neo-sm md:text-sm">
               <i className="fa fa-fire"></i>
               <span>热门</span>
             </div>
@@ -169,49 +175,46 @@ export default async function JokeDetailPage({ params }: PageProps) {
 
           <div className="relative z-10 p-5 md:p-8 lg:p-12">
             {/* 段子内容 */}
-            <div className="mb-6 md:mb-8">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl md:text-3xl">📝</span>
-              <h1 className="text-xl font-bold text-gray-800 md:text-2xl">文案内容</h1>
-            </div>
+            <div className="mb-8 md:mb-12">
+              <div className="mb-6 flex items-center gap-2 border-b-4 border-black pb-2">
+                <span className="text-2xl md:text-3xl">📝</span>
+                <h1 className="text-xl font-black italic text-black md:text-2xl">文案内容</h1>
+              </div>
 
               <div className="group relative">
-                <div className="min-h-[120px] rounded-lg bg-gray-50 px-4 py-3 text-base leading-relaxed text-gray-800 transition-colors duration-300 hover:bg-gray-100 md:px-6 md:py-4 md:text-lg lg:text-xl">
-                  <p className="whitespace-pre-wrap">{joke.body}</p>
+                <div className="min-h-[120px] border-3 border-black bg-kfc-cream p-6 text-xl font-medium leading-relaxed text-black shadow-neo transition-all hover:-translate-y-1 hover:shadow-neo-lg md:p-8 md:text-2xl lg:text-3xl">
+                  <p className="whitespace-pre-wrap">“{joke.body}”</p>
                 </div>
-                <div className="mt-3 flex justify-end md:mt-4">
+                <div className="mt-4 flex justify-end">
                   <CopyButton text={joke.body} />
                 </div>
               </div>
             </div>
 
-            {/* 分隔线 */}
-            <div className="my-6 border-t border-gray-100 md:my-8"></div>
-
             {/* 作者信息 */}
-            <div className="mb-6">
-              <div className="mb-3 flex items-center gap-2 md:mb-4">
-                <i className="fa fa-user text-lg text-kfc-red md:text-xl"></i>
-                <h2 className="text-lg font-bold text-gray-800 md:text-xl">文案鬼才</h2>
+            <div className="mb-8">
+              <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
+                <i className="fa fa-user text-xl text-kfc-red md:text-2xl"></i>
+                <h2 className="text-xl font-black italic text-black md:text-2xl">文案鬼才</h2>
               </div>
 
-              <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 md:gap-4 md:p-4">
-                <div className="relative">
+              <div className="flex items-center gap-4 border-3 border-black bg-white p-4 shadow-neo">
+                <div className="relative border-2 border-black p-1 shadow-neo-sm">
                   <Image
                     src={joke.author.avatarUrl}
                     alt={`${joke.author.username}的头像`}
                     width={64}
                     height={64}
-                    className="h-12 w-12 rounded-full bg-gray-100 md:h-16 md:w-16"
+                    className="h-12 w-12 object-cover md:h-16 md:w-16"
                   />
                 </div>
 
                 <div className="flex-1">
-                  <div className="mb-1 text-base font-semibold text-gray-900 md:text-lg">
+                  <div className="mb-1 text-lg font-black text-black md:text-xl">
                     @{joke.author.username}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 md:text-sm">
-                    <i className="fa fa-calendar"></i>
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-gray-500 md:text-sm">
+                    <i className="fa fa-calendar text-black"></i>
                     <span>发布于</span>
                     <FormattedDate date={joke.createdAt} />
                   </div>
@@ -222,16 +225,13 @@ export default async function JokeDetailPage({ params }: PageProps) {
             {/* 互动区域 - 仅登录用户显示 */}
             {isAuthenticated && (
               <>
-                {/* 分隔线 */}
-                <div className="my-6 border-t border-gray-100 md:my-8"></div>
-
                 <div className="mb-6">
-                  <div className="mb-3 flex items-center gap-2 md:mb-4">
-                    <i className="fa fa-heart text-lg text-kfc-red md:text-xl"></i>
-                    <h2 className="text-lg font-bold text-gray-800 md:text-xl">互动反馈</h2>
+                  <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
+                    <i className="fa fa-heart text-xl text-kfc-red md:text-2xl"></i>
+                    <h2 className="text-xl font-black italic text-black md:text-2xl">互动反馈</h2>
                   </div>
 
-                  <div className="rounded-lg bg-gray-50 p-3 md:p-4">
+                  <div className="border-3 border-black bg-gray-50 p-4 shadow-neo">
                     <Suspense
                       fallback={
                         <div className="flex items-center gap-2 text-gray-500">
@@ -252,23 +252,15 @@ export default async function JokeDetailPage({ params }: PageProps) {
           </div>
         </article>
 
-        {/* 底部操作按钮 - 优化移动端布局 */}
-        <div className="mt-6 flex flex-col gap-3 md:mt-8 md:flex-row md:justify-center md:gap-4">
-        <a
-          href="/jokes"
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-6 py-3 font-bold text-gray-800 transition-all hover:bg-gray-50 hover:border-gray-300"
-        >
-          <span>再来一条</span>
-          <i className="fa fa-arrow-right"></i>
-        </a>
+        {/* 底部操作按钮 */}
+        <div className="mt-8 flex flex-col gap-4 md:flex-row md:justify-center">
+          <NeoButton href={nextJokeUrl} variant="secondary" size="lg" icon="fa-arrow-right">
+            Next Joke / 再来一条
+          </NeoButton>
 
-          <Link
-            href="/"
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-6 py-3 font-bold text-gray-600 transition-all hover:bg-gray-50 hover:text-kfc-red"
-          >
-            <i className="fa fa-home"></i>
-            返回首页
-          </Link>
+          <NeoButton href="/" variant="black" size="lg" icon="fa-home">
+            Back Home / 返回首页
+          </NeoButton>
         </div>
       </div>
     </div>

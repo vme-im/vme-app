@@ -34,21 +34,21 @@ function LoginConfirmDialogContent({
 
   return (
     <div
-      className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in duration-200"
+      className="relative w-full max-w-md border-4 border-black bg-white p-6 shadow-neo-xl animate-in zoom-in duration-200"
       onClick={(e) => e.stopPropagation()}
     >
       <button
         onClick={onClose}
-        className="absolute right-4 top-4 text-gray-400 transition-colors hover:text-gray-600"
+        className="absolute right-4 top-4 font-black text-black transition-colors hover:text-kfc-red"
         disabled={isLoading}
       >
         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
 
-      <div className="mb-4 flex justify-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-kfc-red to-orange-500">
+      <div className="mb-6 flex justify-center">
+        <div className="flex h-16 w-16 items-center justify-center border-3 border-black bg-kfc-red shadow-neo">
           <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
             <path
               fillRule="evenodd"
@@ -59,21 +59,21 @@ function LoginConfirmDialogContent({
         </div>
       </div>
 
-      <h3 className="mb-3 text-center text-2xl font-bold text-gray-900">{title}</h3>
-      <p className="mb-6 text-center text-gray-600">{message}</p>
+      <h3 className="mb-4 text-center text-2xl font-black italic uppercase text-black">{title}</h3>
+      <p className="mb-6 text-center font-bold text-gray-700">{message}</p>
 
-      <div className="mb-6 rounded-lg bg-blue-50 p-4">
+      <div className="mb-6 border-2 border-dashed border-black bg-kfc-cream p-4">
         <div className="flex items-start gap-2">
-          <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
               d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
               clipRule="evenodd"
             />
           </svg>
-          <div className="text-sm text-blue-800">
-            <p className="mb-1 font-medium">登录后您可以：</p>
-            <ul className="space-y-1 text-blue-700">
+          <div className="text-sm text-black">
+            <p className="mb-1 font-black">登录后您可以：</p>
+            <ul className="space-y-1 font-bold">
               <li>• 给喜欢的文案点赞</li>
               <li>• 提交自己的创意文案</li>
               <li>• 参与社区互动</li>
@@ -82,18 +82,18 @@ function LoginConfirmDialogContent({
         </div>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-4">
         <button
           onClick={onClose}
           disabled={isLoading}
-          className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 border-2 border-black bg-white px-4 py-3 font-black text-black transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           取消
         </button>
         <button
           onClick={handleConfirm}
           disabled={isLoading}
-          className="flex-1 rounded-lg bg-gradient-to-r from-kfc-red to-orange-500 px-4 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 border-2 border-black bg-black px-4 py-3 font-black text-white shadow-neo transition-all hover:-translate-y-1 hover:bg-gray-800 hover:shadow-neo-lg disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
@@ -101,7 +101,7 @@ function LoginConfirmDialogContent({
               登录中...
             </span>
           ) : (
-            '使用 GitHub 登录'
+            'GitHub 登录'
           )}
         </button>
       </div>

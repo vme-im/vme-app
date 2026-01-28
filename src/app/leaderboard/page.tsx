@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { headers } from 'next/headers'
 import LeaderboardList from '@/components/leaderboard/List'
+import NeoButton from '@/components/shared/NeoButton'
 
 // 获取URL参数的类型定义
 interface PageProps {
@@ -48,13 +49,9 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
 
       {/* 返回首页 */}
       <div className="mt-12 text-center">
-        <a
-          href="/"
-          className="inline-flex items-center gap-2 rounded-xl bg-kfc-red px-6 py-3 font-bold text-white transition-all duration-300 hover:bg-kfc-darkRed"
-        >
-          <i className="fa fa-home"></i>
-          返回首页
-        </a>
+        <NeoButton href="/" variant="primary" icon="fa-home">
+          Back Home / 返回首页
+        </NeoButton>
       </div>
     </div>
   )

@@ -21,23 +21,23 @@ export default function LoginButton() {
   if (session) {
     return (
       <div className="flex items-center gap-2 sm:gap-3">
-        <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-2">
+        <div className="flex items-center gap-2 border-2 border-black bg-white px-3 py-1.5 shadow-neo-sm">
           <Image
             src={session.user?.image || '/default-avatar.png'}
             alt="用户头像"
             width={24}
             height={24}
-            className="h-6 w-6 rounded-full border border-kfc-yellow"
+            className="h-6 w-6 border border-black"
           />
-          <span className="max-w-[80px] truncate text-sm font-medium text-white sm:max-w-[120px]">
+          <span className="max-w-[80px] truncate text-sm font-black text-black sm:max-w-[120px]">
             {session.user?.username}
           </span>
         </div>
         <button
           onClick={() => signOut()}
-          className="min-h-[36px] rounded-full bg-white/10 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
+          className="border-2 border-black bg-black px-3 py-1.5 text-sm font-bold text-white shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none hover:bg-gray-800"
         >
-          退出登录
+          LOG OUT
         </button>
       </div>
     )
@@ -46,7 +46,7 @@ export default function LoginButton() {
   return (
     <button
       onClick={() => signIn('github')}
-      className="flex items-center gap-2 rounded-full bg-kfc-yellow px-4 py-2 text-sm font-bold text-kfc-red transition-all duration-300 hover:bg-kfc-lightYellow hover:shadow-md shadow-sm"
+      className="flex items-center gap-2 border-2 border-black bg-kfc-yellow px-4 py-1.5 text-sm font-black text-black shadow-neo-sm transition-all hover:-translate-y-1 hover:shadow-neo hover:bg-white"
     >
       <svg
         className="h-5 w-5"
@@ -60,7 +60,7 @@ export default function LoginButton() {
           clipRule="evenodd"
         />
       </svg>
-      登录
+      LOGIN / 登录
     </button>
   )
 }

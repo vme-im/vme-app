@@ -26,18 +26,18 @@ export default function CopyButton({ text, className = '' }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className={`flex items-center gap-1 rounded-lg bg-transparent px-2 py-1 text-xs text-gray-500 transition-all duration-300 hover:bg-gray-100 hover:text-gray-700 ${className}`}
+      className={`flex items-center gap-1 border-2 border-black bg-white px-3 py-1 text-xs font-bold text-black shadow-neo-sm transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none hover:bg-kfc-yellow ${className}`}
       title="复制文案"
     >
       {copied ? (
         <>
-          <i className="fa fa-check text-green-600"></i>
-          <span className="text-xs">已复制</span>
+          <i className="fa fa-check text-kfc-red"></i>
+          <span className="text-xs uppercase">COPIED!</span>
         </>
       ) : (
         <>
           <i className="fa fa-copy text-xs"></i>
-          <span className="text-xs">复制</span>
+          <span className="text-xs uppercase">COPY</span>
         </>
       )}
     </button>

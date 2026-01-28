@@ -21,11 +21,11 @@ export default async function JokesList({ currentPage }: JokesListProps) {
       {/* 列表标题 */}
       <div className="mb-8 flex items-center justify-between border-b-4 border-black pb-4">
         <h2 className="flex items-center gap-2 text-2xl font-black uppercase italic text-black md:text-3xl">
-          <i className="fa fa-folder-open text-kfc-red"></i> All Entries
+          <i className="fa fa-folder-open text-kfc-red"></i> All Entries / 全部收录
         </h2>
         <div className="flex items-center gap-2 border-2 border-black bg-kfc-yellow px-4 py-1 shadow-neo-sm">
           <span className="text-sm font-bold uppercase text-black">
-            Total: <span className="font-black">{total}</span>
+            Total / 共计: <span className="font-black">{total}</span>
           </span>
         </div>
       </div>

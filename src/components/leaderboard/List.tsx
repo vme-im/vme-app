@@ -211,15 +211,15 @@ export default async function LeaderboardServer({
                     </h3>
 
                     <div className="mb-4 space-y-1 text-sm font-bold text-black/80">
-                      <div className="uppercase">Posts: {author.totalPosts}</div>
+                      <div className="uppercase">Posts / 投稿: {author.totalPosts}</div>
                       <div className="uppercase">
-                        Reactions: {author.totalInteractions.toLocaleString()}
+                        Reactions / 互动: {author.totalInteractions.toLocaleString()}
                       </div>
                     </div>
 
                     {/* 综合评分 */}
                     <div className="inline-block border-2 border-black bg-white px-4 py-1 text-sm font-black uppercase text-black shadow-neo-sm">
-                      Power: {Math.round(author.score)}
+                      Power / 战力: {Math.round(author.score)}
                     </div>
 
                     {/* GitHub 链接 */}
@@ -229,7 +229,7 @@ export default async function LeaderboardServer({
                       rel="noopener noreferrer"
                       className="mt-4 block border-t-2 border-black pt-2 text-xs font-bold uppercase text-black hover:text-white hover:bg-black transition-colors"
                     >
-                      View GitHub Profile
+                      View GitHub / 查看主页
                     </Link>
                   </div>
                 )
@@ -273,14 +273,14 @@ export default async function LeaderboardServer({
                         @{author.username}
                       </h3>
                       <div className="text-xs font-bold uppercase text-gray-500">
-                        {author.totalPosts} Posts • Score: {Math.round(author.score)}
+                        {author.totalPosts} 投稿 • Score / 分数: {Math.round(author.score)}
                       </div>
                     </div>
                   </div>
 
                   {/* 统计数据 */}
                   <div className="flex items-center gap-2 border-l-2 border-black pl-4">
-                     <i className="fa fa-heart text-kfc-red"></i>
+                    <i className="fa fa-heart text-kfc-red"></i>
                     <div className="text-lg font-black text-black">
                       {author.totalInteractions.toLocaleString()}
                     </div>
@@ -292,7 +292,7 @@ export default async function LeaderboardServer({
         )}
 
         {/* 更新时间 */}
-        <div className="text-center text-sm text-gray-500">
+        <div className="mt-10 text-center text-sm text-gray-500">
           最后更新: {new Date(data.updatedAt).toLocaleString('zh-CN')}
         </div>
       </div>
