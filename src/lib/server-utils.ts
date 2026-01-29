@@ -3,6 +3,17 @@ import fs from 'fs'
 import path from 'path'
 import { IKfcItem, Summary } from '@/types'
 
+// 检测内容是否为梗图 (包含 markdown 图片语法)
+export function isMeme(body: string): boolean {
+  return /!\[.*\]\(.*\)/.test(body)
+}
+
+// 提取图片 URL
+export function extractImageUrl(body: string): string | null {
+  const match = body.match(/!\[.*\]\((.*)\)/)
+  return match ? match[1] : null
+}
+
 const cache: {
   kfcItems: Record<string, IKfcItem[]>
   allMonths: string[]
@@ -126,6 +137,7 @@ export async function getTopContributors() {
 export async function getKfcItemsWithPagination(
   page = 1,
   pageSize = 20,
+  type?: 'text' | 'meme'
 ): Promise<{
   items: IKfcItem[]
   total: number
@@ -134,34 +146,34 @@ export async function getKfcItemsWithPagination(
   totalPages: number
 }> {
   const months = await getAvailableMonths()
-  let allItems: IKfcItem[] = []
+  let allFilteredItems: IKfcItem[] = []
 
-  // 获取汇总信息来确定正确的total和totalPages
+  // 获取汇总信息
   const summary = await getSummary()
   if (!summary) {
     throw new Error('无法获取分页信息：summary数据不可用')
   }
 
-  const totalItems = summary.totalItems
-
-  // 只加载必要的月份数据，直到满足分页需求
-  let itemsNeeded = page * pageSize
-  let loadedItems = 0
-
+  // 加载月份数据并进行过滤
+  // 因为过滤后总量不确定，我们需要加载足够的内容
   for (const month of months) {
-    if (loadedItems >= itemsNeeded) break
-
     const items = await getKfcItemsByMonth(month)
-    allItems = [...allItems, ...items]
-    loadedItems += items.length
+    const filtered = type
+      ? items.filter(item => type === 'meme' ? isMeme(item.body) : !isMeme(item.body))
+      : items
+
+    allFilteredItems = [...allFilteredItems, ...filtered]
+
+    // 如果累积数据已经超过需要的范围，且不是为了计算总数，可以考虑优化
+    // 但目前由于需要按时间排序且跨月，先全部加载或按需加载
   }
 
   // 计算分页结果
-  const total = totalItems
+  const total = allFilteredItems.length
   const totalPages = Math.ceil(total / pageSize)
   const startIndex = (page - 1) * pageSize
-  const endIndex = Math.min(startIndex + pageSize, allItems.length)
-  const paginatedItems = allItems.slice(startIndex, endIndex)
+  const endIndex = Math.min(startIndex + pageSize, allFilteredItems.length)
+  const paginatedItems = allFilteredItems.slice(startIndex, endIndex)
 
   return {
     items: paginatedItems,
@@ -173,14 +185,27 @@ export async function getKfcItemsWithPagination(
 }
 
 // 获取随机项目
-export async function getRandomKfcItem(): Promise<IKfcItem> {
-  // 从summary中获取数据分布信息
+export async function getRandomKfcItem(type?: 'text' | 'meme'): Promise<IKfcItem> {
+  // 如果需要过滤类型，我们需要获取符合条件的所有项
+  if (type) {
+    const allItems = await getAllKfcItems()
+    const filteredItems = allItems.filter(item =>
+      type === 'meme' ? isMeme(item.body) : !isMeme(item.body)
+    )
+
+    if (!filteredItems.length) {
+      throw new Error(`无法获取随机项目：没有符合类型 ${type} 的内容`)
+    }
+
+    return filteredItems[Math.floor(Math.random() * filteredItems.length)]
+  }
+
+  // 原有的高性能随机逻辑（基于summary分布）
   const summary = await getSummary()
   if (!summary || !summary.months || !summary.months.length) {
     throw new Error('无法获取随机项目：summary数据不可用')
   }
 
-  // 随机选择一个月份，但考虑各月份的数据量进行加权
   const totalItems = summary.totalItems
   const randomIndex = Math.floor(Math.random() * totalItems)
 
@@ -195,13 +220,11 @@ export async function getRandomKfcItem(): Promise<IKfcItem> {
     }
   }
 
-  // 获取该月的项目
   const items = await getKfcItemsByMonth(selectedMonth)
   if (!items.length) {
     throw new Error(`无法获取随机项目：${selectedMonth}月数据为空`)
   }
 
-  // 随机选择一个项目
   const randomItemIndex = Math.floor(Math.random() * items.length)
   return items[randomItemIndex]
 }

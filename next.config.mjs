@@ -15,6 +15,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'r2.vme.im',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 }

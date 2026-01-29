@@ -6,6 +6,8 @@ import Link from 'next/link'
 import CopyButton from '@/components/shared/CopyButton'
 import InteractiveReactions from '@/components/reactions/Interactive'
 import ReactionsLoading from '@/components/reactions/Loading'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { IKfcItem } from '@/types'
 
 interface JokeCardProps {
@@ -40,9 +42,36 @@ export default function JokeCard({
 
       {/* 段子内容 */}
       <div className="mb-4">
-        <p className="text-justify-cn text-base font-bold leading-snug text-black whitespace-pre-wrap line-clamp-6 md:text-lg">
-          {item.body}
-        </p>
+        <div className="prose prose-p:my-1 prose-img:my-0 mb-4 overflow-hidden text-black prose-p:leading-snug prose-headings:font-black prose-p:font-bold prose-a:text-blue-600 prose-blockquote:border-l-4 prose-blockquote:border-black prose-blockquote:bg-gray-100 prose-blockquote:py-1 prose-blockquote:pl-2">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              img: ({ node, src, alt, ...props }: any) => {
+                if (!src) return null
+                return (
+                  <div className="relative my-2 h-64 w-full overflow-hidden rounded-sm border-2 border-black bg-gray-100">
+                    <Image
+                      src={src}
+                      alt={alt || 'Meme'}
+                      fill
+                      className="object-contain p-2"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  </div>
+                )
+              },
+              p: ({ node, children, ...props }: any) => {
+                return (
+                  <p className="whitespace-pre-wrap text-justify-cn text-base md:text-lg" {...props}>
+                    {children}
+                  </p>
+                )
+              }
+            }}
+          >
+            {item.body}
+          </ReactMarkdown>
+        </div>
         <div className="mt-4 flex items-center justify-between gap-2">
           <Link
             href={`/jokes/${item.id}`}

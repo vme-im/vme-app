@@ -2,19 +2,21 @@ import Image from 'next/image'
 import Link from 'next/link'
 import NeoButton from '@/components/shared/NeoButton'
 
-import { getKfcItemsWithPagination, getRandomKfcItem } from '@/lib/server-utils'
+import { getKfcItemsWithPagination, getRandomKfcItem, isMeme, extractImageUrl } from '@/lib/server-utils'
 
 export default async function Page() {
-  // 获取最新的一批段子用于展示
-  // 我们获取前20个，然后从中选择展示
-  const { items: latestItems } = await getKfcItemsWithPagination(1, 20)
+  // 获取最新的一批纯文字段子用于展示
+  const { items: latestTextItems } = await getKfcItemsWithPagination(1, 10, 'text')
 
-  // 处理主推段子 (Headline)
-  // 总是随机展示一个，保持惊喜感
-  const headlineJoke = await getRandomKfcItem()
+  // 处理主推文字段子 (Headline)
+  const headlineJoke = await getRandomKfcItem('text')
 
-  // 选出3个"今日精选"，排除headline
-  const selectedJokes = latestItems
+  // 获取一个随机梗图
+  const randomMeme = await getRandomKfcItem('meme')
+  const memeImageUrl = randomMeme ? extractImageUrl(randomMeme.body) : null
+
+  // 选出3个"今日精选"文字，排除headline
+  const selectedJokes = latestTextItems
     .filter(item => item.id !== headlineJoke?.id)
     .slice(0, 3)
 
@@ -29,7 +31,6 @@ export default async function Page() {
   ]
 
   // 随机选择一个文案
-  // 注意：在服务端组件中，这会在每次渲染（或重验证）时改变
   const randomCopy = HERO_COPIES[Math.floor(Math.random() * HERO_COPIES.length)]
 
   return (
@@ -89,7 +90,7 @@ export default async function Page() {
                 <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-black bg-gray-100 text-lg">
                   {['😭', '🤡', '💔'][index % 3]}
                 </span>
-                <span className="font-bold text-gray-500 text-xs uppercase tracking-wider">Top Pick #{index + 1} / 精选推荐</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Top Pick #{index + 1} / 精选推荐</span>
               </div>
               <p className="mb-4 line-clamp-4 flex-1 text-justify font-medium leading-relaxed text-gray-800">
                 {joke.body}
@@ -115,11 +116,11 @@ export default async function Page() {
           <h2 className="text-2xl font-black italic text-kfc-red md:text-3xl">今日爆款段子</h2>
         </div>
         <div className="bg-kfc-red/5 p-2 md:p-4">
-          <div className="flex flex-col gap-6 md:flex-row">
-            <div className="flex-1">
+          <div className="flex flex-col gap-6 md:flex-row md:h-[24rem]">
+            <div className="flex-1 h-full">
               <Link
                 href={headlineJoke ? `/jokes/${headlineJoke.id}` : '#'}
-                className="block border-3 border-black bg-white p-6 shadow-neo-xl transition-all hover:translate-y-[-2px] hover:shadow-neo-2xl lg:p-8"
+                className="flex h-full flex-col border-3 border-black bg-white p-6 shadow-neo-xl transition-all hover:translate-y-[-2px] hover:shadow-neo-2xl lg:p-8"
               >
                 <div className="mb-4">
                   <span className="mr-2 inline-block border-2 border-black bg-black px-2 py-0.5 text-xs font-bold text-white">
@@ -130,10 +131,10 @@ export default async function Page() {
                   </span>
                 </div>
                 {/* 限制高度，超出隐藏 */}
-                <div className="line-clamp-6 text-xl font-bold leading-loose text-gray-900 md:text-2xl">
+                <div className="mb-4 line-clamp-6 text-xl font-bold leading-loose text-gray-900 md:text-2xl">
                   {headlineJoke?.body}
                 </div>
-                <div className="mt-6 flex items-center justify-between">
+                <div className="mt-auto flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 overflow-hidden rounded-full border-2 border-black bg-gray-200">
                       {headlineJoke?.author?.avatarUrl ? (
@@ -150,28 +151,44 @@ export default async function Page() {
                     </div>
                     <span className="font-bold">@{headlineJoke?.author?.username || '匿名疯四人'}</span>
                   </div>
-                  <div className="font-black italic text-kfc-red text-xl">
+                  <div className="text-xl font-black italic text-kfc-red">
                     V 我 50
                   </div>
                 </div>
               </Link>
             </div>
 
-            {/* 右侧配图区域 (模拟) */}
-            <div className="w-full md:w-1/3">
-              <div className="relative h-full min-h-[200px] w-full border-3 border-black bg-white p-2 shadow-neo">
-                <div className="flex h-full w-full flex-col items-center justify-center bg-gray-100 p-4 text-center">
-                  <span className="text-4xl">🐼</span>
-                  <p className="mt-2 text-sm font-bold text-gray-500">
-                    (此处应有熊猫头表情包)
-                  </p>
-                  <div className="mt-4 w-full border-t border-black pt-4">
-                    <div className="bg-kfc-newsprint p-2 text-xs font-bold">
-                      “我也想吃疯狂星期四”
+            {/* 右侧配图区域 (展示真实梗图) */}
+            <div className="w-full md:w-1/3 h-full">
+              <Link
+                href={randomMeme ? `/jokes/${randomMeme.id}` : '#'}
+                className="group relative block h-full w-full border-3 border-black bg-white p-2 shadow-neo transition-all hover:-translate-y-1 hover:shadow-neo-lg"
+              >
+                <div className="flex h-full w-full flex-col overflow-hidden">
+                  <div className="relative flex-1 bg-gray-100 flex items-center justify-center min-h-[250px]">
+                    {memeImageUrl ? (
+                      <Image
+                        src={memeImageUrl}
+                        alt="KFC Meme"
+                        fill
+                        className="object-contain p-2"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <span className="text-4xl">🐼</span>
+                        <p className="mt-2 text-sm font-bold text-gray-500">
+                          疯狂星期四，没图怎么行
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 border-t-2 border-black pt-2">
+                    <div className="bg-kfc-yellow p-2 text-center text-xs font-black uppercase italic text-black">
+                      Hot Meme / 实时热门梗图
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
         </div>
