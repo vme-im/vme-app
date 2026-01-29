@@ -11,6 +11,7 @@
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.978.0",
     "@octokit/core": "^7.0.3",
     "@octokit/oauth-app": "^6.0.0",
     "@vercel/analytics": "^1.5.0",
@@ -22,6 +23,8 @@
     "next-themes": "^0.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "swr": "^2.3.6",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",

@@ -1,4 +1,6 @@
 import { Suspense } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
 import { getAllKfcItems, getRandomKfcItem } from '@/lib/server-utils'
@@ -7,7 +9,6 @@ import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
 import CopyButton from '@/components/shared/CopyButton'
 import InteractiveReactions from '@/components/reactions/Interactive'
-import Link from 'next/link'
 import NeoButton from '@/components/shared/NeoButton'
 import { IKfcItem } from '@/types'
 
@@ -183,7 +184,29 @@ export default async function JokeDetailPage({ params }: PageProps) {
 
               <div className="group relative">
                 <div className="min-h-[120px] border-3 border-black bg-kfc-cream p-6 text-xl font-medium leading-relaxed text-black shadow-neo transition-all hover:-translate-y-1 hover:shadow-neo-lg md:p-8 md:text-2xl lg:text-3xl">
-                  <p className="whitespace-pre-wrap">“{joke.body}”</p>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({ node, ...props }) => <p className="mb-4 last:mb-0 break-words whitespace-pre-wrap" {...props} />,
+                      img: ({ node, ...props }) => (
+                        <span className="my-6 flex justify-center w-full">
+                          <img
+                            {...props}
+                            className="max-h-[500px] w-auto max-w-full md:max-h-[600px]"
+                          />
+                        </span>
+                      ),
+                      a: ({ node, ...props }) => (
+                        <a {...props} className="text-kfc-red hover:underline decoration-2 underline-offset-2" target="_blank" rel="noopener noreferrer" />
+                      ),
+                      ul: ({ node, ...props }) => <ul className="mb-4 list-disc pl-5" {...props} />,
+                      ol: ({ node, ...props }) => <ol className="mb-4 list-decimal pl-5" {...props} />,
+                      blockquote: ({ node, ...props }) => <blockquote className="my-4 border-l-4 border-black bg-white/50 p-4 italic" {...props} />,
+                      code: ({ node, ...props }) => <code className="rounded bg-black/10 px-1 py-0.5 font-mono text-base" {...props} />,
+                    }}
+                  >
+                    {joke.body}
+                  </ReactMarkdown>
                 </div>
                 <div className="mt-4 flex justify-end">
                   <CopyButton text={joke.body} />

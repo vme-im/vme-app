@@ -91,6 +91,7 @@ export interface LikeResponse {
 export interface SubmitJokeRequest {
   title: string
   content: string
+  labels?: string[]
 }
 
 export interface SubmitJokeResponse {
@@ -100,4 +101,14 @@ export interface SubmitJokeResponse {
   issueNumber?: number
   issueId?: string
   detailPath?: string
+}
+
+// 图片上传相关类型
+export interface UploadImageResponse {
+  success: boolean
+  message: string
+  url?: string
+  path?: string
+  size?: number
+  contentType?: string
 }

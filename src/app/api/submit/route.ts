@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     requireUserAuth(user)
 
     const body: SubmitJokeRequest = await request.json()
-    const { title, content } = body
+    const { title, content, labels } = body
 
     // 验证输入
     if (!title?.trim() || !content?.trim()) {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // 创建 GitHub Issue
-      const issueData = await githubService.createJokeIssue(title, content)
+      const issueData = await githubService.createJokeIssue(title, content, labels)
 
       console.log('Issue创建成功:', {
         number: issueData.number,

@@ -3,16 +3,22 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { showLoginDialog } from '@/components/shared/LoginDialog'
+import UrlImageUploader from './url-image-uploader'
 
 const FORM_STORAGE_KEY = 'submit_joke_form_draft'
+
+type SubmitMode = 'text' | 'meme'
 
 /**
  * 提交段子表单组件
  */
 export default function SubmitForm() {
   const { data: session, status } = useSession()
+  const [activeTab, setActiveTab] = useState<SubmitMode>('text')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [pendingFiles, setPendingFiles] = useState<Map<string, File>>(new Map())
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null)
 
@@ -22,10 +28,16 @@ export default function SubmitForm() {
       const savedForm = localStorage.getItem(FORM_STORAGE_KEY)
       if (savedForm) {
         try {
-          const { title: savedTitle, content: savedContent } = JSON.parse(savedForm)
-          if (savedTitle || savedContent) {
-            setTitle(savedTitle)
-            setContent(savedContent)
+          const parsed = JSON.parse(savedForm)
+          // 兼容旧格式和新格式
+          if (parsed.title || parsed.content) {
+            setTitle(parsed.title || '')
+            setContent(parsed.content || '')
+            if (parsed.mode) setActiveTab(parsed.mode)
+            if (parsed.images) {
+              const validImages = parsed.images.filter((url: string) => !url.startsWith('blob:'))
+              setUploadedImages(validImages)
+            }
             setMessage({ type: 'info', text: '已恢复您之前填写的内容' })
             localStorage.removeItem(FORM_STORAGE_KEY)
           }
@@ -36,88 +48,186 @@ export default function SubmitForm() {
     }
   }, [session, status])
 
+  const handleFileSelected = (file: File) => {
+    const previewUrl = URL.createObjectURL(file)
+    setPendingFiles(prev => new Map(prev).set(previewUrl, file))
+    setUploadedImages(prev => [...prev, previewUrl])
+  }
+
+  const handleImageRemoved = (url: string) => {
+    if (url.startsWith('blob:')) {
+      URL.revokeObjectURL(url)
+      setPendingFiles(prev => {
+        const newMap = new Map(prev)
+        newMap.delete(url)
+        return newMap
+      })
+    }
+    setUploadedImages(prev => prev.filter(img => img !== url))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!title.trim() || !content.trim()) {
-      setMessage({ type: 'error', text: '请填写完整的标题和内容' })
+    // 验证逻辑
+    if (!title.trim()) {
+      setMessage({ type: 'error', text: '请填写标题' })
       return
     }
 
-    setIsSubmitting(true)
-    setMessage(null)
-
-    try {
-      const response = await fetch('/api/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          content: content.trim(),
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        setMessage({ type: 'success', text: '文案上交成功！正在跳转到详情页...' })
-        setTitle('')
-        setContent('')
-        // 清理可能存在的草稿
-        localStorage.removeItem(FORM_STORAGE_KEY)
-
-        const targetUrl = data.detailPath || (data.issueNumber ? `/jokes/${data.issueNumber}` : data.issueUrl)
-
-        if (targetUrl) {
-          setTimeout(() => {
-            window.location.assign(targetUrl)
-          }, 800)
-        }
-      } else {
-        // 处理认证错误
-        if (response.status === 401) {
-          const errorMsg = data.message || ''
-          const isExpired = errorMsg.includes('无效') || errorMsg.includes('过期')
-
-          // 保存表单数据
-          localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify({ title, content }))
-
-          setMessage({
-            type: 'error',
-            text: isExpired ? '登录已过期，请重新登录' : '请先登录以继续提交'
-          })
-
-          // 显示登录确认弹窗
-          showLoginDialog({
-            title: isExpired ? '登录已过期' : '提交段子需要登录',
-            message: isExpired
-              ? '您的登录已过期，请重新登录以继续提交'
-              : '登录后即可上交文案，分享快乐给更多人！',
-          })
-        } else {
-          setMessage({ type: 'error', text: data.message || '提交失败，请稍后重试' })
-        }
+    if (activeTab === 'text') {
+      if (!content.trim()) {
+        setMessage({ type: 'error', text: '请填写文案内容' })
+        return
       }
-    } catch (error) {
-      console.error('提交段子失败:', error)
-      setMessage({ type: 'error', text: '网络错误，请稍后重试' })
-    } finally {
-      setIsSubmitting(false)
+    } else {
+
+      // 梗图模式下，允许内容为空，但必须有图片
+      if (activeTab === 'meme' && uploadedImages.length === 0) {
+        setMessage({ type: 'error', text: '请至少上传一张梗图' })
+        return
+      }
+
+      setIsSubmitting(true)
+      setMessage(null)
+
+      try {
+        // 处理图片上传
+        let finalImages = [...uploadedImages]
+
+        if (activeTab === 'meme' && pendingFiles.size > 0) {
+          // 上传所有待上传的图片
+          const uploadPromises = uploadedImages.map(async (url, index) => {
+            if (pendingFiles.has(url)) {
+              try {
+                const file = pendingFiles.get(url)!
+                const formData = new FormData()
+                formData.append('file', file)
+
+                const res = await fetch('/api/image-upload', {
+                  method: 'POST',
+                  body: formData
+                })
+
+                const data = await res.json()
+                if (data.success) {
+                  return { index, url: data.url }
+                } else {
+                  throw new Error(data.message || '图片上传失败')
+                }
+              } catch (err) {
+                throw err
+              }
+            }
+            return { index, url }
+          })
+
+          try {
+            const results = await Promise.all(uploadPromises)
+            // 按原顺序重建数组
+            finalImages = results.sort((a, b) => a.index - b.index).map(r => r.url)
+          } catch (error: any) {
+            setMessage({ type: 'error', text: error.message || '图片上传失败，请重试' })
+            setIsSubmitting(false)
+            return
+          }
+        }
+
+        // 构建最终提交内容
+        let finalContent = content.trim()
+
+        // 如果是梗图模式，将图片追加到内容末尾
+        if (activeTab === 'meme' && finalImages.length > 0) {
+          const imageMarkdown = finalImages.map(url => `![](${url})`).join('\n')
+          finalContent = finalContent ? `${finalContent}\n\n${imageMarkdown}` : imageMarkdown
+        }
+
+        const labels = activeTab === 'meme' ? ['梗图'] : ['文案']
+
+        const response = await fetch('/api/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: title.trim(),
+            content: finalContent,
+            labels, // 传递标签
+          }),
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          setMessage({ type: 'success', text: activeTab === 'meme' ? '梗图上交成功！' : '文案上交成功！正在跳转到详情页...' })
+          setTitle('')
+          setContent('')
+          setUploadedImages([])
+          setPendingFiles(new Map())
+          // 清理可能存在的草稿
+          localStorage.removeItem(FORM_STORAGE_KEY)
+
+          const targetUrl = data.detailPath || (data.issueNumber ? `/jokes/${data.issueNumber}` : data.issueUrl)
+
+          if (targetUrl) {
+            setTimeout(() => {
+              window.location.assign(targetUrl)
+            }, 800)
+          }
+        } else {
+          // 处理认证错误
+          if (response.status === 401) {
+            const errorMsg = data.message || ''
+            const isExpired = errorMsg.includes('无效') || errorMsg.includes('过期')
+
+            // 保存表单数据
+            localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify({
+              title,
+              content,
+              mode: activeTab,
+              images: uploadedImages.filter(url => !url.startsWith('blob:'))
+            }))
+
+            setMessage({
+              type: 'error',
+              text: isExpired ? '登录已过期，请重新登录' : '请先登录以继续提交'
+            })
+
+            // 显示登录确认弹窗
+            showLoginDialog({
+              title: isExpired ? '登录已过期' : '提交内容需要登录',
+              message: isExpired
+                ? '您的登录已过期，请重新登录以继续提交'
+                : '登录后即可上交文案或梗图，分享快乐给更多人！',
+            })
+          } else {
+            setMessage({ type: 'error', text: data.message || '提交失败，请稍后重试' })
+          }
+        }
+      } catch (error) {
+        console.error('提交失败:', error)
+        setMessage({ type: 'error', text: '网络错误，请稍后重试' })
+      } finally {
+        setIsSubmitting(false)
+      }
     }
   }
 
   const handleLoginClick = () => {
     // 保存表单数据
-    if (title.trim() || content.trim()) {
-      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify({ title, content }))
+    if (title.trim() || content.trim() || uploadedImages.length > 0) {
+      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify({
+        title,
+        content,
+        mode: activeTab,
+        images: uploadedImages.filter(url => !url.startsWith('blob:'))
+      }))
     }
 
     // 显示登录确认弹窗
     showLoginDialog({
-      title: '提交段子需要登录',
-      message: '登录后即可上交文案，分享快乐给更多人！',
+      title: '提交内容需要登录',
+      message: '登录后即可上交文案或梗图，分享快乐给更多人！',
     })
   }
 
@@ -168,11 +278,32 @@ export default function SubmitForm() {
         上交我的<span className="text-kfc-red underline decoration-4">疯四文案</span>
       </h2>
 
+      <div className="mb-6 flex space-x-4 border-b-2 border-gray-200 pb-1">
+        <button
+          onClick={() => setActiveTab('text')}
+          className={`pb-2 text-lg font-black uppercase transition-colors ${activeTab === 'text'
+            ? 'border-b-4 border-kfc-red text-black'
+            : 'text-gray-400 hover:text-gray-600'
+            }`}
+        >
+          📝 纯文本 / Text
+        </button>
+        <button
+          onClick={() => setActiveTab('meme')}
+          className={`pb-2 text-lg font-black uppercase transition-colors ${activeTab === 'meme'
+            ? 'border-b-4 border-kfc-red text-black'
+            : 'text-gray-400 hover:text-gray-600'
+            }`}
+        >
+          🖼️ 梗图 / Meme
+        </button>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label htmlFor="title" className="block text-sm font-black uppercase text-black">
-              文案标题 / Title *
+              标题 / Title *
             </label>
             <p className="text-xs font-bold text-gray-500">
               {title.length}/100
@@ -183,17 +314,33 @@ export default function SubmitForm() {
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="给你的文案起个标题..."
+            placeholder="给你的作品起个标题..."
             className="w-full min-h-[44px] border-2 border-black bg-white px-4 py-3 font-bold text-black shadow-neo-sm transition-all placeholder:text-gray-400 focus:bg-kfc-cream focus:shadow-neo focus:outline-none"
             disabled={isSubmitting}
             maxLength={100}
           />
         </div>
 
+        {/* 梗图上传区域 */}
+        {activeTab === 'meme' && (
+          <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+            <label className="mb-2 block text-sm font-black uppercase text-black">
+              上传梗图 / Images *
+            </label>
+            <UrlImageUploader
+              onFileSelect={handleFileSelected}
+              onImageRemoved={handleImageRemoved}
+              uploadedImages={uploadedImages}
+              maxImages={6}
+              disabled={isSubmitting}
+            />
+          </div>
+        )}
+
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label htmlFor="content" className="block text-sm font-black uppercase text-black">
-              文案内容 / Content *
+              {activeTab === 'meme' ? '补充说明 / Description (Optional)' : '文案内容 / Content *'}
             </label>
             <p className="text-xs font-bold text-gray-500">
               {content.length}/2000
@@ -203,7 +350,7 @@ export default function SubmitForm() {
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="开始你的表演..."
+            placeholder={activeTab === 'meme' ? "可以说说这张图的梗点..." : "开始你的表演..."}
             rows={6}
             className="w-full resize-none border-2 border-black bg-white px-4 py-3 font-bold text-black shadow-neo-sm transition-all placeholder:text-gray-400 focus:bg-kfc-cream focus:shadow-neo focus:outline-none"
             disabled={isSubmitting}
@@ -213,8 +360,8 @@ export default function SubmitForm() {
 
         {message && (
           <div className={`border-2 border-black p-4 font-bold shadow-neo-sm ${message.type === 'success'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'
             }`}>
             {message.text}
           </div>
@@ -222,7 +369,7 @@ export default function SubmitForm() {
 
         <button
           type="submit"
-          disabled={isSubmitting || !title.trim() || !content.trim()}
+          disabled={isSubmitting}
           className="w-full border-3 border-black bg-kfc-yellow px-6 py-4 text-xl font-black uppercase text-black shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:bg-black hover:text-white hover:shadow-none disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none"
         >
           {isSubmitting ? (
@@ -244,7 +391,7 @@ export default function SubmitForm() {
           <li>• 请确保内容原创，避免重复提交</li>
           <li>• 内容应当积极健康，符合社区规范</li>
           <li>• 提交后将自动创建 GitHub Issue，经审核后显示</li>
-          <li>• 作为贡献者，您的 GitHub 头像和用户名将被展示</li>
+          <li>• {activeTab === 'meme' ? '梗图将自动合成为 Markdown 格式提交' : '文案支持 Markdown 格式 (但不推荐过度使用)'}</li>
         </ul>
       </div>
     </div>

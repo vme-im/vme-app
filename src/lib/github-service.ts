@@ -42,6 +42,11 @@ export interface GitHubIssue {
   id: string
 }
 
+export interface UploadImageResult {
+  url: string
+  path: string
+}
+
 export type ReactionType = 'THUMBS_UP' | 'THUMBS_DOWN' | 'LAUGH' | 'HOORAY' | 'CONFUSED' | 'HEART' | 'ROCKET' | 'EYES'
 
 // === 限流管理 ===
@@ -109,14 +114,14 @@ class RateLimitManager {
     const core = rateLimitData.core || rateLimitData.rate
     const search = rateLimitData.search
     const graphql = rateLimitData.graphql
-    
+
     // 计算最严格的剩余比例
     const coreRatio = core ? core.remaining / core.limit : 1
     const graphqlRatio = graphql ? graphql.remaining / graphql.limit : 1
     const minRatio = Math.min(coreRatio, graphqlRatio)
-    
+
     const isNearLimit = minRatio <= this.WARNING_THRESHOLD
-    
+
     const status: RateLimitStatus = {
       core: core ? {
         limit: core.limit,
@@ -125,7 +130,7 @@ class RateLimitManager {
         used: core.used || (core.limit - core.remaining),
         resource: 'core'
       } : { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'core' },
-      
+
       search: search ? {
         limit: search.limit,
         remaining: search.remaining,
@@ -133,7 +138,7 @@ class RateLimitManager {
         used: search.used || (search.limit - search.remaining),
         resource: 'search'
       } : { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'search' },
-      
+
       graphql: graphql ? {
         limit: graphql.limit,
         remaining: graphql.remaining,
@@ -141,13 +146,13 @@ class RateLimitManager {
         used: graphql.used || (graphql.limit - graphql.remaining),
         resource: 'graphql'
       } : { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'graphql' },
-      
+
       isNearLimit
     }
-    
+
     // 缓存状态
     this.setCachedRateLimit(status)
-    
+
     return status
   }
 }
@@ -222,7 +227,7 @@ export class GitHubService {
    */
   private async validateRateLimit(): Promise<void> {
     const rateLimit = await this.checkRateLimit()
-    
+
     if (rateLimit.isNearLimit) {
       console.warn('API rate limit warning: user token approaching limits', rateLimit)
     }
@@ -233,16 +238,16 @@ export class GitHubService {
   /**
    * 创建文案 Issue
    */
-  async createJokeIssue(title: string, content: string): Promise<GitHubIssue> {
+  async createJokeIssue(title: string, content: string, labels: string[] = ['文案']): Promise<GitHubIssue> {
     await this.validateRateLimit()
-    
+
     try {
       const response = await this.octokit.request('POST /repos/{owner}/{repo}/issues', {
         owner: this.repoOwner,
         repo: this.repoName,
         title: title.trim(),
         body: content.trim(),
-        labels: ['文案'],
+        labels: labels,
         headers: {
           'X-GitHub-Api-Version': '2022-11-28'
         }
@@ -259,11 +264,58 @@ export class GitHubService {
   }
 
   /**
+   * 上传图片到 assets 分支
+   */
+  async uploadImageToAssets(path: string, contentBase64: string): Promise<UploadImageResult> {
+    await this.validateRateLimit()
+
+    const rawUrl = `https://raw.githubusercontent.com/${this.repoOwner}/${this.repoName}/assets/${path}`
+
+    try {
+      await this.octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
+        owner: this.repoOwner,
+        repo: this.repoName,
+        path,
+        message: `upload image ${path}`,
+        content: contentBase64,
+        branch: 'assets',
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      })
+
+      return { url: rawUrl, path }
+    } catch (error: any) {
+      // 如果已存在，尝试直接返回现有文件
+      if (error?.status === 422) {
+        try {
+          const existing = await this.octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+            owner: this.repoOwner,
+            repo: this.repoName,
+            path,
+            ref: 'assets',
+            headers: {
+              'X-GitHub-Api-Version': '2022-11-28'
+            }
+          })
+
+          const downloadUrl = (existing.data as any)?.download_url
+          return { url: downloadUrl || rawUrl, path }
+        } catch (innerError: any) {
+          throw this.handleError(innerError, 'Failed to check existing image')
+        }
+      }
+
+      throw this.handleError(error, 'Failed to upload image')
+    }
+  }
+
+  /**
    * 验证 Issue 是否存在
    */
   async validateIssue(issueId: string): Promise<boolean> {
     await this.validateRateLimit()
-    
+
     try {
       const query = `
         query GetIssue($id: ID!) {
@@ -292,7 +344,7 @@ export class GitHubService {
    */
   async addReaction(issueId: string, reaction: ReactionType): Promise<string> {
     await this.validateRateLimit()
-    
+
     try {
       const mutation = `
         mutation AddReaction($input: AddReactionInput!) {
@@ -330,11 +382,11 @@ export class GitHubService {
    */
   async removeReaction(issueId: string, reaction: ReactionType, userLogin: string): Promise<void> {
     await this.validateRateLimit()
-    
+
     try {
       // 先获取用户的反应
       const userReactionId = await this.getUserReactionId(issueId, reaction, userLogin)
-      
+
       if (!userReactionId) {
         throw new GitHubServiceError('Reaction not found', 'REACTION_NOT_FOUND', 404)
       }
@@ -406,7 +458,7 @@ export class GitHubService {
    */
   async getIssueStats(issueId: string): Promise<GitHubIssueStats> {
     await this.validateRateLimit()
-    
+
     try {
       const query = `
         query GetIssueStats($issueId: ID!) {
@@ -437,7 +489,7 @@ export class GitHubService {
       const response = await this.octokit.graphql<{
         node: {
           id: string
-          reactions: { 
+          reactions: {
             totalCount: number
             nodes: GitHubReaction[]
           }
@@ -481,11 +533,11 @@ export class GitHubService {
     if (error.status === 403) {
       return new GitHubServiceError('Access forbidden', 'FORBIDDEN', 403, error)
     }
-    
+
     if (error.status === 404) {
       return new GitHubServiceError('Resource not found', 'NOT_FOUND', 404, error)
     }
-    
+
     if (error.status === 422) {
       return new GitHubServiceError('Invalid request data', 'INVALID_DATA', 422, error)
     }
@@ -493,7 +545,7 @@ export class GitHubService {
     // 一般错误
     const message = error.message || 'Unknown GitHub API error'
     const status = error.status || 500
-    
+
     return new GitHubServiceError(message, 'API_ERROR', status, error)
   }
 }
