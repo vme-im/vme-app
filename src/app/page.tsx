@@ -117,16 +117,20 @@ export default async function Page() {
         <div className="bg-kfc-red/5 p-2 md:p-4">
           <div className="flex flex-col gap-6 md:flex-row">
             <div className="flex-1">
-              <div className="border-3 border-black bg-white p-6 shadow-neo-xl lg:p-8">
+              <Link
+                href={headlineJoke ? `/jokes/${headlineJoke.id}` : '#'}
+                className="block border-3 border-black bg-white p-6 shadow-neo-xl transition-all hover:translate-y-[-2px] hover:shadow-neo-2xl lg:p-8"
+              >
                 <div className="mb-4">
-                  <span className="mr-2 inline-block border-2 border-black bg-black px-2 py-0.5 text-xs font-bold text-white text-white">
+                  <span className="mr-2 inline-block border-2 border-black bg-black px-2 py-0.5 text-xs font-bold text-white">
                     HEADLINE
                   </span>
                   <span className="text-xs font-bold text-gray-400">
                     {new Date(headlineJoke?.createdAt || Date.now()).toLocaleDateString('zh-CN')}
                   </span>
                 </div>
-                <div className="text-xl font-bold leading-loose text-gray-900 md:text-2xl">
+                {/* 限制高度，超出隐藏 */}
+                <div className="line-clamp-6 text-xl font-bold leading-loose text-gray-900 md:text-2xl">
                   {headlineJoke?.body}
                 </div>
                 <div className="mt-6 flex items-center justify-between">
@@ -150,7 +154,7 @@ export default async function Page() {
                     V 我 50
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
 
             {/* 右侧配图区域 (模拟) */}
