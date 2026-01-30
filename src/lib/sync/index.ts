@@ -62,6 +62,7 @@ async function upsertItem(sql: NeonQueryFunction<false, false>, item: ItemToSync
         body = EXCLUDED.body,
         updated_at = EXCLUDED.updated_at,
         content_type = EXCLUDED.content_type,
+        tags = CASE WHEN array_length(EXCLUDED.tags, 1) IS NULL THEN items.tags ELSE EXCLUDED.tags END,
         synced_at = NOW()
     `
     return true
@@ -168,7 +169,8 @@ async function getLastSyncTime(sql: NeonQueryFunction<false, false>): Promise<Da
  */
 export async function syncSingleIssue(
   payload: GitHubIssuePayload,
-  repo: { owner: string; name: string }
+  repo: { owner: string; name: string },
+  overrides?: { content_type?: 'text' | 'meme'; tags?: string[] }
 ): Promise<SyncResult> {
   const startTime = Date.now()
   const sql = getDb()
@@ -178,6 +180,12 @@ export async function syncSingleIssue(
 
   try {
     const item = payloadToItemSync(payload, `${repo.owner}/${repo.name}`)
+    if (overrides?.content_type) {
+      item.content_type = overrides.content_type
+    }
+    if (overrides?.tags) {
+      item.tags = overrides.tags
+    }
     const success = await upsertItem(sql, item)
 
     if (!success) {
@@ -331,7 +339,10 @@ export async function sync(request: SyncRequest): Promise<SyncResult> {
           timestamp: new Date().toISOString(),
         }
       }
-      return syncSingleIssue(request.issue, request.repo)
+      return syncSingleIssue(request.issue, request.repo, {
+        content_type: request.content_type,
+        tags: request.tags,
+      })
 
     case 'incremental':
       return syncIncremental(request.since)

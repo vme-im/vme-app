@@ -44,6 +44,8 @@ export interface SyncRequest {
   issue?: GitHubIssuePayload    // single 模式
   repo?: { owner: string; name: string }  // single 模式
   since?: string                // incremental 模式
+  content_type?: 'text' | 'meme'
+  tags?: string[]
 }
 
 // 同步结果
@@ -84,26 +86,11 @@ export interface ItemToSync {
 
 // 默认仓库配置
 export const DEFAULT_SYNC_REPOS: RepoConfig[] = [
-  { owner: 'zkl2333', repo: 'vme', labels: ['收录'] },
+  { owner: 'vme-im', repo: 'vme-content', labels: ['收录'] },
   { owner: 'whitescent', repo: 'KFC-Crazy-Thursday', labels: ['文案提供'] },
 ]
 
 // 从环境变量读取仓库配置
 export function getSyncRepos(): RepoConfig[] {
-  const envRepos = process.env.SYNC_REPOS
-  if (!envRepos) {
-    return DEFAULT_SYNC_REPOS
-  }
-
-  try {
-    const parsed = JSON.parse(envRepos) as RepoConfig[]
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      console.warn('SYNC_REPOS is empty or invalid, using defaults')
-      return DEFAULT_SYNC_REPOS
-    }
-    return parsed
-  } catch {
-    console.warn('Failed to parse SYNC_REPOS, using defaults')
-    return DEFAULT_SYNC_REPOS
-  }
+  return DEFAULT_SYNC_REPOS
 }
