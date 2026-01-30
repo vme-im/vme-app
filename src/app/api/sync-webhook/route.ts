@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
   )
   const allowedLabels = repoConfig?.labels?.length ? repoConfig.labels : ['收录']
 
-  const labelName = payload?.label?.name
+  const labelName = typeof payload?.label?.name === 'string' ? payload.label.name : ''
   const labelNames = getLabelNames(issue.labels)
 
   const isModerationTrigger =
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
 
   const hasAllowedLabel = labelNames.some((name) => allowedLabels.includes(name))
   const isTriggered =
-    (action === 'labeled' && allowedLabels.includes(labelName)) ||
+    (action === 'labeled' && labelName.length > 0 && allowedLabels.includes(labelName)) ||
     ((action === 'edited' || action === 'closed') && hasAllowedLabel)
 
   if (!isTriggered) {
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
     html_url: issue.html_url,
   }
 
-  const contentType = detectContentTypeFromLabels(labelNames, issuePayload.body)
+  const contentType = detectContentTypeFromLabels(labelNames, issuePayload.body || '')
   const tags = await analyzeContent({
     title: issuePayload.title,
     body: issuePayload.body,
