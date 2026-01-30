@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
-import { getAllKfcItems, getRandomKfcItem } from '@/lib/server-utils'
+import { getAllKfcItems, getRandomKfcItem, getItemById } from '@/lib/server-utils'
 import { authOptions } from '@/lib/auth'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
@@ -70,8 +70,7 @@ async function getJokeForParams(id: string): Promise<IKfcItem | null> {
     return fetchIssueByNumber(Number(id))
   }
 
-  const items = await getAllKfcItems()
-  return items.find((item) => item.id === id) || null
+  return await getItemById(id)
 }
 
 // 生成静态参数（可选，用于优化）

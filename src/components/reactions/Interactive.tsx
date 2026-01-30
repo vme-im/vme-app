@@ -3,19 +3,15 @@
 import { useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
+import { ReactionGroup, ReactionNode } from '@/types'
 import ReactionsUI from './UI'
 import ReactionsLoading from './Loading'
 import ReactionsLogin from './Login'
 
 interface InteractiveReactionsProps {
   issueId: string
-  initialReactionDetails?: Array<{
-    content: string
-    users: {
-      totalCount: number
-    }
-  }>
-  initialReactionNodes?: any[]
+  initialReactionDetails?: ReactionGroup[]
+  initialReactionNodes?: ReactionNode[]
   className?: string
 }
 
@@ -66,13 +62,13 @@ export default function InteractiveReactions({
 
   // 检查是否有初始数据（来自批量请求）
   const hasInitialData = initialReactionDetails.length > 0 || initialReactionNodes.length > 0
-  
+
   // 使用 SWR 获取 reactions 数据
   // 策略：
   // 1. 列表页（有批量数据）：使用批量数据，不自动请求
   // 2. 详情页：无批量数据，自动请求
   const shouldAutoFetch = !hasInitialData
-  
+
   const { data: liveData, mutate: refreshReactions } = useSWR(
     // 会话加载中或未登录时，不初始化 SWR
     status === 'loading' || status === 'unauthenticated' ? null : `/api/reactions/${issueId}`,
@@ -98,7 +94,7 @@ export default function InteractiveReactions({
   const { reactionCounts, userReactionMap, reactionUsers, warning } = useMemo(() => {
     const reactionDetails = liveData?.details || []
     const reactionNodes = liveData?.nodes || []
-    
+
     const counts = new Map<string, number>()
     const userReactionMap = new Map<string, string>()
     const users = new Map<string, string[]>()
@@ -129,9 +125,9 @@ export default function InteractiveReactions({
       })
     }
 
-    return { 
-      reactionCounts: counts, 
-      userReactionMap, 
+    return {
+      reactionCounts: counts,
+      userReactionMap,
       reactionUsers: users,
       warning: liveData?.warning || null
     }

@@ -55,23 +55,6 @@ export interface IKfcItem {
   }
 }
 
-export interface JokeDisplayItem {
-  content: string
-  author: string
-  avatar: string
-  date: string
-  likes: number
-}
-
-// Issue统计数据 - 包含两种reaction数据
-export interface IssueStats {
-  [key: string]: {
-    reactions: number
-    reactionDetails: ReactionGroup[]  // 统计信息：每种reaction的总数
-    reactionNodes: ReactionNode[]     // 详细信息：每个reaction的ID和用户
-  }
-}
-
 // GitHub支持的reaction类型
 export type GitHubReaction = 'THUMBS_UP' | 'THUMBS_DOWN' | 'LAUGH' | 'CONFUSED' | 'HEART' | 'HOORAY' | 'ROCKET' | 'EYES'
 

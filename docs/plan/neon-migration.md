@@ -2,21 +2,38 @@
 
 > **架构原则**: GitHub Issues 是唯一可信数据源，Neon 数据库仅作为加速查询和便于筛选的缓存层。
 
+## 仓库结构
+
+项目已拆分为两个独立仓库：
+
+| 仓库 | 用途 | 内容 |
+|------|------|------|
+| **vme-content** | 内容仓库 | `data/`, `data.json`, GitHub Actions, 同步脚本 |
+| **vme-app** | 应用仓库 | Next.js 源码, API Routes, 前端组件 |
+
 ## 一、现状分析
 
 ### 1.1 当前架构
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  GitHub Issues  │────▶│  GitHub Actions │────▶│   data.json     │
-│  (数据源)       │     │  (审核+同步)     │     │   (静态文件)     │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-                                                         │
-                                                         ▼
-                                                  ┌─────────────────┐
-                                                  │  Next.js API    │
-                                                  │  (读取JSON)      │
-                                                  └─────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    vme-content 仓库 (内容层)                      │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐     ┌─────────────────┐     ┌───────────┐  │
+│  │  GitHub Issues  │────▶│  GitHub Actions │────▶│ data.json │  │
+│  │  (数据源)       │     │  (审核+同步)     │     │ data/*.json│  │
+│  └─────────────────┘     └─────────────────┘     └───────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     vme-app 仓库 (应用层)                         │
+├─────────────────────────────────────────────────────────────────┤
+│                      ┌─────────────────┐                        │
+│                      │  Next.js API    │                        │
+│                      │  (读取数据)      │                        │
+│                      └─────────────────┘                        │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 1.2 存在的问题
@@ -71,14 +88,14 @@ interface Summary {
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      GitHub Actions (Sync Layer)                     │
+│              vme-content 仓库 - GitHub Actions (Sync Layer)          │
 │  ┌───────────────┐   ┌───────────────┐   ┌───────────────┐         │
 │  │  Issue Spider │──▶│ AI 审核模块   │──▶│  Neon Writer  │         │
 │  │  (抓取新文案)  │   │  (内容审核)    │   │  (写入缓存)    │         │
 │  └───────────────┘   └───────────────┘   └───────────────┘         │
 └─────────────────────────────────────────────────────────────────────┘
-                                                                │
-                                                                ▼
+                                                               │
+                                                               ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Neon PostgreSQL                              │
 │                        (缓存层 / Cache Layer)                        │
@@ -94,7 +111,7 @@ interface Summary {
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        Next.js Application                           │
+│                   vme-app 仓库 - Next.js Application                 │
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │                      API Routes                              │   │
 │  │  /api/items  → Neon 查询 (分页、筛选、搜索)                   │   │
@@ -215,12 +232,12 @@ ORDER BY hot_score DESC;
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    GitHub Actions Workflow                       │
+│           vme-content 仓库 - GitHub Actions Workflow             │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  Step 1: Fetch Issues                                          │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │ GET /repos/zkl2333/vme/issues                             │  │
+│  │ GET /repos/vme-im/vme-content/issues                      │  │
 │  │ - state: closed (已审核关闭的文案)                        │  │
 │  │ - per_page: 100                                           │  │
 │  │ - since: last_sync_at (增量同步)                          │  │
@@ -254,7 +271,7 @@ ORDER BY hot_score DESC;
 ### 4.2 同步脚本结构
 
 ```typescript
-// actions_scripts/src/neon-sync/syncToNeon.ts
+// vme-content 仓库: actions_scripts/src/neon-sync/syncToNeon.ts
 
 import { neon } from '@neondatabase/serverless';
 
@@ -317,7 +334,7 @@ export async function syncIssuesToNeon(issues: GitHubIssue[]) {
 ### 5.1 数据访问层抽象
 
 ```typescript
-// src/lib/data-access/index.ts
+// vme-app 仓库: src/lib/data-access/index.ts
 
 export interface DataProvider {
   getItems(params: GetItemsParams): Promise<PaginatedItems>
@@ -387,7 +404,7 @@ export class FallbackProvider implements DataProvider {
 ### 5.2 API 路由改造
 
 ```typescript
-// src/app/api/items/route.ts
+// vme-app 仓库: src/app/api/items/route.ts
 
 import { dataProvider } from '@/lib/data-access';
 
@@ -420,7 +437,7 @@ export async function GET(request: NextRequest) {
 ### 5.3 新增功能
 
 ```typescript
-// src/app/api/search/route.ts - 全文搜索
+// vme-app 仓库: src/app/api/search/route.ts - 全文搜索
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q');
@@ -450,12 +467,13 @@ async searchItems(query: string): Promise<IKfcItem[]> {
 ### 6.1 环境变量
 
 ```bash
-# .env.local
+# vme-app 仓库: .env.local
 # Neon 数据库连接
 DATABASE_URL="postgresql://user:password@ep-xxx.aws.neon.tech/vme?sslmode=require"
 
-# GitHub Token (用于同步)
-GITHUB_TOKEN=ghp_xxx
+# vme-content 仓库: GitHub Actions Secrets
+# GITHUB_TOKEN=ghp_xxx
+# DATABASE_URL=postgresql://...
 
 # 同步配置
 SYNC_ENABLED=true
@@ -465,11 +483,11 @@ SYNC_INTERVAL=3600000  # 1小时
 ### 6.2 依赖安装
 
 ```bash
-# Neon 客户端 (无服务器友好)
+# vme-app 仓库
 npm install @neondatabase/serverless
 
-# 或 Prisma ORM (如需类型安全)
-npm install prisma @prisma/client
+# vme-content 仓库 (actions_scripts)
+npm install @neondatabase/serverless
 ```
 
 ## 七、实施计划
@@ -478,19 +496,20 @@ npm install prisma @prisma/client
 
 - [ ] 创建 Neon 项目，获取连接字符串
 - [ ] 执行数据库 Schema 创建
-- [ ] 配置 GitHub Actions Secrets
+- [ ] 配置 vme-content 仓库 GitHub Actions Secrets
+- [ ] 配置 vme-app 仓库环境变量
 - [ ] 编写数据库迁移脚本
 
 ### Phase 2: 同步层 (2-3天)
 
-- [ ] 实现 `syncToNeon.ts` 同步脚本
+- [ ] 在 vme-content 仓库实现 `syncToNeon.ts` 同步脚本
 - [ ] 编写增量同步逻辑
 - [ ] 配置 GitHub Actions Workflow
 - [ ] 测试数据同步正确性
 
 ### Phase 3: API 改造 (3-4天)
 
-- [ ] 实现 `DataProvider` 接口
+- [ ] 在 vme-app 仓库实现 `DataProvider` 接口
 - [ ] 改造 `/api/items` 使用 Neon
 - [ ] 改造 `/api/random` 使用 Neon
 - [ ] 改造 `/api/status` 使用 Neon
@@ -544,7 +563,7 @@ npm install prisma @prisma/client
 ### 8.2 健康检查
 
 ```typescript
-// src/app/api/health/route.ts
+// vme-app 仓库: src/app/api/health/route.ts
 export async function GET() {
   const checks = {
     neon: await checkNeonHealth(),

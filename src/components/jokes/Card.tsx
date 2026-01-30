@@ -8,12 +8,12 @@ import InteractiveReactions from '@/components/reactions/Interactive'
 import ReactionsLoading from '@/components/reactions/Loading'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { IKfcItem } from '@/types'
+import { IKfcItem, ReactionGroup, ReactionNode } from '@/types'
 
 interface JokeCardProps {
   item: IKfcItem
-  initialReactionDetails?: any[]
-  initialReactionNodes?: any[]
+  initialReactionDetails?: ReactionGroup[]
+  initialReactionNodes?: ReactionNode[]
   waitForBatchData?: boolean // 是否等待批量数据
 }
 

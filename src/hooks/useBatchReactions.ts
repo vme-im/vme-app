@@ -1,11 +1,12 @@
 import useSWR, { mutate as globalMutate } from 'swr'
 import { useEffect } from 'react'
+import { ReactionGroup, ReactionNode } from '@/types'
 
 interface BatchReactionsResponse {
   data: Record<string, {
     reactions: number
-    details: any[]
-    nodes: any[]
+    details: ReactionGroup[]
+    nodes: ReactionNode[]
   }>
   errors: Record<string, string>
   metadata: {
@@ -34,7 +35,7 @@ const fetcher = async (url: string, issueIds: string[]): Promise<BatchReactionsR
 
 export function useBatchReactions(issueIds: string[]) {
   const shouldFetch = issueIds.length > 0
-  
+
   const { data, error, isLoading, mutate } = useSWR(
     shouldFetch ? ['batch-reactions', issueIds] : null,
     ([_, ids]) => fetcher('/api/reactions/batch', ids),
@@ -98,7 +99,7 @@ export function useBatchReactions(issueIds: string[]) {
 // 单个Issue的反应数据Hook（基于批量Hook的简化版本）
 export function useIssueReactions(issueId: string) {
   const { getReactionData, getError, isLoading, hasData, refresh } = useBatchReactions([issueId])
-  
+
   return {
     data: getReactionData(issueId),
     error: getError(issueId),

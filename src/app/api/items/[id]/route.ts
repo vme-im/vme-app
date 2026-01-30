@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllKfcItems } from '@/lib/server-utils'
+import { getItemById } from '@/lib/server-utils'
 
 export const revalidate = 60 // 60秒缓存
 
@@ -14,8 +14,7 @@ export async function GET(
 
   try {
     const { id } = params
-    const items = await getAllKfcItems()
-    const item = items.find((item) => item.id === id)
+    const item = await getItemById(id)
 
     if (!item) {
       return NextResponse.json(

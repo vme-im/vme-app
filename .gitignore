@@ -63,3 +63,10 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
+
+# Agents & Skills
+.agents/skills/
+.github/skills/
+.claude/skills/
+.cursor/skills/
+

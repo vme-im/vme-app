@@ -12,28 +12,15 @@ import { Octokit } from '@octokit/core'
 import { getServerSession } from 'next-auth/next'
 import { getToken } from 'next-auth/jwt'
 import { authOptions } from '@/lib/auth'
+import { ReactionGroup, ReactionNode, GitHubReaction as ReactionType } from '@/types'
 
 // === 类型定义 ===
-export interface GitHubReaction {
-  id: string
-  content: string
-  user: {
-    login: string
-  }
-}
-
-export interface GitHubReactionGroup {
-  content: string
-  users: {
-    totalCount: number
-  }
-}
 
 export interface GitHubIssueStats {
   id: string
   reactions: number
-  reactionDetails: GitHubReactionGroup[]
-  reactionNodes: GitHubReaction[]
+  reactionDetails: ReactionGroup[]
+  reactionNodes: ReactionNode[]
 }
 
 export interface GitHubIssue {
@@ -46,8 +33,6 @@ export interface UploadImageResult {
   url: string
   path: string
 }
-
-export type ReactionType = 'THUMBS_UP' | 'THUMBS_DOWN' | 'LAUGH' | 'HOORAY' | 'CONFUSED' | 'HEART' | 'ROCKET' | 'EYES'
 
 // === 限流管理 ===
 export interface RateLimitInfo {
@@ -437,7 +422,7 @@ export class GitHubService {
     const response = await this.octokit.graphql<{
       node: {
         reactions: {
-          nodes: GitHubReaction[]
+          nodes: ReactionNode[]
         }
       } | null
     }>(query, { id: issueId })
@@ -491,9 +476,9 @@ export class GitHubService {
           id: string
           reactions: {
             totalCount: number
-            nodes: GitHubReaction[]
+            nodes: ReactionNode[]
           }
-          reactionGroups: GitHubReactionGroup[]
+          reactionGroups: ReactionGroup[]
         } | null
       }>(query, { issueId })
 
