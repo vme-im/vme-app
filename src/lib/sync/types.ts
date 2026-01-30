@@ -78,6 +78,8 @@ export interface ItemToSync {
   author_username: string
   source_repo: string
   moderation_status: 'approved'
+  content_type: 'text' | 'meme'
+  tags: string[]
 }
 
 // 默认仓库配置

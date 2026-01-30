@@ -38,6 +38,8 @@ async function upsertItem(sql: NeonQueryFunction<false, false>, item: ItemToSync
         author_username,
         source_repo,
         moderation_status,
+        content_type,
+        tags,
         reactions_count,
         synced_at
       ) VALUES (
@@ -50,6 +52,8 @@ async function upsertItem(sql: NeonQueryFunction<false, false>, item: ItemToSync
         ${item.author_username},
         ${item.source_repo},
         ${item.moderation_status},
+        ${item.content_type},
+        ${item.tags},
         0,
         NOW()
       )
@@ -57,6 +61,7 @@ async function upsertItem(sql: NeonQueryFunction<false, false>, item: ItemToSync
         title = EXCLUDED.title,
         body = EXCLUDED.body,
         updated_at = EXCLUDED.updated_at,
+        content_type = EXCLUDED.content_type,
         synced_at = NOW()
     `
     return true
@@ -92,6 +97,7 @@ async function upsertItemsBatch(
     const updatedAts = batch.map(item => item.updated_at)
     const authorUsernames = batch.map(item => item.author_username)
     const sourceRepos = batch.map(item => item.source_repo)
+    const contentTypes = batch.map(item => item.content_type)
 
     try {
       await sql`
@@ -104,11 +110,16 @@ async function upsertItemsBatch(
           updated_at,
           author_username,
           source_repo,
+          content_type,
           moderation_status,
+          tags,
           reactions_count,
           synced_at
         )
-        SELECT * FROM unnest(
+        SELECT
+          id, title, url, body, created_at, updated_at, author_username, source_repo, content_type,
+          'approved', '{}', 0, NOW()
+        FROM unnest(
           ${ids}::text[],
           ${titles}::text[],
           ${urls}::text[],
@@ -116,13 +127,14 @@ async function upsertItemsBatch(
           ${createdAts}::timestamptz[],
           ${updatedAts}::timestamptz[],
           ${authorUsernames}::text[],
-          ${sourceRepos}::text[]
-        ) AS t(id, title, url, body, created_at, updated_at, author_username, source_repo)
-        CROSS JOIN (SELECT 'approved'::text AS moderation_status, 0 AS reactions_count, NOW() AS synced_at) AS defaults
+          ${sourceRepos}::text[],
+          ${contentTypes}::text[]
+        ) AS t(id, title, url, body, created_at, updated_at, author_username, source_repo, content_type)
         ON CONFLICT (id) DO UPDATE SET
           title = EXCLUDED.title,
           body = EXCLUDED.body,
           updated_at = EXCLUDED.updated_at,
+          content_type = EXCLUDED.content_type,
           synced_at = NOW()
       `
       totalSynced += batch.length

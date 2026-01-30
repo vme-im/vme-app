@@ -8,10 +8,6 @@ import {
   ItemRow,
 } from './types'
 
-// 检测内容是否为梗图
-function isMeme(body: string): boolean {
-  return /!\[.*\]\(.*\)/.test(body)
-}
 
 // 拼接 GitHub 头像 URL
 function getAvatarUrl(username: string): string {
@@ -90,6 +86,12 @@ export class NeonProvider implements DataProvider {
       paramIndex++
     }
 
+    if (type) {
+      conditions.push(`content_type = $${paramIndex}`)
+      queryParams.push(type)
+      paramIndex++
+    }
+
     const whereClause = conditions.join(' AND ')
 
     // 获取数据
@@ -104,13 +106,7 @@ export class NeonProvider implements DataProvider {
     const result = await this.pool.query(itemsQuery, queryParams)
     const rows = result.rows as ItemRow[]
 
-    // 过滤类型 (在应用层过滤，因为 meme 检测是基于正则)
-    let items = rows.map(rowToItem)
-    if (type) {
-      items = items.filter((item) =>
-        type === 'meme' ? isMeme(item.body) : !isMeme(item.body)
-      )
-    }
+    const items = rows.map(rowToItem)
 
     // 获取总数
     const countQuery = `SELECT COUNT(*) as count FROM items WHERE ${whereClause}`
@@ -131,28 +127,18 @@ export class NeonProvider implements DataProvider {
   }
 
   async getRandomItem(type?: 'text' | 'meme'): Promise<IKfcItem | null> {
-    // 如果需要过滤类型，获取多条后在应用层过滤
-    const limit = type ? 50 : 1
+    const typeCondition = type ? `AND content_type = $1` : ''
+    const params = type ? [type] : []
 
     const result = await this.pool.query(`
       SELECT * FROM items
-      WHERE moderation_status = 'approved'
+      WHERE moderation_status = 'approved' ${typeCondition}
       ORDER BY RANDOM()
-      LIMIT $1
-    `, [limit])
+      LIMIT 1
+    `, params)
     const rows = result.rows as ItemRow[]
 
-    if (!rows.length) return null
-
-    let items = rows.map(rowToItem)
-
-    if (type) {
-      items = items.filter((item) =>
-        type === 'meme' ? isMeme(item.body) : !isMeme(item.body)
-      )
-    }
-
-    return items[0] || null
+    return rows.length ? rowToItem(rows[0]) : null
   }
 
   async getItemById(id: string): Promise<IKfcItem | null> {

@@ -38,28 +38,10 @@ export interface ItemRow {
   created_at: Date
   updated_at: Date
   author_username: string
-  author_avatar_url: string
-  author_url: string
+  source_repo: string
+  content_type: 'text' | 'meme'
+  tags: string[]
   reactions_count: number
   moderation_status: string
   synced_at: Date
-}
-
-export interface AuthorRow {
-  username: string
-  avatar_url: string
-  url: string
-  item_count: number
-  total_reactions: number
-  v50_score: number
-  updated_at: Date
-}
-
-export interface StatsRow {
-  id: string
-  total_items: number
-  total_contributors: number
-  top_contributors: Contributor[]
-  monthly_stats: Record<string, number>
-  updated_at: Date
 }

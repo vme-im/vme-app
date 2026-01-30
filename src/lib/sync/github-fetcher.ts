@@ -183,6 +183,11 @@ export async function fetchIssuesSince(
   return allIssues
 }
 
+// 检测内容是否为梗图
+function detectContentType(body: string): 'text' | 'meme' {
+  return /!\[.*\]\(.*\)/.test(body) ? 'meme' : 'text'
+}
+
 /**
  * 将 GitHub Issue 转换为待同步的数据库格式
  */
@@ -200,6 +205,8 @@ export function issueToItemSync(
     author_username: issue.author?.login || 'unknown',
     source_repo: sourceRepo,
     moderation_status: 'approved',
+    content_type: detectContentType(issue.body),
+    tags: [],  // 后续由 LLM 审核时填充
   }
 }
 
@@ -210,15 +217,18 @@ export function payloadToItemSync(
   payload: GitHubIssuePayload,
   sourceRepo: string
 ): ItemToSync {
+  const body = payload.body || ''
   return {
     id: payload.id,
     title: payload.title,
     url: payload.html_url,
-    body: payload.body || '',
+    body: body,
     created_at: new Date(payload.created_at),
     updated_at: new Date(payload.updated_at),
     author_username: payload.user.login,
     source_repo: sourceRepo,
     moderation_status: 'approved',
+    content_type: detectContentType(body),
+    tags: [],  // 后续由 LLM 审核时填充
   }
 }
