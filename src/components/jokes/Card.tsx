@@ -61,6 +61,18 @@ export default function JokeCard({
                 )
               },
               p: ({ node, children, ...props }: any) => {
+                // 检查子元素是否包含块级元素（如 img 转换后的 div）
+                const hasBlockChild = node?.children?.some(
+                  (child: any) => child.tagName === 'img'
+                )
+                // 如果包含块级元素，使用 div 代替 p 避免 hydration error
+                if (hasBlockChild) {
+                  return (
+                    <div className="whitespace-pre-wrap text-justify-cn text-base md:text-lg" {...props}>
+                      {children}
+                    </div>
+                  )
+                }
                 return (
                   <p className="whitespace-pre-wrap text-justify-cn text-base md:text-lg" {...props}>
                     {children}

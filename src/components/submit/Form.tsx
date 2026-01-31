@@ -81,14 +81,14 @@ export default function SubmitForm() {
         return
       }
     } else {
-
       // 梗图模式下，允许内容为空，但必须有图片
-      if (activeTab === 'meme' && uploadedImages.length === 0) {
+      if (uploadedImages.length === 0) {
         setMessage({ type: 'error', text: '请至少上传一张梗图' })
         return
       }
+    }
 
-      setIsSubmitting(true)
+    setIsSubmitting(true)
       setMessage(null)
 
       try {
