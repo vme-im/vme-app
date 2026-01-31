@@ -290,7 +290,7 @@ export async function syncIncremental(since?: string): Promise<SyncResult> {
     let totalSynced = 0
     let totalSkipped = 0
 
-    for (const { owner, repo, labels } of repos) {
+    for (const { owner, repo, labels, typeLabels } of repos) {
       const sourceRepo = `${owner}/${repo}`
       const sinceDate = since
         ? new Date(since)
@@ -305,10 +305,11 @@ export async function syncIncremental(since?: string): Promise<SyncResult> {
           owner,
           repo,
           labels,
-          sinceDate
+          sinceDate,
+          typeLabels
         )
-        const items = issuesWithRepo.map(({ issue }) =>
-          issueToItemSync(issue, sourceRepo)
+        const items = issuesWithRepo.map(({ issue, typeLabels }) =>
+          issueToItemSync(issue, sourceRepo, typeLabels)
         )
 
         console.log(`Found ${items.length} issues to sync (${sourceRepo})`)
@@ -369,8 +370,8 @@ export async function syncFull(): Promise<SyncResult> {
   try {
     // 抓取全部数据
     const issuesWithRepo = await fetchAllApprovedIssues()
-    const items = issuesWithRepo.map(({ issue, sourceRepo }) =>
-      issueToItemSync(issue, sourceRepo)
+    const items = issuesWithRepo.map(({ issue, sourceRepo, typeLabels }) =>
+      issueToItemSync(issue, sourceRepo, typeLabels)
     )
 
     console.log(`Found ${items.length} issues to sync`)

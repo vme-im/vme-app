@@ -5,6 +5,10 @@ export interface RepoConfig {
   owner: string
   repo: string
   labels: string[]
+  typeLabels?: {           // 可选：类型标签映射
+    meme?: string[]        // 梗图类型标签
+    text?: string[]        // 文案类型标签
+  }
 }
 
 // GitHub Issue 原始数据 (GraphQL 返回)
@@ -20,6 +24,9 @@ export interface GitHubIssueNode {
     avatarUrl: string
     url: string
   } | null
+  labels?: {           // 新增：标签信息
+    nodes: { name: string }[]
+  }
 }
 
 // GitHub Actions 传入的 Issue Payload (REST API 格式)
@@ -86,8 +93,24 @@ export interface ItemToSync {
 
 // 默认仓库配置
 export const DEFAULT_SYNC_REPOS: RepoConfig[] = [
-  { owner: 'vme-im', repo: 'vme-content', labels: ['收录'] },
-  { owner: 'whitescent', repo: 'KFC-Crazy-Thursday', labels: ['文案提供'] },
+  {
+    owner: 'vme-im',
+    repo: 'vme-content',
+    labels: ['收录', '梗图'],
+    typeLabels: {
+      meme: ['梗图'],
+      text: ['收录'],
+    },
+  },
+  {
+    owner: 'whitescent',
+    repo: 'KFC-Crazy-Thursday',
+    labels: ['文案提供', '梗图'],
+    typeLabels: {
+      meme: ['梗图'],
+      text: ['文案提供'],
+    },
+  },
 ]
 
 // 从环境变量读取仓库配置

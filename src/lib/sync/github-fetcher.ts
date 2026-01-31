@@ -54,6 +54,11 @@ async function fetchIssuesByLabels(
                 avatarUrl
                 url
               }
+              labels(first: 10) {
+                nodes {
+                  name
+                }
+              }
             }
             cursor
           }
@@ -92,12 +97,12 @@ async function fetchIssuesByLabels(
  * 抓取所有配置仓库的已审核通过 Issues
  */
 export async function fetchAllApprovedIssues(): Promise<
-  { issue: GitHubIssueNode; sourceRepo: string }[]
+  { issue: GitHubIssueNode; sourceRepo: string; typeLabels?: { meme?: string[]; text?: string[] } }[]
 > {
   const repos = getSyncRepos()
-  const allIssues: { issue: GitHubIssueNode; sourceRepo: string }[] = []
+  const allIssues: { issue: GitHubIssueNode; sourceRepo: string; typeLabels?: { meme?: string[]; text?: string[] } }[] = []
 
-  for (const { owner, repo, labels } of repos) {
+  for (const { owner, repo, labels, typeLabels } of repos) {
     console.log(`Fetching issues from ${owner}/${repo} with labels: ${labels.join(', ')}`)
 
     try {
@@ -108,6 +113,7 @@ export async function fetchAllApprovedIssues(): Promise<
         allIssues.push({
           issue,
           sourceRepo: `${owner}/${repo}`,
+          typeLabels,
         })
       }
     } catch (error) {
@@ -127,10 +133,11 @@ export async function fetchIssuesSinceForRepo(
   owner: string,
   repo: string,
   labels: string[],
-  since: Date
-): Promise<{ issue: GitHubIssueNode; sourceRepo: string }[]> {
+  since: Date,
+  typeLabels?: { meme?: string[]; text?: string[] }
+): Promise<{ issue: GitHubIssueNode; sourceRepo: string; typeLabels?: { meme?: string[]; text?: string[] } }[]> {
   const octokit = getOctokit()
-  const issues: { issue: GitHubIssueNode; sourceRepo: string }[] = []
+  const issues: { issue: GitHubIssueNode; sourceRepo: string; typeLabels?: { meme?: string[]; text?: string[] } }[] = []
 
   console.log(
     `Fetching issues from ${owner}/${repo} since ${since.toISOString()}`
@@ -165,8 +172,16 @@ export async function fetchIssuesSinceForRepo(
                 url: issue.user.html_url,
               }
             : null,
+          labels: issue.labels
+            ? {
+                nodes: issue.labels.map((label: any) => ({
+                  name: typeof label === 'string' ? label : label.name,
+                })),
+              }
+            : undefined,
         },
         sourceRepo: `${owner}/${repo}`,
+        typeLabels,
       })
     }
 
@@ -181,8 +196,21 @@ export async function fetchIssuesSinceForRepo(
   return issues
 }
 
-// 检测内容是否为梗图
-function detectContentType(body: string): 'text' | 'meme' {
+// 检测内容类型（优先使用标签配置）
+function detectContentType(
+  body: string,
+  labelNames: string[],
+  typeLabels?: { meme?: string[]; text?: string[] }
+): 'text' | 'meme' {
+  // 优先使用配置的类型标签判断
+  if (typeLabels?.meme?.some(label => labelNames.includes(label))) {
+    return 'meme'
+  }
+  if (typeLabels?.text?.some(label => labelNames.includes(label))) {
+    return 'text'
+  }
+
+  // 回退：检测 markdown 图片语法
   return /!\[.*\]\(.*\)/.test(body) ? 'meme' : 'text'
 }
 
@@ -191,8 +219,11 @@ function detectContentType(body: string): 'text' | 'meme' {
  */
 export function issueToItemSync(
   issue: GitHubIssueNode,
-  sourceRepo: string
+  sourceRepo: string,
+  typeLabels?: { meme?: string[]; text?: string[] }
 ): ItemToSync {
+  const labelNames = issue.labels?.nodes.map(l => l.name) || []
+
   return {
     id: issue.id,
     title: issue.title,
@@ -203,7 +234,7 @@ export function issueToItemSync(
     author_username: issue.author?.login || 'unknown',
     source_repo: sourceRepo,
     moderation_status: 'approved',
-    content_type: detectContentType(issue.body),
+    content_type: detectContentType(issue.body, labelNames, typeLabels),
     tags: [],  // 后续由 LLM 审核时填充
   }
 }
