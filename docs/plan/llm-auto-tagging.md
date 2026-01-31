@@ -1,10 +1,10 @@
-# LLM 自动打标设计（Webhook 版）
+# LLM 自动打标设计（Actions 版）
 
 ## 概述
 
-在现有审核流程基础上，使用 Webhook 将“审核通过”的文案实时同步到 `vme-app`，由服务端执行 LLM 内容分析（content_type + tags）并写入 Neon 数据库。  
-**不再保留 GitHub Actions 的同步流程**。  
-**第三方仓库不接入 Webhook**，仅通过增量抓取同步。
+在现有审核流程基础上，GitHub Actions 负责评论/打标签/关闭 issue 等 GitHub 写操作，并在“审核通过”后主动调用 `vme-app` 同步接口，由服务端执行 LLM 内容分析（content_type + tags）并写入 Neon 数据库。  
+**不接入 Webhook**。  
+**第三方仓库仅通过增量抓取同步**。
 
 ## 目标
 
@@ -17,28 +17,34 @@
 
 - 现有流程依赖 Actions 写入或触发同步
 - 拆分后同步逻辑更适合集中在 `vme-app`
-- Webhook 更稳定、延迟更低，便于统一观测
+- GitHub 评论/标签/关闭需要由 Actions 执行，Webhook 不适用
 
-## 总体流程（Webhook 主路径）
+## 总体流程（Actions 主路径）
 
 ```
-Issue 被打上“收录”标签
+Issue 被打上“文案/梗图”标签
           ↓
-GitHub Webhook -> vme-app /api/sync-webhook
+GitHub Actions（issue_moderation.yml） -> 运行 `actions_scripts/dist/moderateIssue.js`
           ↓
-签名校验 + 事件过滤
+审核通过：打上“收录”标签 + 发表评论 + 关闭 issue
+          ↓
+GitHub Actions 调用 vme-app /api/sync
+          ↓
+API Key 校验 + 事件过滤
           ↓
 LLM 内容分析（失败不阻塞）
           ↓
 upsert 写入 Neon（幂等）
+          ↓
+（可选）触发 create_data.yml 生成 data.json
 ```
 
 ## 事件来源与接入策略
 
 ### 自有仓库（同组织）
-- 接入 Webhook（实时）
-- 触发事件：`issues` 的 `labeled` / `edited` / `closed`
-- 过滤：label 包含 `收录`
+- 由 Actions 触发（实时或近实时）
+- 触发事件：`issues` 的 `labeled`
+- 过滤：label 为 `文案` 或 `梗图`（当前审核入口）
 
 ### 第三方仓库（仅采集）
 - **不接入 Webhook**
@@ -46,9 +52,14 @@ upsert 写入 Neon（幂等）
 
 ## 鉴权与安全
 
-- 使用 GitHub Webhook Secret 验签（`X-Hub-Signature-256`）
+- 使用 `SYNC_API_KEY` 进行接口鉴权
 - 允许列表校验：仅处理配置的仓库
 - 不向第三方仓库回写（只读采集）
+
+## 职责边界
+
+- Actions：审核、评论、打标签、关闭 issue、（可选）触发数据生成
+- vme-app：LLM 打标、写库、幂等去重、增量同步
 
 ## 幂等与去重
 
@@ -99,13 +110,13 @@ upsert 写入 Neon（幂等）
 | 排比 | 使用排比句式 |
 | 谐音梗 | 包含谐音/双关 |
 
-## API 设计（Webhook）
+## API 设计（Actions）
 
-### `/api/sync-webhook`
+### `/api/sync`
 
-- 接收 GitHub Webhook（issues）
-- 校验签名 + repo allowlist
-- 转换为内部 `SyncRequest`：
+- 接收 Actions 侧触发（issues）
+- 校验 `SYNC_API_KEY` + repo allowlist
+- 请求体为内部 `SyncRequest`：
   - `mode: 'single'`
   - `issue: GitHubIssuePayload`
   - `repo: { owner, name }`
@@ -143,7 +154,6 @@ upsert 写入 Neon（幂等）
 ```
 DATABASE_URL=postgresql://...
 SYNC_API_KEY=xxx
-WEBHOOK_SECRET=xxx
 AI_API_KEY=sk-xxx
 AI_API_BASE_URL=https://api.openai.com
 LLM_MODEL=gpt-4o-mini
@@ -151,18 +161,17 @@ LLM_MODEL=gpt-4o-mini
 
 ## 实现步骤
 
-1. 新增 `src/app/api/sync-webhook/route.ts`
+1. 在 `actions_scripts` 中（审核通过后）调用 `vme-app /api/sync`（携带 `SYNC_API_KEY`）
 2. 新增 `src/lib/sync/content-analyzer.ts`
 3. 扩展 `SyncRequest` 类型与 `syncSingleIssue` 入参
-4. 在 `sync-webhook` 中调用 LLM 分析并写库
-5. 配置 Webhook 与 Secret（自有仓库）
+4. 在 `sync` 中调用 LLM 分析并写库
+5. 保留 Actions 的评论/打标签/关闭逻辑
 6. 配置 Vercel Cron 做第三方仓库增量同步
-7. 端到端测试（labeled/edited/closed）
+7. 端到端测试（labeled）
 
 ## 测试清单
 
 - labeled 触发，立即写库
-- edited 触发更新 tags/body
-- 签名错误拒绝（401）
+- API Key 错误拒绝（401）
 - LLM 失败仍能写库
 - 第三方仓库仅增量，不触发 webhook

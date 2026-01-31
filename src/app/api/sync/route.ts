@@ -1,5 +1,6 @@
 // 同步 API 路由
 import { NextRequest, NextResponse } from 'next/server'
+import { analyzeContent } from '@/lib/sync/content-analyzer'
 import { sync, SyncRequest } from '@/lib/sync'
 
 /**
@@ -69,6 +70,22 @@ export async function POST(request: NextRequest) {
         { error: 'Bad Request', message: 'Single mode requires issue and repo' },
         { status: 400 }
       )
+    }
+
+    if (body.mode === 'single' && body.issue) {
+      const issueBody = body.issue.body || ''
+      if (!body.content_type) {
+        body.content_type = /!\[.*?\]\(https?:\/\/[^\s)]+\)/.test(issueBody)
+          ? 'meme'
+          : 'text'
+      }
+
+      if (body.tags === undefined) {
+        body.tags = await analyzeContent({
+          title: body.issue.title,
+          body: issueBody,
+        })
+      }
     }
 
     // 执行同步
