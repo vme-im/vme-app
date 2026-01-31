@@ -8,10 +8,11 @@ import {
 } from './types'
 import {
   fetchAllApprovedIssues,
-  fetchIssuesSince,
+  fetchIssuesSinceForRepo,
   issueToItemSync,
   payloadToItemSync,
 } from './github-fetcher'
+import { getSyncRepos } from './types'
 
 // 获取数据库连接
 function getDb() {
@@ -20,6 +21,52 @@ function getDb() {
     throw new Error('DATABASE_URL environment variable is required')
   }
   return neon(databaseUrl)
+}
+
+
+async function createSyncLog(
+  sql: NeonQueryFunction<false, false>,
+  payload: { mode: string; source: string }
+): Promise<number> {
+  const result = await sql`
+    INSERT INTO sync_logs (mode, source, items_synced, started_at)
+    VALUES (${payload.mode}, ${payload.source}, 0, NOW())
+    RETURNING id
+  ` as { id: number }[]
+
+  return result[0]?.id ?? 0
+}
+
+async function finishSyncLog(
+  sql: NeonQueryFunction<false, false>,
+  payload: { id: number; items_synced: number; error: string | null }
+) {
+  await sql`
+    UPDATE sync_logs
+    SET items_synced = ${payload.items_synced},
+        finished_at = NOW(),
+        error = ${payload.error}
+    WHERE id = ${payload.id}
+  `
+}
+
+async function getLastIncrementalSyncTimes(
+  sql: NeonQueryFunction<false, false>
+): Promise<Map<string, Date>> {
+  const result = await sql`
+    SELECT source, MAX(finished_at) as last_finished
+    FROM sync_logs
+    WHERE mode = 'incremental' AND error IS NULL AND finished_at IS NOT NULL
+    GROUP BY source
+  ` as { source: string; last_finished: Date | null }[]
+
+  const map = new Map<string, Date>()
+  for (const row of result) {
+    if (row.last_finished) {
+      map.set(row.source, row.last_finished)
+    }
+  }
+  return map
 }
 
 /**
@@ -154,14 +201,12 @@ async function upsertItemsBatch(
 }
 
 /**
- * 获取上次同步时间 (从 items 表的 synced_at 推断)
+ * 获取各仓库上次更新时间 (从 sync_logs 表推断)
  */
-async function getLastSyncTime(sql: NeonQueryFunction<false, false>): Promise<Date | null> {
-  const result = await sql`
-    SELECT MAX(synced_at) as last_sync FROM items
-  ` as { last_sync: Date | null }[]
-
-  return result.length > 0 ? result[0].last_sync : null
+async function getLastUpdatedTimes(
+  sql: NeonQueryFunction<false, false>
+): Promise<Map<string, Date>> {
+  return getLastIncrementalSyncTimes(sql)
 }
 
 /**
@@ -175,11 +220,14 @@ export async function syncSingleIssue(
   const startTime = Date.now()
   const sql = getDb()
   const errors: string[] = []
+  const sourceRepo = `${repo.owner}/${repo.name}`
 
-  console.log(`Syncing single issue: ${payload.title} from ${repo.owner}/${repo.name}`)
+  console.log(`Syncing single issue: ${payload.title} from ${sourceRepo}`)
+
+  const logId = await createSyncLog(sql, { mode: 'single', source: sourceRepo })
 
   try {
-    const item = payloadToItemSync(payload, `${repo.owner}/${repo.name}`)
+    const item = payloadToItemSync(payload, sourceRepo)
     if (overrides?.content_type) {
       item.content_type = overrides.content_type
     }
@@ -191,6 +239,12 @@ export async function syncSingleIssue(
     if (!success) {
       errors.push(`Failed to sync issue: ${payload.id}`)
     }
+
+    await finishSyncLog(sql, {
+      id: logId,
+      items_synced: success ? 1 : 0,
+      error: success ? null : errors.join('; '),
+    })
 
     return {
       success: success,
@@ -204,6 +258,8 @@ export async function syncSingleIssue(
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error'
     errors.push(errorMsg)
+
+    await finishSyncLog(sql, { id: logId, items_synced: 0, error: errorMsg })
 
     return {
       success: false,
@@ -228,33 +284,56 @@ export async function syncIncremental(since?: string): Promise<SyncResult> {
   console.log('Starting incremental sync...')
 
   try {
-    // 获取同步起始时间
-    let sinceDate: Date
-    if (since) {
-      sinceDate = new Date(since)
-    } else {
-      const lastSync = await getLastSyncTime(sql)
-      sinceDate = lastSync || new Date(Date.now() - 24 * 60 * 60 * 1000) // 默认24小时前
+    const repos = getSyncRepos()
+    const defaultSince = new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z')
+    const lastUpdatedTimes = since ? new Map<string, Date>() : await getLastUpdatedTimes(sql)
+    let totalSynced = 0
+    let totalSkipped = 0
+
+    for (const { owner, repo, labels } of repos) {
+      const sourceRepo = `${owner}/${repo}`
+      const sinceDate = since
+        ? new Date(since)
+        : (lastUpdatedTimes.get(sourceRepo) || defaultSince)
+
+      console.log(`Fetching issues since: ${sinceDate.toISOString()} (${sourceRepo})`)
+
+      const logId = await createSyncLog(sql, { mode: 'incremental', source: sourceRepo })
+
+      try {
+        const issuesWithRepo = await fetchIssuesSinceForRepo(
+          owner,
+          repo,
+          labels,
+          sinceDate
+        )
+        const items = issuesWithRepo.map(({ issue }) =>
+          issueToItemSync(issue, sourceRepo)
+        )
+
+        console.log(`Found ${items.length} issues to sync (${sourceRepo})`)
+
+        const { synced, skipped } = await upsertItemsBatch(sql, items)
+        totalSynced += synced
+        totalSkipped += skipped
+
+        await finishSyncLog(sql, {
+          id: logId,
+          items_synced: synced,
+          error: null,
+        })
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        await finishSyncLog(sql, { id: logId, items_synced: 0, error: errorMsg })
+        throw error
+      }
     }
-
-    console.log(`Fetching issues since: ${sinceDate.toISOString()}`)
-
-    // 抓取增量数据
-    const issuesWithRepo = await fetchIssuesSince(sinceDate)
-    const items = issuesWithRepo.map(({ issue, sourceRepo }) =>
-      issueToItemSync(issue, sourceRepo)
-    )
-
-    console.log(`Found ${items.length} issues to sync`)
-
-    // 写入数据库 (批量插入)
-    const { synced, skipped } = await upsertItemsBatch(sql, items)
 
     return {
       success: true,
       mode: 'incremental',
-      itemsSynced: synced,
-      itemsSkipped: skipped,
+      itemsSynced: totalSynced,
+      itemsSkipped: totalSkipped,
       errors,
       duration: Date.now() - startTime,
       timestamp: new Date().toISOString(),
@@ -285,6 +364,8 @@ export async function syncFull(): Promise<SyncResult> {
 
   console.log('Starting full sync...')
 
+  const logId = await createSyncLog(sql, { mode: 'full', source: 'all-repos' })
+
   try {
     // 抓取全部数据
     const issuesWithRepo = await fetchAllApprovedIssues()
@@ -296,6 +377,12 @@ export async function syncFull(): Promise<SyncResult> {
 
     // 写入数据库 (批量插入)
     const { synced, skipped } = await upsertItemsBatch(sql, items)
+
+    await finishSyncLog(sql, {
+      id: logId,
+      items_synced: synced,
+      error: null,
+    })
 
     return {
       success: true,
@@ -309,6 +396,8 @@ export async function syncFull(): Promise<SyncResult> {
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error'
     errors.push(errorMsg)
+
+    await finishSyncLog(sql, { id: logId, items_synced: 0, error: errorMsg })
 
     return {
       success: false,

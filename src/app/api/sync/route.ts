@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+
     const runSync = async () => {
       const analyzeStartedAt = Date.now()
       if (body.mode === 'single' && body.issue) {

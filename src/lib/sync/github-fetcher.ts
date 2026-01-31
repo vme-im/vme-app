@@ -123,64 +123,62 @@ export async function fetchAllApprovedIssues(): Promise<
 /**
  * 抓取单个仓库自某时间后更新的 Issues (增量同步)
  */
-export async function fetchIssuesSince(
+export async function fetchIssuesSinceForRepo(
+  owner: string,
+  repo: string,
+  labels: string[],
   since: Date
 ): Promise<{ issue: GitHubIssueNode; sourceRepo: string }[]> {
-  const repos = getSyncRepos()
   const octokit = getOctokit()
-  const allIssues: { issue: GitHubIssueNode; sourceRepo: string }[] = []
+  const issues: { issue: GitHubIssueNode; sourceRepo: string }[] = []
 
-  for (const { owner, repo, labels } of repos) {
-    console.log(
-      `Fetching issues from ${owner}/${repo} since ${since.toISOString()}`
+  console.log(
+    `Fetching issues from ${owner}/${repo} since ${since.toISOString()}`
+  )
+
+  try {
+    const response = await octokit.request(
+      'GET /repos/{owner}/{repo}/issues',
+      {
+        owner,
+        repo,
+        labels: labels.join(','),
+        since: since.toISOString(),
+        state: 'all',
+        per_page: 100,
+      }
     )
 
-    // 使用 REST API 进行增量查询 (支持 since 参数)
-    try {
-      const response = await octokit.request(
-        'GET /repos/{owner}/{repo}/issues',
-        {
-          owner,
-          repo,
-          labels: labels.join(','),
-          since: since.toISOString(),
-          state: 'all',
-          per_page: 100,
-        }
-      )
-
-      for (const issue of response.data) {
-        // 转换 REST API 格式为 GraphQL 格式
-        allIssues.push({
-          issue: {
-            id: issue.node_id,
-            title: issue.title,
-            url: issue.html_url,
-            body: issue.body || '',
-            createdAt: issue.created_at,
-            updatedAt: issue.updated_at,
-            author: issue.user
-              ? {
-                  login: issue.user.login,
-                  avatarUrl: issue.user.avatar_url,
-                  url: issue.user.html_url,
-                }
-              : null,
-          },
-          sourceRepo: `${owner}/${repo}`,
-        })
-      }
-
-      console.log(
-        `Found ${response.data.length} updated issues from ${owner}/${repo}`
-      )
-    } catch (error) {
-      console.error(`Failed to fetch from ${owner}/${repo}:`, error)
-      throw error
+    for (const issue of response.data) {
+      issues.push({
+        issue: {
+          id: issue.node_id,
+          title: issue.title,
+          url: issue.html_url,
+          body: issue.body || '',
+          createdAt: issue.created_at,
+          updatedAt: issue.updated_at,
+          author: issue.user
+            ? {
+                login: issue.user.login,
+                avatarUrl: issue.user.avatar_url,
+                url: issue.user.html_url,
+              }
+            : null,
+        },
+        sourceRepo: `${owner}/${repo}`,
+      })
     }
+
+    console.log(
+      `Found ${response.data.length} updated issues from ${owner}/${repo}`
+    )
+  } catch (error) {
+    console.error(`Failed to fetch from ${owner}/${repo}:`, error)
+    throw error
   }
 
-  return allIssues
+  return issues
 }
 
 // 检测内容是否为梗图
