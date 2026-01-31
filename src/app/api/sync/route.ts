@@ -1,5 +1,6 @@
 // 同步 API 路由
 import { NextRequest, NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { analyzeContent } from '@/lib/sync/content-analyzer'
 import { sync, SyncRequest } from '@/lib/sync'
 
@@ -25,6 +26,23 @@ function authenticate(request: NextRequest): { valid: boolean; source: string } 
   }
 
   return { valid: false, source: 'unauthorized' }
+}
+
+type SyncAuth = ReturnType<typeof authenticate>
+
+function shouldRunAsync(mode: SyncRequest['mode'], auth: SyncAuth): boolean {
+  return mode === 'single' || auth.source === 'vercel-cron'
+}
+
+function respondAccepted(mode: SyncRequest['mode']) {
+  return NextResponse.json(
+    {
+      accepted: true,
+      mode,
+      async: true,
+    },
+    { status: 202 }
+  )
 }
 
 /**
@@ -84,43 +102,56 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const analyzeStartedAt = Date.now()
-    if (body.mode === 'single' && body.issue) {
-      const issueBody = body.issue.body || ''
-      if (!body.content_type) {
-        body.content_type = /!\[.*?\]\(https?:\/\/[^\s)]+\)/.test(issueBody)
-          ? 'meme'
-          : 'text'
-      }
+    const runSync = async () => {
+      const analyzeStartedAt = Date.now()
+      if (body.mode === 'single' && body.issue) {
+        const issueBody = body.issue.body || ''
+        if (!body.content_type) {
+          body.content_type = /!\[.*?\]\(https?:\/\/[^\s)]+\)/.test(issueBody)
+            ? 'meme'
+            : 'text'
+        }
 
-      if (body.tags === undefined) {
-        body.tags = await analyzeContent({
-          title: body.issue.title,
-          body: issueBody,
-        })
+        if (body.tags === undefined) {
+          body.tags = await analyzeContent({
+            title: body.issue.title,
+            body: issueBody,
+          })
+        }
       }
+      console.log('Sync analyze done', {
+        mode: body.mode,
+        durationMs: Date.now() - analyzeStartedAt,
+      })
+
+      const syncStartedAt = Date.now()
+      const result = await sync(body)
+      console.log('Sync write done', {
+        mode: body.mode,
+        durationMs: Date.now() - syncStartedAt,
+      })
+
+      console.log('Sync request done', {
+        mode: body.mode,
+        durationMs: Date.now() - requestStartedAt,
+      })
+
+      return result
     }
-    console.log('Sync analyze done', {
-      mode: body.mode,
-      durationMs: Date.now() - analyzeStartedAt,
-    })
 
-    // 执行同步
-    const syncStartedAt = Date.now()
-    const result = await sync(body)
-    console.log('Sync write done', {
-      mode: body.mode,
-      durationMs: Date.now() - syncStartedAt,
-    })
+    // TODO: 升级到 Next.js 15.1+ 后改用 next/server 的 after()
+    if (shouldRunAsync(body.mode, auth)) {
+      waitUntil(
+        runSync().catch((error) => {
+          console.error('Sync background task failed:', error)
+        })
+      )
 
-    // 返回结果
-    console.log('Sync request done', {
-      mode: body.mode,
-      durationMs: Date.now() - requestStartedAt,
-    })
-    return NextResponse.json(result, {
-      status: result.success ? 200 : 500,
-    })
+      return respondAccepted(body.mode)
+    }
+
+    const result = await runSync()
+    return NextResponse.json(result, { status: result.success ? 200 : 500 })
   } catch (error) {
     console.error('Sync API error:', error)
     console.error('Sync request failed', {
