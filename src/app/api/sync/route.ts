@@ -37,9 +37,16 @@ function authenticate(request: NextRequest): { valid: boolean; source: string } 
  * - since?: string (incremental 模式可选)
  */
 export async function POST(request: NextRequest) {
+  const requestStartedAt = Date.now()
   // 鉴权
   const auth = authenticate(request)
   if (!auth.valid) {
+    console.warn('Sync auth failed', {
+      hasAuthHeader: Boolean(request.headers.get('Authorization')),
+      hasApiKey: Boolean(request.headers.get('X-API-Key')),
+      hasCronSecret: Boolean(process.env.CRON_SECRET),
+      hasSyncKey: Boolean(process.env.SYNC_API_KEY),
+    })
     return NextResponse.json(
       { error: 'Unauthorized', message: 'Invalid or missing authentication' },
       { status: 401 }
@@ -49,6 +56,7 @@ export async function POST(request: NextRequest) {
   console.log(`Sync request from: ${auth.source}`)
 
   try {
+    const parseStartedAt = Date.now()
     // 解析请求体
     let body: SyncRequest
 
@@ -59,6 +67,10 @@ export async function POST(request: NextRequest) {
     } else {
       body = { mode: 'incremental' }
     }
+    console.log('Sync parse done', {
+      mode: body.mode,
+      durationMs: Date.now() - parseStartedAt,
+    })
 
     // 验证请求
     if (!body.mode) {
@@ -72,6 +84,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const analyzeStartedAt = Date.now()
     if (body.mode === 'single' && body.issue) {
       const issueBody = body.issue.body || ''
       if (!body.content_type) {
@@ -87,16 +100,32 @@ export async function POST(request: NextRequest) {
         })
       }
     }
+    console.log('Sync analyze done', {
+      mode: body.mode,
+      durationMs: Date.now() - analyzeStartedAt,
+    })
 
     // 执行同步
+    const syncStartedAt = Date.now()
     const result = await sync(body)
+    console.log('Sync write done', {
+      mode: body.mode,
+      durationMs: Date.now() - syncStartedAt,
+    })
 
     // 返回结果
+    console.log('Sync request done', {
+      mode: body.mode,
+      durationMs: Date.now() - requestStartedAt,
+    })
     return NextResponse.json(result, {
       status: result.success ? 200 : 500,
     })
   } catch (error) {
     console.error('Sync API error:', error)
+    console.error('Sync request failed', {
+      durationMs: Date.now() - requestStartedAt,
+    })
 
     return NextResponse.json(
       {
