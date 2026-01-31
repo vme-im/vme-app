@@ -89,127 +89,126 @@ export default function SubmitForm() {
     }
 
     setIsSubmitting(true)
-      setMessage(null)
+    setMessage(null)
 
-      try {
-        // 处理图片上传
-        let finalImages = [...uploadedImages]
+    try {
+      // 处理图片上传
+      let finalImages = [...uploadedImages]
 
-        if (activeTab === 'meme' && pendingFiles.size > 0) {
-          // 上传所有待上传的图片
-          const uploadPromises = uploadedImages.map(async (url, index) => {
-            if (pendingFiles.has(url)) {
-              try {
-                const file = pendingFiles.get(url)!
-                const formData = new FormData()
-                formData.append('file', file)
+      if (activeTab === 'meme' && pendingFiles.size > 0) {
+        // 上传所有待上传的图片
+        const uploadPromises = uploadedImages.map(async (url, index) => {
+          if (pendingFiles.has(url)) {
+            try {
+              const file = pendingFiles.get(url)!
+              const formData = new FormData()
+              formData.append('file', file)
 
-                const res = await fetch('/api/image-upload', {
-                  method: 'POST',
-                  body: formData
-                })
+              const res = await fetch('/api/image-upload', {
+                method: 'POST',
+                body: formData
+              })
 
-                const data = await res.json()
-                if (data.success) {
-                  return { index, url: data.url }
-                } else {
-                  throw new Error(data.message || '图片上传失败')
-                }
-              } catch (err) {
-                throw err
+              const data = await res.json()
+              if (data.success) {
+                return { index, url: data.url }
+              } else {
+                throw new Error(data.message || '图片上传失败')
               }
+            } catch (err) {
+              throw err
             }
-            return { index, url }
-          })
-
-          try {
-            const results = await Promise.all(uploadPromises)
-            // 按原顺序重建数组
-            finalImages = results.sort((a, b) => a.index - b.index).map(r => r.url)
-          } catch (error: any) {
-            setMessage({ type: 'error', text: error.message || '图片上传失败，请重试' })
-            setIsSubmitting(false)
-            return
           }
-        }
-
-        // 构建最终提交内容
-        let finalContent = content.trim()
-
-        // 如果是梗图模式，将图片追加到内容末尾
-        if (activeTab === 'meme' && finalImages.length > 0) {
-          const imageMarkdown = finalImages.map(url => `![](${url})`).join('\n')
-          finalContent = finalContent ? `${finalContent}\n\n${imageMarkdown}` : imageMarkdown
-        }
-
-        const labels = activeTab === 'meme' ? ['梗图'] : ['文案']
-
-        const response = await fetch('/api/submit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: title.trim(),
-            content: finalContent,
-            labels, // 传递标签
-          }),
+          return { index, url }
         })
 
-        const data = await response.json()
-
-        if (data.success) {
-          setMessage({ type: 'success', text: activeTab === 'meme' ? '梗图上交成功！' : '文案上交成功！正在跳转到详情页...' })
-          setTitle('')
-          setContent('')
-          setUploadedImages([])
-          setPendingFiles(new Map())
-          // 清理可能存在的草稿
-          localStorage.removeItem(FORM_STORAGE_KEY)
-
-          const targetUrl = data.detailPath || (data.issueNumber ? `/jokes/${data.issueNumber}` : data.issueUrl)
-
-          if (targetUrl) {
-            setTimeout(() => {
-              window.location.assign(targetUrl)
-            }, 800)
-          }
-        } else {
-          // 处理认证错误
-          if (response.status === 401) {
-            const errorMsg = data.message || ''
-            const isExpired = errorMsg.includes('无效') || errorMsg.includes('过期')
-
-            // 保存表单数据
-            localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify({
-              title,
-              content,
-              mode: activeTab,
-              images: uploadedImages.filter(url => !url.startsWith('blob:'))
-            }))
-
-            setMessage({
-              type: 'error',
-              text: isExpired ? '登录已过期，请重新登录' : '请先登录以继续提交'
-            })
-
-            // 显示登录确认弹窗
-            showLoginDialog({
-              title: isExpired ? '登录已过期' : '提交内容需要登录',
-              message: isExpired
-                ? '您的登录已过期，请重新登录以继续提交'
-                : '登录后即可上交文案或梗图，分享快乐给更多人！',
-            })
-          } else {
-            setMessage({ type: 'error', text: data.message || '提交失败，请稍后重试' })
-          }
+        try {
+          const results = await Promise.all(uploadPromises)
+          // 按原顺序重建数组
+          finalImages = results.sort((a, b) => a.index - b.index).map(r => r.url)
+        } catch (error: any) {
+          setMessage({ type: 'error', text: error.message || '图片上传失败，请重试' })
+          setIsSubmitting(false)
+          return
         }
-      } catch (error) {
-        console.error('提交失败:', error)
-        setMessage({ type: 'error', text: '网络错误，请稍后重试' })
-      } finally {
-        setIsSubmitting(false)
       }
+
+      // 构建最终提交内容
+      let finalContent = content.trim()
+
+      // 如果是梗图模式，将图片追加到内容末尾
+      if (activeTab === 'meme' && finalImages.length > 0) {
+        const imageMarkdown = finalImages.map(url => `![](${url})`).join('\n')
+        finalContent = finalContent ? `${finalContent}\n\n${imageMarkdown}` : imageMarkdown
+      }
+
+      const labels = activeTab === 'meme' ? ['梗图'] : ['文案']
+
+      const response = await fetch('/api/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          content: finalContent,
+          labels, // 传递标签
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setMessage({ type: 'success', text: activeTab === 'meme' ? '梗图上交成功！' : '文案上交成功！正在跳转到详情页...' })
+        setTitle('')
+        setContent('')
+        setUploadedImages([])
+        setPendingFiles(new Map())
+        // 清理可能存在的草稿
+        localStorage.removeItem(FORM_STORAGE_KEY)
+
+        const targetUrl = data.detailPath || (data.issueNumber ? `/jokes/${data.issueNumber}` : data.issueUrl)
+
+        if (targetUrl) {
+          setTimeout(() => {
+            window.location.assign(targetUrl)
+          }, 800)
+        }
+      } else {
+        // 处理认证错误
+        if (response.status === 401) {
+          const errorMsg = data.message || ''
+          const isExpired = errorMsg.includes('无效') || errorMsg.includes('过期')
+
+          // 保存表单数据
+          localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify({
+            title,
+            content,
+            mode: activeTab,
+            images: uploadedImages.filter(url => !url.startsWith('blob:'))
+          }))
+
+          setMessage({
+            type: 'error',
+            text: isExpired ? '登录已过期，请重新登录' : '请先登录以继续提交'
+          })
+
+          // 显示登录确认弹窗
+          showLoginDialog({
+            title: isExpired ? '登录已过期' : '提交内容需要登录',
+            message: isExpired
+              ? '您的登录已过期，请重新登录以继续提交'
+              : '登录后即可上交文案或梗图，分享快乐给更多人！',
+          })
+        } else {
+          setMessage({ type: 'error', text: data.message || '提交失败，请稍后重试' })
+        }
+      }
+    } catch (error) {
+      console.error('提交失败:', error)
+      setMessage({ type: 'error', text: '网络错误，请稍后重试' })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
