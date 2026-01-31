@@ -8,6 +8,7 @@ interface PaginationProps {
   totalPages: number
   totalItems: number
   pageSize: number
+  extraParams?: Record<string, string>
 }
 
 /**
@@ -18,6 +19,7 @@ export default function Pagination({
   totalPages,
   totalItems,
   pageSize,
+  extraParams,
 }: PaginationProps) {
   const searchParams = useSearchParams()
 
@@ -57,6 +59,12 @@ export default function Pagination({
   const buildUrl = (page: number) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set('page', page.toString())
+    // 添加额外参数
+    if (extraParams) {
+      for (const [key, value] of Object.entries(extraParams)) {
+        params.set(key, value)
+      }
+    }
     return `?${params.toString()}`
   }
 

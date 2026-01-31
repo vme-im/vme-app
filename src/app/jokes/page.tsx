@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import Link from 'next/link'
 import JokesList from '@/components/jokes/List'
 import NeoButton from '@/components/shared/NeoButton'
 
@@ -6,12 +7,14 @@ import NeoButton from '@/components/shared/NeoButton'
 interface PageProps {
   searchParams: {
     page?: string
+    type?: 'text' | 'meme'
   }
 }
 
 export default async function JokesPage({ searchParams }: PageProps) {
-  // 从URL参数获取页码
+  // 从URL参数获取页码和类型
   const page = parseInt(searchParams.page || '1')
+  const type = searchParams.type
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -27,18 +30,55 @@ export default async function JokesPage({ searchParams }: PageProps) {
         </div>
       </div>
 
+      {/* 类型切换 Tab */}
+      <div className="mb-8 flex flex-wrap justify-center gap-2">
+        <Link
+          href="/jokes"
+          className={`flex items-center gap-2 border-2 border-black px-4 py-2 font-bold uppercase shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
+            !type
+              ? 'bg-kfc-red text-white'
+              : 'bg-white text-black hover:bg-black hover:text-white'
+          }`}
+        >
+          <i className="fa fa-folder-open"></i>
+          All / 全部
+        </Link>
+        <Link
+          href="/jokes?type=text"
+          className={`flex items-center gap-2 border-2 border-black px-4 py-2 font-bold uppercase shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
+            type === 'text'
+              ? 'bg-kfc-red text-white'
+              : 'bg-white text-black hover:bg-black hover:text-white'
+          }`}
+        >
+          <i className="fa fa-quote-left"></i>
+          Texts / 文案
+        </Link>
+        <Link
+          href="/jokes?type=meme"
+          className={`flex items-center gap-2 border-2 border-black px-4 py-2 font-bold uppercase shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
+            type === 'meme'
+              ? 'bg-kfc-red text-white'
+              : 'bg-white text-black hover:bg-black hover:text-white'
+          }`}
+        >
+          <i className="fa fa-image"></i>
+          Memes / 梗图
+        </Link>
+      </div>
+
       {/* 段子列表 */}
       <Suspense
         fallback={
           <div className="flex h-64 items-center justify-center border-4 border-black bg-white p-8 shadow-neo">
             <div className="flex flex-col items-center gap-4 text-black">
               <i className="fa fa-spinner fa-spin text-4xl"></i>
-              <span className="text-xl font-black uppercase">加载文案库中...</span>
+              <span className="text-xl font-black uppercase">加载中...</span>
             </div>
           </div>
         }
       >
-        <JokesList currentPage={page} />
+        <JokesList currentPage={page} type={type} />
       </Suspense>
 
       {/* 返回首页 */}
