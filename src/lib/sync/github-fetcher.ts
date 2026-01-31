@@ -1,12 +1,19 @@
 // GitHub Issues 抓取模块
 import { Octokit } from '@octokit/core'
 import {
-  RepoConfig,
   GitHubIssueNode,
   GitHubIssuePayload,
   ItemToSync,
+  TypeLabels,
   getSyncRepos,
 } from './types'
+
+// Issue 携带元数据类型
+type IssueWithMeta = {
+  issue: GitHubIssueNode
+  sourceRepo: string
+  typeLabels?: TypeLabels
+}
 
 // GraphQL 分页响应类型
 interface IssuesResult {
@@ -96,11 +103,9 @@ async function fetchIssuesByLabels(
 /**
  * 抓取所有配置仓库的已审核通过 Issues
  */
-export async function fetchAllApprovedIssues(): Promise<
-  { issue: GitHubIssueNode; sourceRepo: string; typeLabels?: { meme?: string[]; text?: string[] } }[]
-> {
+export async function fetchAllApprovedIssues(): Promise<IssueWithMeta[]> {
   const repos = getSyncRepos()
-  const allIssues: { issue: GitHubIssueNode; sourceRepo: string; typeLabels?: { meme?: string[]; text?: string[] } }[] = []
+  const allIssues: IssueWithMeta[] = []
 
   for (const { owner, repo, labels, typeLabels } of repos) {
     console.log(`Fetching issues from ${owner}/${repo} with labels: ${labels.join(', ')}`)
@@ -127,80 +132,89 @@ export async function fetchAllApprovedIssues(): Promise<
 }
 
 /**
- * 抓取单个仓库自某时间后更新的 Issues (增量同步)
+ * 抓取单个仓库自某时间后更新的 Issues (增量同步，支持分页)
  */
 export async function fetchIssuesSinceForRepo(
   owner: string,
   repo: string,
   labels: string[],
   since: Date,
-  typeLabels?: { meme?: string[]; text?: string[] }
-): Promise<{ issue: GitHubIssueNode; sourceRepo: string; typeLabels?: { meme?: string[]; text?: string[] } }[]> {
+  typeLabels?: TypeLabels
+): Promise<IssueWithMeta[]> {
   const octokit = getOctokit()
-  const issues: { issue: GitHubIssueNode; sourceRepo: string; typeLabels?: { meme?: string[]; text?: string[] } }[] = []
+  const allIssues: IssueWithMeta[] = []
+  let page = 1
 
   console.log(
     `Fetching issues from ${owner}/${repo} since ${since.toISOString()}`
   )
 
   try {
-    const response = await octokit.request(
-      'GET /repos/{owner}/{repo}/issues',
-      {
-        owner,
-        repo,
-        labels: labels.join(','),
-        since: since.toISOString(),
-        state: 'all',
-        per_page: 100,
-      }
-    )
+    while (true) {
+      const response = await octokit.request(
+        'GET /repos/{owner}/{repo}/issues',
+        {
+          owner,
+          repo,
+          labels: labels.join(','),
+          since: since.toISOString(),
+          state: 'all',
+          per_page: 100,
+          page,
+        }
+      )
 
-    for (const issue of response.data) {
-      issues.push({
-        issue: {
-          id: issue.node_id,
-          title: issue.title,
-          url: issue.html_url,
-          body: issue.body || '',
-          createdAt: issue.created_at,
-          updatedAt: issue.updated_at,
-          author: issue.user
-            ? {
-                login: issue.user.login,
-                avatarUrl: issue.user.avatar_url,
-                url: issue.user.html_url,
-              }
-            : null,
-          labels: issue.labels
-            ? {
-                nodes: issue.labels.map((label: any) => ({
-                  name: typeof label === 'string' ? label : label.name,
-                })),
-              }
-            : undefined,
-        },
-        sourceRepo: `${owner}/${repo}`,
-        typeLabels,
-      })
+      if (response.data.length === 0) break
+
+      for (const issue of response.data) {
+        allIssues.push({
+          issue: {
+            id: issue.node_id,
+            title: issue.title,
+            url: issue.html_url,
+            body: issue.body || '',
+            createdAt: issue.created_at,
+            updatedAt: issue.updated_at,
+            author: issue.user
+              ? {
+                  login: issue.user.login,
+                  avatarUrl: issue.user.avatar_url,
+                  url: issue.user.html_url,
+                }
+              : null,
+            labels: issue.labels
+              ? {
+                  nodes: issue.labels.map((label) => ({
+                    name: typeof label === 'string' ? label : label.name || '',
+                  })),
+                }
+              : undefined,
+          },
+          sourceRepo: `${owner}/${repo}`,
+          typeLabels,
+        })
+      }
+
+      if (response.data.length < 100) break
+      page++
     }
 
     console.log(
-      `Found ${response.data.length} updated issues from ${owner}/${repo}`
+      `Found ${allIssues.length} updated issues from ${owner}/${repo}`
     )
   } catch (error) {
     console.error(`Failed to fetch from ${owner}/${repo}:`, error)
     throw error
   }
 
-  return issues
+  return allIssues
 }
 
 // 检测内容类型（优先使用标签配置）
 function detectContentType(
   body: string,
-  labelNames: string[],
-  typeLabels?: { meme?: string[]; text?: string[] }
+  labelNames: string[] = [],
+  typeLabels?: TypeLabels
 ): 'text' | 'meme' {
   // 优先使用配置的类型标签判断
   if (typeLabels?.meme?.some(label => labelNames.includes(label))) {
@@ -220,7 +234,7 @@ function detectContentType(
 export function issueToItemSync(
   issue: GitHubIssueNode,
   sourceRepo: string,
-  typeLabels?: { meme?: string[]; text?: string[] }
+  typeLabels?: TypeLabels
 ): ItemToSync {
   const labelNames = issue.labels?.nodes.map(l => l.name) || []
 
@@ -244,7 +258,8 @@ export function issueToItemSync(
  */
 export function payloadToItemSync(
   payload: GitHubIssuePayload,
-  sourceRepo: string
+  sourceRepo: string,
+  options?: { labelNames?: string[]; typeLabels?: TypeLabels }
 ): ItemToSync {
   const body = payload.body || ''
   return {
@@ -257,7 +272,7 @@ export function payloadToItemSync(
     author_username: payload.user.login,
     source_repo: sourceRepo,
     moderation_status: 'approved',
-    content_type: detectContentType(body),
+    content_type: detectContentType(body, options?.labelNames, options?.typeLabels),
     tags: [],  // 后续由 LLM 审核时填充
   }
 }

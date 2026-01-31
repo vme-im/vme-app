@@ -23,6 +23,26 @@ function getDb() {
   return neon(databaseUrl)
 }
 
+// 创建 SyncResult 工厂函数
+function createSyncResult(
+  success: boolean,
+  mode: SyncRequest['mode'],
+  synced: number,
+  skipped: number,
+  errors: string[],
+  startTime: number
+): SyncResult {
+  return {
+    success,
+    mode,
+    itemsSynced: synced,
+    itemsSkipped: skipped,
+    errors,
+    duration: Date.now() - startTime,
+    timestamp: new Date().toISOString(),
+  }
+}
+
 
 async function createSyncLog(
   sql: NeonQueryFunction<false, false>,
@@ -183,6 +203,7 @@ async function upsertItemsBatch(
           body = EXCLUDED.body,
           updated_at = EXCLUDED.updated_at,
           content_type = EXCLUDED.content_type,
+          tags = CASE WHEN array_length(EXCLUDED.tags, 1) IS NULL THEN items.tags ELSE EXCLUDED.tags END,
           synced_at = NOW()
       `
       totalSynced += batch.length
@@ -246,30 +267,12 @@ export async function syncSingleIssue(
       error: success ? null : errors.join('; '),
     })
 
-    return {
-      success: success,
-      mode: 'single',
-      itemsSynced: success ? 1 : 0,
-      itemsSkipped: success ? 0 : 1,
-      errors,
-      duration: Date.now() - startTime,
-      timestamp: new Date().toISOString(),
-    }
+    return createSyncResult(success, 'single', success ? 1 : 0, success ? 0 : 1, errors, startTime)
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error'
     errors.push(errorMsg)
-
     await finishSyncLog(sql, { id: logId, items_synced: 0, error: errorMsg })
-
-    return {
-      success: false,
-      mode: 'single',
-      itemsSynced: 0,
-      itemsSkipped: 1,
-      errors,
-      duration: Date.now() - startTime,
-      timestamp: new Date().toISOString(),
-    }
+    return createSyncResult(false, 'single', 0, 1, errors, startTime)
   }
 }
 
@@ -325,33 +328,18 @@ export async function syncIncremental(since?: string): Promise<SyncResult> {
         })
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        errors.push(`${sourceRepo}: ${errorMsg}`)
         await finishSyncLog(sql, { id: logId, items_synced: 0, error: errorMsg })
-        throw error
+        // 继续同步其他仓库，不中断
       }
     }
 
-    return {
-      success: true,
-      mode: 'incremental',
-      itemsSynced: totalSynced,
-      itemsSkipped: totalSkipped,
-      errors,
-      duration: Date.now() - startTime,
-      timestamp: new Date().toISOString(),
-    }
+    const success = errors.length === 0
+    return createSyncResult(success, 'incremental', totalSynced, totalSkipped, errors, startTime)
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error'
     errors.push(errorMsg)
-
-    return {
-      success: false,
-      mode: 'incremental',
-      itemsSynced: 0,
-      itemsSkipped: 0,
-      errors,
-      duration: Date.now() - startTime,
-      timestamp: new Date().toISOString(),
-    }
+    return createSyncResult(false, 'incremental', 0, 0, errors, startTime)
   }
 }
 
@@ -385,30 +373,12 @@ export async function syncFull(): Promise<SyncResult> {
       error: null,
     })
 
-    return {
-      success: true,
-      mode: 'full',
-      itemsSynced: synced,
-      itemsSkipped: skipped,
-      errors,
-      duration: Date.now() - startTime,
-      timestamp: new Date().toISOString(),
-    }
+    return createSyncResult(true, 'full', synced, skipped, errors, startTime)
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error'
     errors.push(errorMsg)
-
     await finishSyncLog(sql, { id: logId, items_synced: 0, error: errorMsg })
-
-    return {
-      success: false,
-      mode: 'full',
-      itemsSynced: 0,
-      itemsSkipped: 0,
-      errors,
-      duration: Date.now() - startTime,
-      timestamp: new Date().toISOString(),
-    }
+    return createSyncResult(false, 'full', 0, 0, errors, startTime)
   }
 }
 

@@ -1,14 +1,17 @@
 // 同步层类型定义
 
+// 类型标签映射
+export type TypeLabels = {
+  meme?: string[]        // 梗图类型标签
+  text?: string[]        // 文案类型标签
+}
+
 // 仓库配置
 export interface RepoConfig {
   owner: string
   repo: string
   labels: string[]
-  typeLabels?: {           // 可选：类型标签映射
-    meme?: string[]        // 梗图类型标签
-    text?: string[]        // 文案类型标签
-  }
+  typeLabels?: TypeLabels
 }
 
 // GitHub Issue 原始数据 (GraphQL 返回)
