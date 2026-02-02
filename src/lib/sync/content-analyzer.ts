@@ -20,6 +20,16 @@ const TONE_TAGS = [
   '摆烂',
   '冷幽默',
   '心酸',
+  '怀旧',
+  '傲娇',
+  '卑微',
+  '破防',
+  '凡尔赛',
+  '阴阳怪气',
+  '佛系',
+  '燃',
+  '中二',
+  '正能量',
 ]
 const THEME_TAGS = [
   '职场',
@@ -43,36 +53,63 @@ const THEME_TAGS = [
   '熬夜',
   '天气',
   '宠物',
+  '健身',
+  '减肥',
+  '理财',
+  '网购',
+  '社交',
+  '追星',
+  '校园',
+  '亚文化',
+  '科技',
+  '八卦',
+  '创业',
+  '大厂',
+  '面试',
 ]
 const STYLE_TAGS = [
-  '对话体',
-  '独白体',
-  '故事体',
+  '对话',
+  '独白',
+  '故事',
   '排比',
   '谐音梗',
   '反问',
   '夸张',
   '押韵',
-  '口号体',
-  '通知体',
-  '吐槽体',
-  '清单体',
-  '采访体',
-  '直播体',
+  '口号',
+  '通知',
+  '吐槽',
+  '清单',
+  '采访',
+  '直播',
   '自问自答',
+  '诗歌',
+  '书信',
+  '翻译腔',
+  '纪录片',
+  '会议纪要',
+  '论文',
+  '说明书',
+  '拟人',
+  '反讽',
+  '隐喻',
+  '蒙太奇',
 ]
-const FALLBACK_TAG = '其他'  // 兜底标签，表示已分类但没有合适标签
-const ALL_TAGS = new Set([...TONE_TAGS, ...THEME_TAGS, ...STYLE_TAGS, FALLBACK_TAG])
+const FALLBACK_TAG = '其他'
+const ALL_TAGS_LIST = [...TONE_TAGS, ...THEME_TAGS, ...STYLE_TAGS, FALLBACK_TAG]
+const ALL_TAGS_SET = new Set(ALL_TAGS_LIST)
 
 function normalizeTags(tags: string[]): string[] {
-  const filtered = tags.filter(tag => ALL_TAGS.has(tag))
+  // 过滤掉空字符串和多余空格，限制在前3个
+  const valid = tags
+    .map(t => t.trim())
+    .filter(t => t.length > 0 && t.length <= 10) // 限制标签长度在10字符以内防止长句被误认为标签
 
-  // 如果没有任何有效标签，返回"其他"
-  if (filtered.length === 0) {
+  if (valid.length === 0) {
     return [FALLBACK_TAG]
   }
 
-  return filtered.slice(0, 3)
+  return valid.slice(0, 3)
 }
 
 export async function analyzeContent(
@@ -103,17 +140,16 @@ export async function analyzeContent(
         messages: [
           {
             role: 'system',
-            content: `你是内容审核助手，需要为疯狂星期四文案生成标签。
+            content: `你是内容分析专家，专门负责为“肯德基疯狂星期四”系列文案生成标签。
 
-可用标签：
-- 情感基调（选 1 个）：${TONE_TAGS.join('、')}
-- 内容主题（选 0-2 个）：${THEME_TAGS.join('、')}
-- 表现手法（选 0-1 个）：${STYLE_TAGS.join('、')}
+背景知识：
+“肯德基疯狂星期四”是中国社交网络上的一种病毒式营销文化。网友会创作各种极具误导性的长篇故事（涵盖霸总、武侠、科幻、情感、社会新闻等各种题材），但在结尾处突然反转，引向“今天是肯德基疯狂星期四，谁请我吃”的主题。
 
-要求：
-1. 最多选择 3 个标签
-2. 必须从上述列表中选择
-3. 如果没有合适的标签，返回"其他"
+任务要求：
+1. 识别文案的情感、主题和风格。
+2. 优先从参考标签列表中选择，如果列表中的标签不足以描述，允许自创精准标签（每个标签 2-6 个字）。
+3. 参考标签列表：${ALL_TAGS_LIST.join('、')}
+4. 最多输出 3 个最贴切的标签。
 `
           },
           {
@@ -134,9 +170,8 @@ export async function analyzeContent(
                     type: 'array',
                     items: {
                       type: 'string',
-                      enum: [...TONE_TAGS, ...THEME_TAGS, ...STYLE_TAGS, FALLBACK_TAG]
                     },
-                    description: '选中的标签，最多3个',
+                    description: '选中的标签（可以是参考列表中的，也可以是自创的），最多3个',
                     maxItems: 3
                   }
                 },
