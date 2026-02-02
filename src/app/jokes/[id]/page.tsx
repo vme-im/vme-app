@@ -221,18 +221,8 @@ export default async function JokeDetailPage({ params }: PageProps) {
                 </div>
               </div>
 
-              {/* 标签列表 - 异步加载 */}
-              <Suspense
-                fallback={
-                  <div className="mt-6 flex items-center gap-3 opacity-50">
-                    <div className="h-8 w-20 animate-pulse rounded bg-gray-200"></div>
-                    <div className="h-8 w-16 animate-pulse rounded bg-gray-200"></div>
-                    <div className="h-8 w-24 animate-pulse rounded bg-gray-200"></div>
-                  </div>
-                }
-              >
-                <JokeTags id={joke.id} initialTags={joke.tags} />
-              </Suspense>
+              {/* 标签列表 - 自动后台加载 */}
+              <JokeTags id={joke.id} initialTags={joke.tags} />
             </div>
 
             {/* 作者信息 */}
@@ -317,32 +307,7 @@ export default async function JokeDetailPage({ params }: PageProps) {
 async function JokeTags({ id, initialTags }: { id: string, initialTags?: string[] }) {
   const tags = initialTags || []
 
-  // 如果没有标签，返回触发器和提示
-  if (tags.length === 0) {
-    return <ClassifyTrigger itemId={id} />
-  }
-
-  return (
-    <>
-      {/* 后台触发器（静默触发，不显示 UI） */}
-      <ClassifyTrigger itemId={id} silent />
-
-      {/* 标签展示 */}
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 border-2 border-black bg-white px-3 py-1 text-sm font-bold shadow-neo-sm">
-          <i className="fa fa-tags text-kfc-red"></i>
-          <span>标签</span>
-        </div>
-        {tags.map((tag) => (
-          <span
-            key={tag}
-            className="inline-block border-2 border-black bg-kfc-yellow px-3 py-1 text-sm font-black text-black shadow-neo-sm transition-all hover:-translate-y-1 hover:shadow-neo cursor-default transform even:-rotate-1 odd:rotate-1"
-          >
-            #{tag}
-          </span>
-        ))}
-      </div>
-    </>
-  )
+  // 直接返回 ClassifyTrigger 组件，它会自动处理所有逻辑
+  return <ClassifyTrigger itemId={id} initialTags={tags} />
 }
 
