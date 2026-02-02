@@ -5,15 +5,16 @@ import NeoButton from '@/components/shared/NeoButton'
 
 // 获取URL参数的类型定义
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     sortBy?: string
-  }
+  }>
 }
 
 // 启用ISR - 每30分钟重新生成页面，包含排行榜数据
 export const revalidate = 1800 // 30分钟重新验证，用于排行榜数据
 
-export default async function LeaderboardPage({ searchParams }: PageProps) {
+export default async function LeaderboardPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   // 从URL参数获取排序方式
   const sortBy = searchParams.sortBy || 'score'
 

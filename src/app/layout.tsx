@@ -1,15 +1,8 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import clsx from 'clsx'
-import dynamic from 'next/dynamic'
-
-// 动态导入 Analytics，避免阻塞首屏渲染
-const Analytics = dynamic(
-  () => import('@vercel/analytics/next').then(mod => ({ default: mod.Analytics })),
-  { ssr: false }
-)
-
 import { Providers } from '@/app/providers'
+import { VercelAnalytics } from '@/components/vercel-analytics'
 import { Header, Footer } from '@/components/shared'
 import { getUniqueContributorsCount } from '@/lib/server-utils'
 
@@ -66,7 +59,7 @@ export default async function RootLayout({
             <Footer />
           </div>
         </Providers>
-        <Analytics />
+        <VercelAnalytics />
       </body>
     </html>
   )

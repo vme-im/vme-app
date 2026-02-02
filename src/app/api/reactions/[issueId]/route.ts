@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GitHubService, GitHubServiceError } from '@/lib/github-service'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { issueId: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ issueId: string }> }) {
+  const params = await props.params;
   const { issueId } = params
 
   if (!issueId) {

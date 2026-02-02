@@ -5,13 +5,14 @@ import NeoButton from '@/components/shared/NeoButton'
 
 // 获取URL参数的类型定义
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     page?: string
     type?: 'text' | 'meme'
-  }
+  }>
 }
 
-export default async function JokesPage({ searchParams }: PageProps) {
+export default async function JokesPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   // 从URL参数获取页码和类型
   const page = parseInt(searchParams.page || '1')
   const type = searchParams.type

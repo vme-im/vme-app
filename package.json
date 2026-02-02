@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
@@ -19,11 +19,11 @@
     "@vercel/functions": "^1.6.0",
     "clsx": "^2.1.0",
     "motion": "^10.17.0",
-    "next": "^14.0.4",
-    "next-auth": "^4.24.5",
+    "next": "16.1.6",
+    "next-auth": "^4.24.13",
     "next-themes": "^0.2.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "swr": "^2.3.6",
@@ -33,10 +33,11 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "eslint": "^8.56.0",
-    "eslint-config-next": "^14.0.4",
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
+    "baseline-browser-mapping": "^2.9.19",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.1.6",
     "postcss": "^8",
     "prettier": "^3.3.2",
     "prettier-plugin-tailwindcss": "^0.7.2",
@@ -46,5 +47,9 @@
   },
   "volta": {
     "node": "24.13.0"
+  },
+  "overrides": {
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3"
   }
 }

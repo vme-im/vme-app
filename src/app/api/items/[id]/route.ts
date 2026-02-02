@@ -3,10 +3,8 @@ import { getItemById } from '@/lib/server-utils'
 
 export const revalidate = 60 // 60秒缓存
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const headers = new Headers()
   headers.set('Access-Control-Allow-Origin', '*')
   headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS, HEAD')

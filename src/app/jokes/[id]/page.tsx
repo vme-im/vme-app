@@ -15,13 +15,13 @@ import ClassifyTrigger from '@/components/jokes/ClassifyTrigger'
 
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 function isIssueNumberParam(id: string) {
-  return /^\d+$/.test(id)
+  return /^\d+$/.test(id);
 }
 
 async function fetchIssueByNumber(issueNumber: number): Promise<IKfcItem | null> {
@@ -84,7 +84,8 @@ export async function generateStaticParams() {
 }
 
 // 生成页面元数据
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata(props: PageProps) {
+  const params = await props.params;
   const joke = await getJokeForParams(params.id)
 
   if (!joke) {
@@ -134,7 +135,8 @@ export async function generateMetadata({ params }: PageProps) {
 
 export const revalidate = 3600 // 1小时重新验证一次
 
-export default async function JokeDetailPage({ params }: PageProps) {
+export default async function JokeDetailPage(props0: PageProps) {
+  const params = await props0.params;
   // 并行获取段子和会话数据
   const [joke, session] = await Promise.all([
     getJokeForParams(params.id),
