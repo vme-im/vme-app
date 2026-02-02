@@ -5,13 +5,13 @@ import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
 import { getAllKfcItems, getRandomKfcItem, getItemById, normalizeItemContent } from '@/lib/server-utils'
 import { authOptions } from '@/lib/auth'
-import { classifyItem } from '@/lib/sync'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
 import CopyButton from '@/components/shared/CopyButton'
 import InteractiveReactions from '@/components/reactions/Interactive'
 import NeoButton from '@/components/shared/NeoButton'
 import { IKfcItem } from '@/types'
+import ClassifyTrigger from '@/components/jokes/ClassifyTrigger'
 
 
 interface PageProps {
@@ -315,42 +315,34 @@ export default async function JokeDetailPage({ params }: PageProps) {
 
 // 异步标签组件
 async function JokeTags({ id, initialTags }: { id: string, initialTags?: string[] }) {
-  let tags = initialTags || []
+  const tags = initialTags || []
 
-  // 如果没有标签，尝试AI分类
+  // 如果没有标签，返回触发器和提示
   if (tags.length === 0) {
-    try {
-      console.log(`[JokeTags] Checking classification for item ${id}...`)
-      // 这里的 classifyItem 会检查数据库，如果确实没有才会调用 LLM
-      const result = await classifyItem(id)
-      if (result.success) {
-        tags = result.tags
-        console.log(`[JokeTags] Item ${id} classified:`, tags)
-      }
-    } catch (e) {
-      console.error('Failed to classify item in async component:', e)
-    }
-  }
-
-  if (tags.length === 0) {
-    return null
+    return <ClassifyTrigger itemId={id} />
   }
 
   return (
-    <div className="mt-6 flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-2 border-2 border-black bg-white px-3 py-1 text-sm font-bold shadow-neo-sm">
-        <i className="fa fa-tags text-kfc-red"></i>
-        <span>标签</span>
+    <>
+      {/* 后台触发器（静默触发，不显示 UI） */}
+      <ClassifyTrigger itemId={id} silent />
+
+      {/* 标签展示 */}
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 border-2 border-black bg-white px-3 py-1 text-sm font-bold shadow-neo-sm">
+          <i className="fa fa-tags text-kfc-red"></i>
+          <span>标签</span>
+        </div>
+        {tags.map((tag) => (
+          <span
+            key={tag}
+            className="inline-block border-2 border-black bg-kfc-yellow px-3 py-1 text-sm font-black text-black shadow-neo-sm transition-all hover:-translate-y-1 hover:shadow-neo cursor-default transform even:-rotate-1 odd:rotate-1"
+          >
+            #{tag}
+          </span>
+        ))}
       </div>
-      {tags.map((tag) => (
-        <span
-          key={tag}
-          className="inline-block border-2 border-black bg-kfc-yellow px-3 py-1 text-sm font-black text-black shadow-neo-sm transition-all hover:-translate-y-1 hover:shadow-neo cursor-default transform even:-rotate-1 odd:rotate-1"
-        >
-          #{tag}
-        </span>
-      ))}
-    </div>
+    </>
   )
 }
 
