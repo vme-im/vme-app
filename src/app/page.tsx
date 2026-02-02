@@ -90,7 +90,7 @@ export default async function Page() {
               </div>
 
               <div className="relative z-10 mb-3 flex flex-wrap items-center gap-3">
-                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border-2 border-black bg-gray-100 shadow-[2px_2px_0_0_#000]">
+                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-black bg-gray-100 shadow-[2px_2px_0_0_#000]">
                   {item.author?.avatarUrl ? (
                     <Image
                       src={item.author.avatarUrl}
@@ -114,8 +114,8 @@ export default async function Page() {
                 {item.body}
               </p>
               <div className="relative z-10 mt-auto flex items-center justify-between border-t-2 border-dashed border-gray-200 pt-3 text-xs font-bold text-gray-400">
-                <span className="truncate max-w-[10rem]">@{item.author?.username || 'KFC Lover'}</span>
-                <span className="flex-shrink-0">🔥 Hot / 热门</span>
+                <span className="truncate max-w-40">@{item.author?.username || 'KFC Lover'}</span>
+                <span className="shrink-0">🔥 Hot / 热门</span>
               </div>
             </Link>
           ))}
@@ -134,7 +134,7 @@ export default async function Page() {
           <h2 className="text-2xl font-black italic text-kfc-red md:text-3xl">今日爆款段子</h2>
         </div>
         <div className="bg-kfc-red/5 p-2 md:p-4">
-          <div className="flex flex-col gap-6 md:flex-row md:h-[24rem]">
+          <div className="flex flex-col gap-6 md:flex-row md:h-96">
             <div className="flex-1 h-full">
               <Link
                 href={headlineJoke ? `/jokes/${headlineJoke.id}` : '#'}

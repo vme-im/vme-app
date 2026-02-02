@@ -58,7 +58,7 @@ const JokeCard = memo(function JokeCard({
               img: ({ node, src, alt, ...props }: any) => {
                 if (!src) return null
                 return (
-                  <div className="relative my-2 h-64 w-full overflow-hidden rounded-sm border-2 border-black bg-gray-100">
+                  <div className="relative my-2 h-64 w-full overflow-hidden rounded-xs border-2 border-black bg-gray-100">
                     <Image
                       src={src}
                       alt={alt || 'Meme'}

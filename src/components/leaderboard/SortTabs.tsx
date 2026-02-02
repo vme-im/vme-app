@@ -44,7 +44,7 @@ const SortTabs = memo(function SortTabs({
             className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
               isActive
                 ? 'bg-kfc-red text-white shadow-md'
-                : 'bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow-md'
+                : 'bg-white text-gray-700 shadow-xs hover:bg-gray-50 hover:shadow-md'
             }`}
           >
             <span>{icon}</span>

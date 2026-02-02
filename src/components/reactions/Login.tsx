@@ -33,7 +33,7 @@ export default function ReactionsLogin({
             className="relative flex shrink-0 items-center gap-1 rounded-full bg-gray-100 px-2 py-1 transition-all duration-200"
           >
             <span className="text-base">{emoji}</span>
-            <span className="select-none text-xs font-medium text-gray-400 blur-sm">
+            <span className="select-none text-xs font-medium text-gray-400 blur-xs">
               88
             </span>
           </div>
@@ -46,7 +46,7 @@ export default function ReactionsLogin({
             message: '登录后即可查看和添加表情反应，还能提交自己的创意文案！',
           })
         }
-        className="absolute inset-0 flex cursor-pointer items-center justify-center rounded bg-black/0 text-xs text-transparent backdrop-blur-0 transition-all hover:bg-black/60 hover:text-white hover:backdrop-blur-sm"
+        className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-sm bg-black/0 text-xs text-transparent backdrop-blur-0 transition-all hover:bg-black/60 hover:text-white hover:backdrop-blur-xs"
       >
         登录后可查看和添加表情反应
       </button>

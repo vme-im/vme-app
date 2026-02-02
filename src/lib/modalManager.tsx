@@ -139,7 +139,7 @@ function ModalPortal({
     <div
       data-modal="true"
       data-modal-id={id}
-      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 animate-in fade-in duration-200"
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-xs px-4 animate-in fade-in duration-200"
       style={{ zIndex }}
       onClick={handleBackdropClick}
     >

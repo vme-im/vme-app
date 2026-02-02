@@ -195,7 +195,7 @@ export default async function JokeDetailPage({ params }: PageProps) {
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      p: ({ node, ...props }) => <p className="mb-4 last:mb-0 break-words whitespace-pre-wrap" {...props} />,
+                      p: ({ node, ...props }) => <p className="mb-4 last:mb-0 wrap-break-word whitespace-pre-wrap" {...props} />,
                       img: ({ node, ...props }) => (
                         <span className="my-6 flex justify-center w-full">
                           <img
@@ -210,7 +210,7 @@ export default async function JokeDetailPage({ params }: PageProps) {
                       ul: ({ node, ...props }) => <ul className="mb-4 list-disc pl-5" {...props} />,
                       ol: ({ node, ...props }) => <ol className="mb-4 list-decimal pl-5" {...props} />,
                       blockquote: ({ node, ...props }) => <blockquote className="my-4 border-l-4 border-black bg-white/50 p-4 italic" {...props} />,
-                      code: ({ node, ...props }) => <code className="rounded bg-black/10 px-1 py-0.5 font-mono text-base" {...props} />,
+                      code: ({ node, ...props }) => <code className="rounded-sm bg-black/10 px-1 py-0.5 font-mono text-base" {...props} />,
                     }}
                   >
                     {normalizedJoke.body}

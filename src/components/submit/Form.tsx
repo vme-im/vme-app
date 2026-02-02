@@ -314,7 +314,7 @@ export default function SubmitForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="给你的作品起个标题..."
-            className="w-full min-h-[44px] border-2 border-black bg-white px-4 py-3 font-bold text-black shadow-neo-sm transition-all placeholder:text-gray-400 focus:bg-kfc-cream focus:shadow-neo focus:outline-none"
+            className="w-full min-h-[44px] border-2 border-black bg-white px-4 py-3 font-bold text-black shadow-neo-sm transition-all placeholder:text-gray-400 focus:bg-kfc-cream focus:shadow-neo focus:outline-hidden"
             disabled={isSubmitting}
             maxLength={100}
           />
@@ -351,7 +351,7 @@ export default function SubmitForm() {
             onChange={(e) => setContent(e.target.value)}
             placeholder={activeTab === 'meme' ? "可以说说这张图的梗点..." : "开始你的表演..."}
             rows={6}
-            className="w-full resize-none border-2 border-black bg-white px-4 py-3 font-bold text-black shadow-neo-sm transition-all placeholder:text-gray-400 focus:bg-kfc-cream focus:shadow-neo focus:outline-none"
+            className="w-full resize-none border-2 border-black bg-white px-4 py-3 font-bold text-black shadow-neo-sm transition-all placeholder:text-gray-400 focus:bg-kfc-cream focus:shadow-neo focus:outline-hidden"
             disabled={isSubmitting}
             maxLength={2000}
           />

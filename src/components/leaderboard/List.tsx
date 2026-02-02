@@ -252,7 +252,7 @@ export default async function LeaderboardServer({
                 >
                   <div className="flex items-center gap-4">
                     {/* 排名 */}
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border-2 border-black bg-black text-lg font-black text-white">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-black bg-black text-lg font-black text-white">
                       #{index + 4}
                     </div>
 

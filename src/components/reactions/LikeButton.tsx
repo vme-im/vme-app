@@ -112,7 +112,7 @@ const LikeButton = memo(function LikeButton({
       className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm transition-all duration-200 ${
         isUserReacted
           ? 'bg-kfc-red text-white shadow-md ring-2 ring-kfc-red/20 hover:bg-red-600 hover:ring-red-400/30'
-          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm'
+          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-xs'
       } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'} ${className}`}
       title={getTitle()}
     >

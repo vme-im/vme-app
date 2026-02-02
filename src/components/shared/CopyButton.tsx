@@ -26,7 +26,7 @@ export default function CopyButton({ text, className = '' }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className={`flex items-center gap-1 border-2 border-black bg-white px-3 py-1 text-xs font-bold text-black shadow-neo-sm transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none hover:bg-kfc-yellow ${className}`}
+      className={`flex items-center gap-1 border-2 border-black bg-white px-3 py-1 text-xs font-bold text-black shadow-neo-sm transition-all hover:translate-x-px hover:translate-y-px hover:shadow-none hover:bg-kfc-yellow ${className}`}
       title="复制文案"
     >
       {copied ? (
