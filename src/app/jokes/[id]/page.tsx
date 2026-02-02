@@ -145,21 +145,8 @@ export default async function JokeDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  // 检查是否需要触发AI分类
-  let jokeToUse = joke
-  const needsClassification = !joke.tags || joke.tags.length === 0
-  if (needsClassification) {
-    console.log(`Item ${params.id} needs AI classification, triggering...`)
-    await classifyItem(params.id)
-    // 重新获取更新后的数据
-    const updatedJoke = await getJokeForParams(params.id)
-    if (updatedJoke) {
-      jokeToUse = updatedJoke
-    }
-  }
-
   // 规范化内容，兼容 title 是正文的情况
-  const normalizedJoke = normalizeItemContent(jokeToUse)
+  const normalizedJoke = normalizeItemContent(joke)
 
   const isAuthenticated = !!session?.user
 
@@ -234,27 +221,22 @@ export default async function JokeDetailPage({ params }: PageProps) {
                 </div>
               </div>
 
-              {/* 标签列表 */}
-              {normalizedJoke.tags && normalizedJoke.tags.length > 0 && (
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2 border-2 border-black bg-white px-3 py-1 text-sm font-bold shadow-neo-sm">
-                    <i className="fa fa-tags text-kfc-red"></i>
-                    <span>标签</span>
+              {/* 标签列表 - 异步加载 */}
+              <Suspense
+                fallback={
+                  <div className="mt-6 flex items-center gap-3 opacity-50">
+                    <div className="h-8 w-20 animate-pulse rounded bg-gray-200"></div>
+                    <div className="h-8 w-16 animate-pulse rounded bg-gray-200"></div>
+                    <div className="h-8 w-24 animate-pulse rounded bg-gray-200"></div>
                   </div>
-                  {normalizedJoke.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-block border-2 border-black bg-kfc-yellow px-3 py-1 text-sm font-black text-black shadow-neo-sm transition-all hover:-translate-y-1 hover:shadow-neo cursor-default transform even:-rotate-1 odd:rotate-1"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
+                }
+              >
+                <JokeTags id={joke.id} initialTags={joke.tags} />
+              </Suspense>
             </div>
 
             {/* 作者信息 */}
-            <div className="mb-8">
+            < div className="mb-8" >
               <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
                 <i className="fa fa-user text-xl text-kfc-red md:text-2xl"></i>
                 <h2 className="text-xl font-black italic text-black md:text-2xl">文案鬼才</h2>
@@ -282,40 +264,42 @@ export default async function JokeDetailPage({ params }: PageProps) {
                   </div>
                 </div>
               </div>
-            </div>
+            </div >
 
             {/* 互动区域 - 仅登录用户显示 */}
-            {isAuthenticated && (
-              <>
-                <div className="mb-6">
-                  <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
-                    <i className="fa fa-heart text-xl text-kfc-red md:text-2xl"></i>
-                    <h2 className="text-xl font-black italic text-black md:text-2xl">互动反馈</h2>
-                  </div>
+            {
+              isAuthenticated && (
+                <>
+                  <div className="mb-6">
+                    <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
+                      <i className="fa fa-heart text-xl text-kfc-red md:text-2xl"></i>
+                      <h2 className="text-xl font-black italic text-black md:text-2xl">互动反馈</h2>
+                    </div>
 
-                  <div className="border-3 border-black bg-gray-50 p-4 shadow-neo">
-                    <Suspense
-                      fallback={
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-kfc-red border-t-transparent"></div>
-                          <span>加载互动数据中...</span>
-                        </div>
-                      }
-                    >
-                      <InteractiveReactions
-                        issueId={normalizedJoke.id}
-                        className="flex-wrap gap-2"
-                      />
-                    </Suspense>
+                    <div className="border-3 border-black bg-gray-50 p-4 shadow-neo">
+                      <Suspense
+                        fallback={
+                          <div className="flex items-center gap-2 text-gray-500">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-kfc-red border-t-transparent"></div>
+                            <span>加载互动数据中...</span>
+                          </div>
+                        }
+                      >
+                        <InteractiveReactions
+                          issueId={normalizedJoke.id}
+                          className="flex-wrap gap-2"
+                        />
+                      </Suspense>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-          </div>
-        </article>
+                </>
+              )
+            }
+          </div >
+        </article >
 
         {/* 底部操作按钮 */}
-        <div className="mt-8 flex flex-col gap-4 md:flex-row md:justify-center">
+        < div className="mt-8 flex flex-col gap-4 md:flex-row md:justify-center" >
           <NeoButton href={nextJokeUrl} variant="secondary" size="lg" icon="fa-arrow-right">
             Next Joke / 再来一条
           </NeoButton>
@@ -323,8 +307,49 @@ export default async function JokeDetailPage({ params }: PageProps) {
           <NeoButton href="/" variant="black" size="lg" icon="fa-home">
             Back Home / 返回首页
           </NeoButton>
-        </div>
+        </div >
+      </div >
+    </div >
+  )
+}
+
+// 异步标签组件
+async function JokeTags({ id, initialTags }: { id: string, initialTags?: string[] }) {
+  let tags = initialTags || []
+
+  // 如果没有标签，尝试AI分类
+  if (tags.length === 0) {
+    try {
+      console.log(`[JokeTags] Checking classification for item ${id}...`)
+      // 这里的 classifyItem 会检查数据库，如果确实没有才会调用 LLM
+      const result = await classifyItem(id)
+      if (result.success) {
+        tags = result.tags
+        console.log(`[JokeTags] Item ${id} classified:`, tags)
+      }
+    } catch (e) {
+      console.error('Failed to classify item in async component:', e)
+    }
+  }
+
+  if (tags.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="mt-6 flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-2 border-2 border-black bg-white px-3 py-1 text-sm font-bold shadow-neo-sm">
+        <i className="fa fa-tags text-kfc-red"></i>
+        <span>标签</span>
       </div>
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className="inline-block border-2 border-black bg-kfc-yellow px-3 py-1 text-sm font-black text-black shadow-neo-sm transition-all hover:-translate-y-1 hover:shadow-neo cursor-default transform even:-rotate-1 odd:rotate-1"
+        >
+          #{tag}
+        </span>
+      ))}
     </div>
   )
 }
