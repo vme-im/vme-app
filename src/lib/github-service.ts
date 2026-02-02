@@ -147,8 +147,8 @@ class RateLimitManager {
  */
 export class GitHubService {
   private octokit: Octokit
-  private readonly repoOwner = 'zkl2333'
-  private readonly repoName = 'vme'
+  private readonly repoOwner = 'vme-im'
+  private readonly repoName = 'vme-app'
 
   constructor(octokit: Octokit) {
     this.octokit = octokit
@@ -163,7 +163,7 @@ export class GitHubService {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.username) {
-      throw new GitHubServiceError('User not authenticated', 'NOT_AUTHENTICATED', 401)
+      throw new GitHubServiceError('用户未认证', 'NOT_AUTHENTICATED', 401)
     }
 
     const secret = process.env.NEXTAUTH_SECRET
@@ -171,7 +171,7 @@ export class GitHubService {
     const accessToken = token?.accessToken as string
 
     if (!accessToken) {
-      throw new GitHubServiceError('Invalid authentication info', 'INVALID_TOKEN', 401)
+      throw new GitHubServiceError('认证信息无效', 'INVALID_TOKEN', 401)
     }
 
     return new GitHubService(new Octokit({
@@ -214,7 +214,7 @@ export class GitHubService {
     const rateLimit = await this.checkRateLimit()
 
     if (rateLimit.isNearLimit) {
-      console.warn('API rate limit warning: user token approaching limits', rateLimit)
+      console.warn('API 限流警告: 用户 token 接近限制', rateLimit)
     }
   }
 
@@ -244,7 +244,7 @@ export class GitHubService {
         id: response.data.node_id,
       }
     } catch (error: any) {
-      throw this.handleError(error, 'Failed to create joke issue')
+      throw this.handleError(error, '创建段子 Issue 失败')
     }
   }
 
@@ -287,11 +287,11 @@ export class GitHubService {
           const downloadUrl = (existing.data as any)?.download_url
           return { url: downloadUrl || rawUrl, path }
         } catch (innerError: any) {
-          throw this.handleError(innerError, 'Failed to check existing image')
+          throw this.handleError(innerError, '检查现有图片失败')
         }
       }
 
-      throw this.handleError(error, 'Failed to upload image')
+      throw this.handleError(error, '上传图片失败')
     }
   }
 
@@ -358,7 +358,7 @@ export class GitHubService {
 
       return response.addReaction.reaction.id
     } catch (error: any) {
-      throw this.handleError(error, 'Failed to add reaction')
+      throw this.handleError(error, '添加反应失败')
     }
   }
 
@@ -373,7 +373,7 @@ export class GitHubService {
       const userReactionId = await this.getUserReactionId(issueId, reaction, userLogin)
 
       if (!userReactionId) {
-        throw new GitHubServiceError('Reaction not found', 'REACTION_NOT_FOUND', 404)
+        throw new GitHubServiceError('未找到反应', 'REACTION_NOT_FOUND', 404)
       }
 
       const mutation = `
@@ -393,7 +393,7 @@ export class GitHubService {
         },
       })
     } catch (error: any) {
-      throw this.handleError(error, 'Failed to remove reaction')
+      throw this.handleError(error, '移除反应失败')
     }
   }
 
@@ -483,7 +483,7 @@ export class GitHubService {
       }>(query, { issueId })
 
       if (!response.node) {
-        throw new GitHubServiceError(`Issue ${issueId} not found`, 'ISSUE_NOT_FOUND', 404)
+        throw new GitHubServiceError(`未找到 Issue ${issueId}`, 'ISSUE_NOT_FOUND', 404)
       }
 
       return {
@@ -493,7 +493,7 @@ export class GitHubService {
         reactionNodes: response.node.reactions.nodes || [],
       }
     } catch (error: any) {
-      throw this.handleError(error, 'Failed to get issue stats')
+      throw this.handleError(error, '获取 Issue 统计数据失败')
     }
   }
 
@@ -506,7 +506,7 @@ export class GitHubService {
     if (error.status === 403 && error.response?.headers?.['x-ratelimit-remaining'] === '0') {
       const rateLimit = await this.checkRateLimit()
       return new GitHubServiceError(
-        'API rate limit exceeded',
+        'API 调用次数超限',
         'RATE_LIMIT_EXCEEDED',
         403,
         error,
@@ -516,19 +516,19 @@ export class GitHubService {
 
     // GitHub API 特定错误
     if (error.status === 403) {
-      return new GitHubServiceError('Access forbidden', 'FORBIDDEN', 403, error)
+      return new GitHubServiceError('访问被拒绝', 'FORBIDDEN', 403, error)
     }
 
     if (error.status === 404) {
-      return new GitHubServiceError('Resource not found', 'NOT_FOUND', 404, error)
+      return new GitHubServiceError('资源未找到', 'NOT_FOUND', 404, error)
     }
 
     if (error.status === 422) {
-      return new GitHubServiceError('Invalid request data', 'INVALID_DATA', 422, error)
+      return new GitHubServiceError('请求数据无效', 'INVALID_DATA', 422, error)
     }
 
     // 一般错误
-    const message = error.message || 'Unknown GitHub API error'
+    const message = error.message || '未知 GitHub API 错误'
     const status = error.status || 500
 
     return new GitHubServiceError(message, 'API_ERROR', status, error)
@@ -554,6 +554,6 @@ export async function getCurrentUser(request?: Request): Promise<{ username: str
  */
 export function requireUserAuth(user: { username: string } | null): asserts user is { username: string } {
   if (!user) {
-    throw new GitHubServiceError('Authentication required', 'AUTHENTICATION_REQUIRED', 401)
+    throw new GitHubServiceError('需要认证', 'AUTHENTICATION_REQUIRED', 401)
   }
 }
