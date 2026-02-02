@@ -36,6 +36,7 @@ function rowToItem(row: ItemRow): IKfcItem {
     reactions: {
       totalCount: row.reactions_count,
     },
+    tags: row.tags || [],
   }
 }
 

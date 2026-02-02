@@ -53,6 +53,7 @@ export interface IKfcItem {
   reactions?: {
     totalCount: number
   }
+  tags?: string[]  // AI分类标签
 }
 
 // GitHub支持的reaction类型

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
 import { getAllKfcItems, getRandomKfcItem, getItemById, normalizeItemContent } from '@/lib/server-utils'
 import { authOptions } from '@/lib/auth'
+import { classifyItem } from '@/lib/sync'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
 import CopyButton from '@/components/shared/CopyButton'
@@ -144,8 +145,21 @@ export default async function JokeDetailPage({ params }: PageProps) {
     notFound()
   }
 
+  // 检查是否需要触发AI分类
+  let jokeToUse = joke
+  const needsClassification = !joke.tags || joke.tags.length === 0
+  if (needsClassification) {
+    console.log(`Item ${params.id} needs AI classification, triggering...`)
+    await classifyItem(params.id)
+    // 重新获取更新后的数据
+    const updatedJoke = await getJokeForParams(params.id)
+    if (updatedJoke) {
+      jokeToUse = updatedJoke
+    }
+  }
+
   // 规范化内容，兼容 title 是正文的情况
-  const normalizedJoke = normalizeItemContent(joke)
+  const normalizedJoke = normalizeItemContent(jokeToUse)
 
   const isAuthenticated = !!session?.user
 

@@ -14,6 +14,7 @@ import {
   payloadToItemSync,
 } from './github-fetcher'
 import { getSyncRepos } from './types'
+import { analyzeContent } from './content-analyzer'
 
 // 获取数据库连接
 function getDb() {
@@ -430,6 +431,61 @@ export async function sync(request: SyncRequest): Promise<SyncResult> {
     case 'full':
     default:
       return syncFull()
+  }
+}
+
+/**
+ * 为单条段子触发AI分类
+ * 如果段子已有标签则跳过，否则调用AI分类并更新数据库
+ *
+ * @param itemId 段子ID
+ * @returns 是否成功分类
+ */
+export async function classifyItem(itemId: string): Promise<{ success: boolean; tags: string[] }> {
+  const sql = getDb()
+
+  try {
+    // 1. 查询段子当前状态
+    const result = await sql`
+      SELECT id, title, body, tags
+      FROM items
+      WHERE id = ${itemId}
+        AND moderation_status = 'approved'
+    ` as { id: string; title: string; body: string; tags: string[] | null }[]
+
+    if (!result || result.length === 0) {
+      console.warn(`Item not found: ${itemId}`)
+      return { success: false, tags: [] }
+    }
+
+    const item = result[0]
+
+    // 2. 检查是否已有标签
+    if (item.tags && item.tags.length > 0) {
+      console.log(`Item ${itemId} already has tags:`, item.tags)
+      return { success: true, tags: item.tags }
+    }
+
+    // 3. 调用AI分类
+    console.log(`AI classifying item: ${itemId}`)
+    const tags = await analyzeContent({
+      title: item.title,
+      body: item.body,
+    })
+
+    // 4. 更新数据库
+    await sql`
+      UPDATE items
+      SET tags = ${tags},
+          synced_at = NOW()
+      WHERE id = ${itemId}
+    `
+
+    console.log(`Item ${itemId} classified with tags:`, tags)
+    return { success: true, tags }
+  } catch (error) {
+    console.error(`Failed to classify item ${itemId}:`, error)
+    return { success: false, tags: [] }
   }
 }
 
