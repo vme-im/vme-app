@@ -13,7 +13,7 @@ import { Providers } from '@/app/providers'
 import { Header, Footer } from '@/components/shared'
 import { getUniqueContributorsCount } from '@/lib/server-utils'
 
-import '@/styles/tailwind.css'
+import '@/app/globals.css'
 
 const monaSans = localFont({
   src: '../fonts/Mona-Sans.var.woff2',
@@ -53,16 +53,18 @@ export default async function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="flex min-h-screen flex-col bg-kfc-cream text-gray-900">
+      <body className="bg-transparent text-gray-900">
         <Providers>
           <div className="bg-kfc-newsprint" aria-hidden="true" />
-          <Header contributorsCount={contributorsCount} />
+          <div className="relative z-10 flex min-h-screen flex-col">
+            <Header contributorsCount={contributorsCount} />
 
-          {/* 主内容 */}
-          <main className="flex flex-1 flex-col">{children}</main>
+            {/* 主内容 */}
+            <main className="flex flex-1 flex-col">{children}</main>
 
-          {/* 页脚 */}
-          <Footer />
+            {/* 页脚 */}
+            <Footer />
+          </div>
         </Providers>
         <Analytics />
       </body>
