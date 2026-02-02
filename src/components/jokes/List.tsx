@@ -36,7 +36,7 @@ export default async function JokesList({ currentPage, type }: JokesListProps) {
       </div>
 
       {/* 段子列表（含批量反应数据注入） */}
-      <ListWithReactions items={items} />
+      <ListWithReactions items={items} showTags={true} />
 
       {/* 分页 */}
       <Pagination

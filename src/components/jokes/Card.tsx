@@ -16,6 +16,7 @@ interface JokeCardProps {
   initialReactionDetails?: ReactionGroup[]
   initialReactionNodes?: ReactionNode[]
   waitForBatchData?: boolean // 是否等待批量数据
+  showTags?: boolean // 是否显示标签
 }
 
 /**
@@ -27,7 +28,8 @@ const JokeCard = memo(function JokeCard({
   item,
   initialReactionDetails = [],
   initialReactionNodes = [],
-  waitForBatchData = false
+  waitForBatchData = false,
+  showTags = false
 }: JokeCardProps) {
   // 使用 useMemo 缓存热门状态计算
   const { totalReactions, isHot } = useMemo(() => {
@@ -104,6 +106,20 @@ const JokeCard = memo(function JokeCard({
 
       {/* 作者信息和互动数据 */}
       <div className="flex flex-col gap-3 border-t-2 border-black pt-4">
+        {/* 标签列表 */}
+        {showTags && item.tags && item.tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {item.tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-block border-2 border-black bg-kfc-yellow px-2 py-0.5 text-xs font-black text-black shadow-neo-sm even:-rotate-1 odd:rotate-1"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="border-2 border-black shadow-neo-sm">

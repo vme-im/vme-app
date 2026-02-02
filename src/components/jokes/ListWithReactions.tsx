@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react'
 
 interface ListWithReactionsProps {
   items: IKfcItem[]
+  showTags?: boolean // 是否显示标签
 }
 
 /**
@@ -15,7 +16,7 @@ interface ListWithReactionsProps {
  * 职责：批量获取所有段子的互动数据，并注入到各个卡片
  * 使用 memo 优化避免不必要的重渲染
  */
-const ListWithReactions = memo(function ListWithReactions({ items }: ListWithReactionsProps) {
+const ListWithReactions = memo(function ListWithReactions({ items, showTags = false }: ListWithReactionsProps) {
   const { status } = useSession()
 
   // 使用 useMemo 缓存 issueIds 计算
@@ -44,6 +45,7 @@ const ListWithReactions = memo(function ListWithReactions({ items }: ListWithRea
             initialReactionDetails={reactionData?.details || []}
             initialReactionNodes={reactionData?.nodes || []}
             waitForBatchData={waitForBatchData}
+            showTags={showTags}
           />
         )
       })}
