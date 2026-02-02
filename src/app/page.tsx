@@ -53,15 +53,15 @@ export default async function Page() {
           </div>
 
           <h1 className="mb-6 text-4xl font-black italic tracking-tighter text-kfc-red drop-shadow-[2px_2px_0px_#000] md:text-6xl lg:text-7xl">
-            {randomCopy.line1} <br className="md:hidden" />
+            {randomCopy.line1} <br />
             <span className="text-black">{randomCopy.line2}</span>
           </h1>
 
           <div className="mx-auto max-w-2xl transform border-3 border-black bg-white p-4 shadow-neo-yellow transition-transform hover:scale-[1.01] md:rotate-1">
             <p className="text-lg font-bold text-black md:text-xl">
-              全网爆文 / 纳趣段子 / 文案
+              全网爆文 / 纳趣段子 / 文案 / 梗图
               <br />
-              <span className="bg-kfc-red px-1 text-white">文化站排面拉满！</span>
+              <span className="bg-kfc-red px-1 text-white">精神状态遥遥领先！</span>
             </p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default async function Page() {
         </div>
         <div className="mt-4 text-center md:hidden">
           <Link href="/jokes" className="text-sm font-bold underline decoration-2 underline-offset-4">
-            查看更多结晶 &rarr;
+            VIEW ARCHIVE / 查看全部 &rarr;
           </Link>
         </div>
       </div>
