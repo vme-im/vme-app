@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
@@ -15,8 +16,9 @@ interface SortTabsProps {
 
 /**
  * 排行榜排序标签组件
+ * 使用 memo 优化性能
  */
-export default function SortTabs({
+const SortTabs = memo(function SortTabs({
   currentSort,
 }: SortTabsProps) {
   const searchParams = useSearchParams()
@@ -29,14 +31,16 @@ export default function SortTabs({
       {sortOptions.map(({ key, label, icon }) => {
         const isActive = currentSort === key
 
-        const href = new URLSearchParams(searchParams)
+        // 直接生成 href 字符串,不需要额外优化
+        const href = new URLSearchParams(searchParams.toString())
         href.set('sortBy', key)
+        const hrefString = `?${href.toString()}`
 
         return (
           <Link
             key={key}
             scroll={false}
-            href={`?${href.toString()}`}
+            href={hrefString}
             className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
               isActive
                 ? 'bg-kfc-red text-white shadow-md'
@@ -50,4 +54,6 @@ export default function SortTabs({
       })}
     </div>
   )
-}
+})
+
+export default SortTabs

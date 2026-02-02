@@ -144,7 +144,7 @@ export default async function LeaderboardServer({
 
       <div className="border-4 border-black bg-white p-6 shadow-neo-xl md:p-8">
         {/* Top 3 特殊展示 */}
-        {data.authors.length >= 3 && (
+        {data.authors.length >= 3 ? (
           <div className="mb-12">
             <h2 className="mb-8 text-center text-3xl font-black uppercase italic text-black md:text-4xl">
               <span className="bg-black px-4 py-1 text-white">Hall of Fame</span> 殿堂级鬼才
@@ -236,10 +236,10 @@ export default async function LeaderboardServer({
               })}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* 完整排行榜 */}
-        {data.authors.length > 3 && (
+        {data.authors.length > 3 ? (
           <div>
             <h2 className="mb-6 border-b-4 border-black pb-2 text-2xl font-black uppercase italic text-black md:text-3xl">
               Leaderboard / 完整榜单
@@ -289,7 +289,7 @@ export default async function LeaderboardServer({
               ))}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* 更新时间 */}
         <div className="mt-10 text-center text-sm text-gray-500">

@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import LikeButton from './LikeButton'
 import ReactionsContainer from './Container'
 
@@ -26,8 +27,9 @@ interface ReactionsUIProps {
 /**
  * 互动反应 - 纯UI组件
  * 职责：展示反应按钮和数据
+ * 使用 memo 优化避免不必要的重渲染
  */
-export default function ReactionsUI({
+const ReactionsUI = memo(function ReactionsUI({
   issueId,
   reactionCounts,
   userReactionMap,
@@ -66,5 +68,7 @@ export default function ReactionsUI({
       </ReactionsContainer>
     </>
   )
-}
+})
+
+export default ReactionsUI
 

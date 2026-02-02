@@ -1,5 +1,6 @@
 'use client'
 
+import { memo, useMemo } from 'react'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -20,16 +21,22 @@ interface JokeCardProps {
 /**
  * 段子卡片组件
  * 职责：展示单个段子的内容、作者信息和互动数据
+ * 使用 memo 优化避免不必要的重渲染
  */
-export default function JokeCard({
+const JokeCard = memo(function JokeCard({
   item,
   initialReactionDetails = [],
   initialReactionNodes = [],
   waitForBatchData = false
 }: JokeCardProps) {
-  // 计算热门状态
-  const totalReactions = item.reactions?.totalCount || 0
-  const isHot = totalReactions >= 10
+  // 使用 useMemo 缓存热门状态计算
+  const { totalReactions, isHot } = useMemo(() => {
+    const totalReactions = item.reactions?.totalCount || 0
+    return {
+      totalReactions,
+      isHot: totalReactions >= 10
+    }
+  }, [item.reactions?.totalCount])
 
   return (
     <div className="group relative border-3 border-black bg-white p-4 transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-neo-xl shadow-neo md:p-6">
@@ -134,4 +141,6 @@ export default function JokeCard({
       </div>
     </div>
   )
-}
+})
+
+export default JokeCard

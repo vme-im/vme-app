@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -10,17 +10,22 @@ interface HeaderProps {
   contributorsCount: number
 }
 
-export default function Header({ contributorsCount }: HeaderProps) {
+/**
+ * Header 组件
+ * 使用 memo 和 useCallback 优化性能
+ */
+const Header = memo(function Header({ contributorsCount }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen)
-  }
+  // 使用 useCallback 缓存事件处理函数
+  const toggleMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen(prev => !prev)
+  }, [])
 
-  const closeMobileMenu = () => {
+  const closeMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(false)
-  }
+  }, [])
 
   const navLinks = [
     { label: '文案仓库', href: '/jokes' },
@@ -139,4 +144,6 @@ export default function Header({ contributorsCount }: HeaderProps) {
       </div>
     </header>
   )
-}
+})
+
+export default Header

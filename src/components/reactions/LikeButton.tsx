@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { memo, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { signIn } from 'next-auth/react'
 import { LikeRequest } from '@/types'
@@ -20,8 +20,9 @@ interface LikeButtonProps {
 /**
  * 点赞按钮组件
  * 职责：处理单个反应的点击、显示和状态管理
+ * 使用 memo 和 useCallback 优化性能
  */
-export default function LikeButton({
+const LikeButton = memo(function LikeButton({
   issueId,
   reaction,
   emoji,
@@ -34,7 +35,8 @@ export default function LikeButton({
   const { data: session } = useSession()
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleReactionToggle = async () => {
+  // 使用 useCallback 缓存点击处理函数
+  const handleReactionToggle = useCallback(async () => {
     if (!session?.user?.username) {
       // 显示登录确认弹窗
       showLoginDialog({
@@ -90,10 +92,10 @@ export default function LikeButton({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [session, isUserReacted, isLoading, issueId, reaction, onDataRefresh])
 
-  // 生成title信息
-  const getTitle = () => {
+  // 使用 useCallback 缓存标题生成函数
+  const getTitle = useCallback(() => {
     if (users.length === 0) {
       return '暂无操作人'
     } else if (users.length === 1) {
@@ -101,7 +103,7 @@ export default function LikeButton({
     } else {
       return `操作人: ${users.slice(0, 3).join(', ')}${users.length > 3 ? ` 等${users.length}人` : ''}`
     }
-  }
+  }, [users])
 
   return (
     <button
@@ -128,4 +130,6 @@ export default function LikeButton({
       )}
     </button>
   )
-}
+})
+
+export default LikeButton

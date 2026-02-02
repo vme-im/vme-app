@@ -5,14 +5,17 @@ import NeoButton from '@/components/shared/NeoButton'
 import { getKfcItemsWithPagination, getRandomKfcItem, isMeme, extractImageUrl } from '@/lib/server-utils'
 
 export default async function Page() {
-  // 获取最新的一批纯文字段子用于展示
-  const { items: latestTextItems } = await getKfcItemsWithPagination(1, 10, 'text')
+  // 并行获取所有首页数据
+  const [
+    { items: latestTextItems },
+    headlineJoke,
+    randomMeme
+  ] = await Promise.all([
+    getKfcItemsWithPagination(1, 10, 'text'),
+    getRandomKfcItem('text'),
+    getRandomKfcItem('meme')
+  ])
 
-  // 处理主推文字段子 (Headline)
-  const headlineJoke = await getRandomKfcItem('text')
-
-  // 获取一个随机梗图
-  const randomMeme = await getRandomKfcItem('meme')
   const memeImageUrl = randomMeme ? extractImageUrl(randomMeme.body) : null
 
   // 选出3个"今日精选"文字，排除headline

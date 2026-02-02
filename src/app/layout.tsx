@@ -1,7 +1,13 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import clsx from 'clsx'
-import { Analytics } from '@vercel/analytics/next'
+import dynamic from 'next/dynamic'
+
+// 动态导入 Analytics，避免阻塞首屏渲染
+const Analytics = dynamic(
+  () => import('@vercel/analytics/next').then(mod => ({ default: mod.Analytics })),
+  { ssr: false }
+)
 
 import { Providers } from '@/app/providers'
 import { Header, Footer } from '@/components/shared'

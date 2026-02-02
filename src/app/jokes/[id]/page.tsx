@@ -131,14 +131,16 @@ export async function generateMetadata({ params }: PageProps) {
 export const revalidate = 3600 // 1小时重新验证一次
 
 export default async function JokeDetailPage({ params }: PageProps) {
-  const joke = await getJokeForParams(params.id)
+  // 并行获取段子和会话数据
+  const [joke, session] = await Promise.all([
+    getJokeForParams(params.id),
+    getServerSession(authOptions)
+  ])
 
   if (!joke) {
     notFound()
   }
 
-  // 获取用户登录状态
-  const session = await getServerSession(authOptions)
   const isAuthenticated = !!session?.user
 
   // 计算热门状态
