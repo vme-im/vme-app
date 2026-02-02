@@ -84,20 +84,40 @@ export default async function Page() {
             <Link
               key={joke.id}
               href={`/jokes/${joke.id}`}
-              className="group flex h-full flex-col border-3 border-black bg-white p-5 shadow-neo transition-all hover:-translate-y-1 hover:shadow-neo-lg"
+              className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden border-3 border-black bg-white p-5 shadow-neo transition-all hover:-translate-y-1 hover:shadow-neo-lg"
             >
-              <div className="mb-3 flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-black bg-gray-100 text-lg">
-                  {['😭', '🤡', '💔'][index % 3]}
-                </span>
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Top Pick #{index + 1} / 精选推荐</span>
+              {/* Background Emoji Decoration */}
+              <div className="absolute -bottom-4 -right-4 z-0 rotate-12 text-8xl opacity-20 pointer-events-none select-none font-funny transition-transform group-hover:scale-110">
+                {['😭', '🤡', '💔'][index % 3]}
               </div>
-              <p className="mb-4 line-clamp-4 flex-1 text-justify font-medium leading-relaxed text-gray-800">
+
+              <div className="relative z-10 mb-3 flex flex-wrap items-center gap-3">
+                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border-2 border-black bg-gray-100 shadow-[2px_2px_0_0_#000]">
+                  {joke.author?.avatarUrl ? (
+                    <Image
+                      src={joke.author.avatarUrl}
+                      alt={joke.author.username || 'User'}
+                      width={40}
+                      height={40}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <svg className="h-full w-full p-1 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Top Pick #{index + 1}</span>
+                  <span className="text-xs font-black text-black">精选推荐</span>
+                </div>
+              </div>
+              <p className="relative z-10 mb-4 line-clamp-4 flex-1 text-justify font-medium leading-relaxed text-gray-800 break-all">
                 {joke.body}
               </p>
-              <div className="mt-auto flex items-center justify-between border-t-2 border-dashed border-gray-200 pt-3 text-xs font-bold text-gray-400">
-                <span>@{joke.author?.username || 'KFC Lover'}</span>
-                <span>🔥 Hot / 热门</span>
+              <div className="relative z-10 mt-auto flex items-center justify-between border-t-2 border-dashed border-gray-200 pt-3 text-xs font-bold text-gray-400">
+                <span className="truncate max-w-[10rem]">@{joke.author?.username || 'KFC Lover'}</span>
+                <span className="flex-shrink-0">🔥 Hot / 热门</span>
               </div>
             </Link>
           ))}
@@ -131,7 +151,7 @@ export default async function Page() {
                   </span>
                 </div>
                 {/* 限制高度，超出隐藏 */}
-                <div className="mb-4 line-clamp-6 text-xl font-bold leading-loose text-gray-900 md:text-2xl">
+                <div className="mb-4 line-clamp-6 text-xl font-bold leading-loose text-gray-900 md:text-2xl break-all">
                   {headlineJoke?.body}
                 </div>
                 <div className="mt-auto flex items-center justify-between">
