@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
-import { getAllKfcItems, getRandomKfcItem, getItemById } from '@/lib/server-utils'
+import { getAllKfcItems, getRandomKfcItem, getItemById, normalizeItemContent } from '@/lib/server-utils'
 import { authOptions } from '@/lib/auth'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
@@ -93,37 +93,40 @@ export async function generateMetadata({ params }: PageProps) {
     }
   }
 
+  // 规范化内容，兼容 title 是正文的情况
+  const normalizedJoke = normalizeItemContent(joke)
+
   // 使用段子标题作为页面标题
-  const pageTitle = joke.title
-    ? `${joke.title} - 疯狂星期四段子库`
+  const pageTitle = normalizedJoke.title
+    ? `${normalizedJoke.title} - 疯狂星期四段子库`
     : '疯狂星期四段子 - KFC 段子库'
 
   // 生成描述：使用段子内容前 150 字符
-  const description = joke.body.length > 150
-    ? joke.body.slice(0, 150) + '...'
-    : joke.body
+  const description = normalizedJoke.body.length > 150
+    ? normalizedJoke.body.slice(0, 150) + '...'
+    : normalizedJoke.body
 
   // 生成关键词
-  const keywords = `疯狂星期四,KFC段子,${joke.author.username},搞笑段子,文案`
+  const keywords = `疯狂星期四,KFC段子,${normalizedJoke.author.username},搞笑段子,文案`
 
   return {
     title: pageTitle,
     description,
     keywords,
-    authors: [{ name: joke.author.username, url: joke.author.url }],
+    authors: [{ name: normalizedJoke.author.username, url: normalizedJoke.author.url }],
     openGraph: {
-      title: joke.title || '疯狂星期四段子',
+      title: normalizedJoke.title || '疯狂星期四段子',
       description,
       type: 'article',
-      authors: [joke.author.username],
-      publishedTime: joke.createdAt,
-      modifiedTime: joke.updatedAt,
+      authors: [normalizedJoke.author.username],
+      publishedTime: normalizedJoke.createdAt,
+      modifiedTime: normalizedJoke.updatedAt,
     },
     twitter: {
       card: 'summary',
-      title: joke.title || '疯狂星期四段子',
+      title: normalizedJoke.title || '疯狂星期四段子',
       description,
-      creator: `@${joke.author.username}`,
+      creator: `@${normalizedJoke.author.username}`,
     },
   }
 }
@@ -141,10 +144,13 @@ export default async function JokeDetailPage({ params }: PageProps) {
     notFound()
   }
 
+  // 规范化内容，兼容 title 是正文的情况
+  const normalizedJoke = normalizeItemContent(joke)
+
   const isAuthenticated = !!session?.user
 
   // 计算热门状态
-  const totalReactions = joke.reactions?.totalCount || 0
+  const totalReactions = normalizedJoke.reactions?.totalCount || 0
   const isHot = totalReactions >= 10
 
   // 获取随机段子用于"再来一条"
@@ -206,11 +212,11 @@ export default async function JokeDetailPage({ params }: PageProps) {
                       code: ({ node, ...props }) => <code className="rounded bg-black/10 px-1 py-0.5 font-mono text-base" {...props} />,
                     }}
                   >
-                    {joke.body}
+                    {normalizedJoke.body}
                   </ReactMarkdown>
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <CopyButton text={joke.body} />
+                  <CopyButton text={normalizedJoke.body} />
                 </div>
               </div>
             </div>
@@ -225,8 +231,8 @@ export default async function JokeDetailPage({ params }: PageProps) {
               <div className="flex items-center gap-4 border-3 border-black bg-white p-4 shadow-neo">
                 <div className="relative border-2 border-black p-1 shadow-neo-sm">
                   <Image
-                    src={joke.author.avatarUrl}
-                    alt={`${joke.author.username}的头像`}
+                    src={normalizedJoke.author.avatarUrl}
+                    alt={`${normalizedJoke.author.username}的头像`}
                     width={64}
                     height={64}
                     className="h-12 w-12 object-cover md:h-16 md:w-16"
@@ -235,12 +241,12 @@ export default async function JokeDetailPage({ params }: PageProps) {
 
                 <div className="flex-1">
                   <div className="mb-1 text-lg font-black text-black md:text-xl">
-                    @{joke.author.username}
+                    @{normalizedJoke.author.username}
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold uppercase text-gray-500 md:text-sm">
                     <i className="fa fa-calendar text-black"></i>
                     <span>发布于</span>
-                    <FormattedDate date={joke.createdAt} />
+                    <FormattedDate date={normalizedJoke.createdAt} />
                   </div>
                 </div>
               </div>
@@ -265,7 +271,7 @@ export default async function JokeDetailPage({ params }: PageProps) {
                       }
                     >
                       <InteractiveReactions
-                        issueId={joke.id}
+                        issueId={normalizedJoke.id}
                         className="flex-wrap gap-2"
                       />
                     </Suspense>

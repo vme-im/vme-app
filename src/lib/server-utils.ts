@@ -2,6 +2,23 @@
 import { IKfcItem, Summary } from '@/types'
 import { getDataProvider } from '@/lib/data-access'
 
+/**
+ * 处理段子数据，兼容 title 是正文的情况
+ * 如果 body 为空，则使用 title 作为内容
+ */
+export function normalizeItemContent(item: IKfcItem): IKfcItem {
+  // 如果 body 不为空，直接返回原数据
+  if (item.body && item.body.trim() !== '') {
+    return item
+  }
+
+  // body 为空，使用 title 作为内容
+  return {
+    ...item,
+    body: item.title
+  }
+}
+
 // 检测内容是否为梗图 (包含 markdown 图片语法)
 export function isMeme(body: string): boolean {
   return /!\[.*\]\(.*\)/.test(body)
