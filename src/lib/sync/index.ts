@@ -5,6 +5,7 @@ import {
   SyncResult,
   ItemToSync,
   GitHubIssuePayload,
+  SyncLogEntry,
 } from './types'
 import {
   fetchAllApprovedIssues,
@@ -121,7 +122,7 @@ async function upsertItem(sql: NeonQueryFunction<false, false>, item: ItemToSync
         ${item.moderation_status},
         ${item.content_type},
         ${item.tags},
-        0,
+        ${item.reactions_count},
         NOW()
       )
       ON CONFLICT (id) DO UPDATE SET
@@ -129,6 +130,7 @@ async function upsertItem(sql: NeonQueryFunction<false, false>, item: ItemToSync
         body = EXCLUDED.body,
         updated_at = EXCLUDED.updated_at,
         content_type = EXCLUDED.content_type,
+        reactions_count = EXCLUDED.reactions_count,
         tags = CASE WHEN array_length(EXCLUDED.tags, 1) IS NULL THEN items.tags ELSE EXCLUDED.tags END,
         synced_at = NOW()
     `
@@ -166,6 +168,7 @@ async function upsertItemsBatch(
     const authorUsernames = batch.map(item => item.author_username)
     const sourceRepos = batch.map(item => item.source_repo)
     const contentTypes = batch.map(item => item.content_type)
+    const reactionsCounts = batch.map(item => item.reactions_count)
 
     try {
       await sql`
@@ -186,7 +189,7 @@ async function upsertItemsBatch(
         )
         SELECT
           id, title, url, body, created_at, updated_at, author_username, source_repo, content_type,
-          'approved', '{}', 0, NOW()
+          'approved', '{}', reactions_count, NOW()
         FROM unnest(
           ${ids}::text[],
           ${titles}::text[],
@@ -196,13 +199,15 @@ async function upsertItemsBatch(
           ${updatedAts}::timestamptz[],
           ${authorUsernames}::text[],
           ${sourceRepos}::text[],
-          ${contentTypes}::text[]
-        ) AS t(id, title, url, body, created_at, updated_at, author_username, source_repo, content_type)
+          ${contentTypes}::text[],
+          ${reactionsCounts}::int[]
+        ) AS t(id, title, url, body, created_at, updated_at, author_username, source_repo, content_type, reactions_count)
         ON CONFLICT (id) DO UPDATE SET
           title = EXCLUDED.title,
           body = EXCLUDED.body,
           updated_at = EXCLUDED.updated_at,
           content_type = EXCLUDED.content_type,
+          reactions_count = EXCLUDED.reactions_count,
           tags = CASE WHEN array_length(EXCLUDED.tags, 1) IS NULL THEN items.tags ELSE EXCLUDED.tags END,
           synced_at = NOW()
       `
@@ -228,6 +233,21 @@ async function getLastUpdatedTimes(
   sql: NeonQueryFunction<false, false>
 ): Promise<Map<string, Date>> {
   return getLastIncrementalSyncTimes(sql)
+}
+
+/**
+ * 获取最近的同步日志
+ */
+export async function getRecentSyncLogs(limit: number = 20): Promise<SyncLogEntry[]> {
+  const sql = getDb()
+  const result = await sql`
+    SELECT mode, source, items_synced, started_at, finished_at, error
+    FROM sync_logs
+    ORDER BY started_at DESC
+    LIMIT ${limit}
+  ` as SyncLogEntry[]
+
+  return result
 }
 
 /**

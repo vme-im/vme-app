@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GitHubService, GitHubServiceError } from '@/lib/github-service'
+import { getRecentSyncLogs } from '@/lib/sync'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,15 +20,15 @@ export async function GET(request: NextRequest) {
     try {
       const userService = await GitHubService.createWithUserToken(request)
       const userRateLimit = await userService.checkRateLimit()
-      
+
       // 使用core API的限流信息（主要API）
       const coreLimit = userRateLimit.core
-      
+
       // 检查返回的数据是否有效（limit为0通常表示token无效）
       if (coreLimit.limit === 0 && coreLimit.remaining === 0) {
         throw new Error('User token appears to be invalid - received zero rate limits')
       }
-      
+
       status.github.userToken.available = true
       status.github.userToken.status = 'working'
       status.github.userToken.rateLimit = {
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       }
     } catch (error: any) {
       status.github.userToken.available = false
-      
+
       // 详细的错误分类
       if (error instanceof GitHubServiceError) {
         if (error.code === 'NOT_AUTHENTICATED') {
@@ -61,10 +62,19 @@ export async function GET(request: NextRequest) {
       } else {
         status.github.userToken.status = 'not_available'
         const statusCode = error?.status || error?.response?.status || 'Unknown'
-        status.github.userToken.error = error instanceof Error 
+        status.github.userToken.error = error instanceof Error
           ? `${error.message} (${statusCode})`
           : 'Unknown error'
       }
+    }
+
+    // 获取最近同步记录
+    try {
+      status.syncLogs = await getRecentSyncLogs(10)
+    } catch (error) {
+      console.error('Failed to fetch sync logs:', error)
+      status.syncLogs = []
+      status.syncLogsError = error instanceof Error ? error.message : 'Unknown error'
     }
 
     return NextResponse.json(status, {

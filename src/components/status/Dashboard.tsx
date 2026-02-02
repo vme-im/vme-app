@@ -11,6 +11,15 @@ interface RateLimitInfo {
   isNearLimit: boolean
 }
 
+interface SyncLogEntry {
+  mode: string
+  source: string
+  items_synced: number
+  started_at: string
+  finished_at: string | null
+  error: string | null
+}
+
 interface SystemStatus {
   timestamp: string
   github: {
@@ -21,6 +30,7 @@ interface SystemStatus {
       error: string | null
     }
   }
+  syncLogs?: SyncLogEntry[]
 }
 
 const fetcher = async (url: string) => {
@@ -123,7 +133,7 @@ function RateLimitBar({ rateLimit }: { rateLimit: RateLimitInfo }) {
 
       <div className="h-4 w-full border-2 border-black bg-white p-0.5">
 
-        <div 
+        <div
 
           className={`h-full ${getStatusColor()}`}
 
@@ -145,6 +155,53 @@ function RateLimitBar({ rateLimit }: { rateLimit: RateLimitInfo }) {
 
   )
 
+}
+
+function SyncLogsTable({ logs }: { logs: SyncLogEntry[] }) {
+  if (!logs || logs.length === 0) {
+    return (
+      <StatusCard title="Recent Sync History" status="info">
+        <p className="font-bold text-gray-600">No sync records found.</p>
+      </StatusCard>
+    )
+  }
+
+  return (
+    <StatusCard title="Recent Sync History" status="info">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm font-bold text-black text-neo">
+          <thead>
+            <tr className="border-b-2 border-black uppercase text-gray-600">
+              <th className="px-2 py-2">Status</th>
+              <th className="px-2 py-2">Mode</th>
+              <th className="px-2 py-2">Source</th>
+              <th className="px-2 py-2 text-right">Items</th>
+              <th className="px-2 py-2 text-right">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {logs.map((log, i) => (
+              <tr key={i} className="border-b border-gray-200 font-mono last:border-0 hover:bg-white">
+                <td className="px-2 py-2">
+                  {log.error ? (
+                    <span className="cursor-help text-red-600" title={log.error}>❌ Fail</span>
+                  ) : (
+                    <span className="text-green-600">✅ OK</span>
+                  )}
+                </td>
+                <td className="px-2 py-2">{log.mode}</td>
+                <td className="max-w-[150px] truncate px-2 py-2" title={log.source}>{log.source}</td>
+                <td className="px-2 py-2 text-right text-base">{log.items_synced}</td>
+                <td className="px-2 py-2 text-right text-xs text-gray-600">
+                  {new Date(log.started_at).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </StatusCard>
+  )
 }
 
 
@@ -287,17 +344,17 @@ export default function StatusDashboard() {
 
         {/* 用户 Token */}
 
-        <StatusCard 
+        <StatusCard
 
-          title="GitHub User Auth" 
+          title="GitHub User Auth"
 
           status={
 
-            status.github.userToken.available && status.github.userToken.status === 'working' ? 'success' : 
+            status.github.userToken.available && status.github.userToken.status === 'working' ? 'success' :
 
-            status.github.userToken.status === 'not_authenticated' ? 'info' : 
+              status.github.userToken.status === 'not_authenticated' ? 'info' :
 
-            status.github.userToken.status === 'expired' || status.github.userToken.status === 'invalid_token' ? 'error' : 'info'
+                status.github.userToken.status === 'expired' || status.github.userToken.status === 'invalid_token' ? 'error' : 'info'
 
           }
 
@@ -368,6 +425,12 @@ export default function StatusDashboard() {
         </StatusCard>
 
       </div>
+
+      {/* Sync History */}
+      {status.syncLogs && (
+        <SyncLogsTable logs={status.syncLogs} />
+      )}
+
 
 
 

@@ -66,6 +66,9 @@ async function fetchIssuesByLabels(
                   name
                 }
               }
+              reactions(first: 0) {
+                totalCount
+              }
             }
             cursor
           }
@@ -177,17 +180,22 @@ export async function fetchIssuesSinceForRepo(
             updatedAt: issue.updated_at,
             author: issue.user
               ? {
-                  login: issue.user.login,
-                  avatarUrl: issue.user.avatar_url,
-                  url: issue.user.html_url,
-                }
+                login: issue.user.login,
+                avatarUrl: issue.user.avatar_url,
+                url: issue.user.html_url,
+              }
               : null,
             labels: issue.labels
               ? {
-                  nodes: issue.labels.map((label) => ({
-                    name: typeof label === 'string' ? label : label.name || '',
-                  })),
-                }
+                nodes: issue.labels.map((label) => ({
+                  name: typeof label === 'string' ? label : label.name || '',
+                })),
+              }
+              : undefined,
+            reactions: issue.reactions
+              ? {
+                totalCount: issue.reactions.total_count || 0,
+              }
               : undefined,
           },
           sourceRepo: `${owner}/${repo}`,
@@ -250,6 +258,7 @@ export function issueToItemSync(
     moderation_status: 'approved',
     content_type: detectContentType(issue.body, labelNames, typeLabels),
     tags: [],  // 后续由 LLM 审核时填充
+    reactions_count: issue.reactions?.totalCount || 0,
   }
 }
 
@@ -274,5 +283,6 @@ export function payloadToItemSync(
     moderation_status: 'approved',
     content_type: detectContentType(body, options?.labelNames, options?.typeLabels),
     tags: [],  // 后续由 LLM 审核时填充
+    reactions_count: payload.reactions?.total_count || 0,
   }
 }

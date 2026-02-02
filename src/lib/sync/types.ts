@@ -30,6 +30,9 @@ export interface GitHubIssueNode {
   labels?: {           // 新增：标签信息
     nodes: { name: string }[]
   }
+  reactions?: {        // 新增：互动数
+    totalCount: number
+  }
 }
 
 // GitHub Actions 传入的 Issue Payload (REST API 格式)
@@ -46,6 +49,17 @@ export interface GitHubIssuePayload {
   created_at: string
   updated_at: string
   html_url: string
+  reactions?: {
+    total_count: number
+    '+1': number
+    '-1': number
+    laugh: number
+    hooray: number
+    confused: number
+    heart: number
+    rocket: number
+    eyes: number
+  }
 }
 
 // 同步请求体
@@ -92,6 +106,7 @@ export interface ItemToSync {
   moderation_status: 'approved'
   content_type: 'text' | 'meme'
   tags: string[]
+  reactions_count: number // 新增：互动数
 }
 
 // 默认仓库配置

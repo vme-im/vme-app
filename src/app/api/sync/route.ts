@@ -155,6 +155,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: result.success ? 200 : 500 })
   } catch (error) {
     console.error('Sync API error:', error)
+    try {
+      const fs = require('fs')
+      const path = require('path')
+      const logPath = path.join(process.cwd(), 'sync-error.log')
+      const errorMessage = error instanceof Error ? error.stack || error.message : String(error)
+      fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${errorMessage}\n`)
+    } catch (e) {
+      console.error('Failed to write error log:', e)
+    }
     console.error('Sync request failed', {
       durationMs: Date.now() - requestStartedAt,
     })
