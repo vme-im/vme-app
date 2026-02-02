@@ -254,6 +254,42 @@ export class NeonProvider implements DataProvider {
     }))
   }
 
+  /**
+   * 获取精选段子 - 每个作者只返回一条
+   * 使用 DISTINCT ON 按作者去重，最终按热度排序
+   *
+   * 逻辑:
+   * 1. CTE 中为每个作者选择其互动最多的段子
+   * 2. 外层查询按 reactions_count 降序返回结果
+   */
+  async getFeaturedItems(limit = 3, excludeId?: string): Promise<IKfcItem[]> {
+    const excludeCondition = excludeId ? `AND id != $1` : ''
+    const params = excludeId ? [excludeId] : []
+    const limitParam = `$${excludeId ? 2 : 1}`
+
+    const result = await this.pool.query(`
+      WITH featured AS (
+        -- 为每个作者选择其互动最多的段子
+        SELECT DISTINCT ON (author_username)
+          id, title, url, body, created_at, updated_at,
+          author_username, source_repo, content_type, tags,
+          reactions_count, moderation_status, synced_at
+        FROM items
+        WHERE moderation_status = 'approved'
+          AND content_type = 'text'
+          ${excludeCondition}
+        ORDER BY author_username, reactions_count DESC, created_at DESC
+      )
+      -- 最终按热度排序返回
+      SELECT * FROM featured
+      ORDER BY reactions_count DESC, created_at DESC
+      LIMIT ${limitParam}
+    `, [...params, limit])
+
+    const rows = result.rows as ItemRow[]
+    return rows.map(rowToItem)
+  }
+
   // 健康检查
   async healthCheck(): Promise<boolean> {
     try {

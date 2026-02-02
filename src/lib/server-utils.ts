@@ -113,6 +113,16 @@ export async function getKfcItemsWithPagination(
   }
 }
 
+/**
+ * 获取今日精选文案 - 确保返回不同作者的段子
+ * 使用 SQL DISTINCT ON 在数据库层面去重
+ * @param excludeId 要排除的段子ID（通常是 headlineJoke 的 ID）
+ * @returns 3个不同作者的段子
+ */
+export async function getFeaturedJokes(excludeId?: string): Promise<IKfcItem[]> {
+  return await provider.getFeaturedItems(3, excludeId)
+}
+
 // 获取随机项目
 export async function getRandomKfcItem(type?: 'text' | 'meme'): Promise<IKfcItem> {
   const item = await provider.getRandomItem(type)

@@ -2,26 +2,21 @@ import Image from 'next/image'
 import Link from 'next/link'
 import NeoButton from '@/components/shared/NeoButton'
 
-import { getKfcItemsWithPagination, getRandomKfcItem, isMeme, extractImageUrl } from '@/lib/server-utils'
+import { getFeaturedJokes, getRandomKfcItem, isMeme, extractImageUrl } from '@/lib/server-utils'
 
 export default async function Page() {
   // 并行获取所有首页数据
   const [
-    { items: latestTextItems },
+    selectedJokes,
     headlineJoke,
     randomMeme
   ] = await Promise.all([
-    getKfcItemsWithPagination(1, 10, 'text'),
+    getFeaturedJokes(), // 在服务端确保获取3个不同作者的段子
     getRandomKfcItem('text'),
     getRandomKfcItem('meme')
   ])
 
   const memeImageUrl = randomMeme ? extractImageUrl(randomMeme.body) : null
-
-  // 选出3个"今日精选"文字，排除headline
-  const selectedJokes = latestTextItems
-    .filter(item => item.id !== headlineJoke?.id)
-    .slice(0, 3)
 
   // 英雄榜文案轮换配置
   const HERO_COPIES = [
@@ -83,10 +78,10 @@ export default async function Page() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          {selectedJokes.map((joke, index) => (
+          {selectedJokes.map((item, index) => (
             <Link
-              key={joke.id}
-              href={`/jokes/${joke.id}`}
+              key={item.id}
+              href={`/jokes/${item.id}`}
               className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden border-3 border-black bg-white p-5 shadow-neo transition-all hover:-translate-y-1 hover:shadow-neo-lg"
             >
               {/* Background Emoji Decoration */}
@@ -96,10 +91,10 @@ export default async function Page() {
 
               <div className="relative z-10 mb-3 flex flex-wrap items-center gap-3">
                 <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border-2 border-black bg-gray-100 shadow-[2px_2px_0_0_#000]">
-                  {joke.author?.avatarUrl ? (
+                  {item.author?.avatarUrl ? (
                     <Image
-                      src={joke.author.avatarUrl}
-                      alt={joke.author.username || 'User'}
+                      src={item.author.avatarUrl}
+                      alt={item.author.username || 'User'}
                       width={40}
                       height={40}
                       className="h-full w-full object-cover"
@@ -116,10 +111,10 @@ export default async function Page() {
                 </div>
               </div>
               <p className="relative z-10 mb-4 line-clamp-4 flex-1 text-justify font-medium leading-relaxed text-gray-800 break-all">
-                {joke.body}
+                {item.body}
               </p>
               <div className="relative z-10 mt-auto flex items-center justify-between border-t-2 border-dashed border-gray-200 pt-3 text-xs font-bold text-gray-400">
-                <span className="truncate max-w-[10rem]">@{joke.author?.username || 'KFC Lover'}</span>
+                <span className="truncate max-w-[10rem]">@{item.author?.username || 'KFC Lover'}</span>
                 <span className="flex-shrink-0">🔥 Hot / 热门</span>
               </div>
             </Link>

@@ -27,6 +27,7 @@ export interface DataProvider {
   searchItems(query: string, limit?: number): Promise<IKfcItem[]>
   getContributors(): Promise<Contributor[]>
   getTopContributors(limit?: number): Promise<Contributor[]>
+  getFeaturedItems(limit?: number, excludeId?: string): Promise<IKfcItem[]>
 }
 
 // 数据库行类型 (snake_case)
