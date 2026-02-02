@@ -1,9 +1,49 @@
 // LLM 内容分析模块
 import type { GitHubIssuePayload } from './types'
 
-const TONE_TAGS = ['温情', '反转', '抽象', '自嘲', '讽刺', '励志']
-const THEME_TAGS = ['职场', '恋爱', '学生', '社畜', '单身', '家庭', '朋友']
-const STYLE_TAGS = ['对话体', '独白体', '故事体', '排比', '谐音梗']
+const TONE_TAGS = [
+  '温情',
+  '反转',
+  '抽象',
+  '自嘲',
+  '讽刺',
+  '励志',
+  '无厘头',
+  '黑色幽默',
+  '暴躁',
+  '尴尬',
+  '甜蜜',
+  '崩溃',
+]
+const THEME_TAGS = [
+  '职场',
+  '恋爱',
+  '学生',
+  '社畜',
+  '单身',
+  '家庭',
+  '朋友',
+  '美食',
+  '外卖',
+  '肯德基',
+  '考试',
+  '租房',
+  '加班',
+  '游戏',
+  '旅行',
+]
+const STYLE_TAGS = [
+  '对话体',
+  '独白体',
+  '故事体',
+  '排比',
+  '谐音梗',
+  '反问',
+  '夸张',
+  '押韵',
+  '口号体',
+  '通知体',
+]
 const FALLBACK_TAG = '其他'  // 兜底标签，表示已分类但没有合适标签
 const ALL_TAGS = new Set([...TONE_TAGS, ...THEME_TAGS, ...STYLE_TAGS, FALLBACK_TAG])
 
