@@ -95,16 +95,3 @@ export function useBatchReactions(issueIds: string[]) {
     hasData: !!data,
   }
 }
-
-// 单个Issue的反应数据Hook（基于批量Hook的简化版本）
-export function useIssueReactions(issueId: string) {
-  const { getReactionData, getError, isLoading, hasData, refresh } = useBatchReactions([issueId])
-
-  return {
-    data: getReactionData(issueId),
-    error: getError(issueId),
-    isLoading,
-    hasData,
-    refresh,
-  }
-}

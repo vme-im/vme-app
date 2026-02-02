@@ -369,10 +369,6 @@ async function closeIssue(
   })
 }
 
-export function hasModerationLabel(labels: string[]): boolean {
-  return labels.some((label) => MODERATION_LABELS.includes(label))
-}
-
 export async function moderateIssue(params: {
   owner: string
   repo: string
