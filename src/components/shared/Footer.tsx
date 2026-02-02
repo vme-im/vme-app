@@ -4,8 +4,8 @@ export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="border-t-4 border-black bg-black text-white">
-      <div className="container mx-auto px-4 py-8 md:py-12">
+    <footer className="border-t-4 border-black bg-black text-white safe-area-bottom">
+      <div className="container mx-auto px-4 safe-area-x py-8 md:py-12">
         {/* 主要内容区域 */}
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row md:gap-8">
           {/* Logo 和品牌 */}

@@ -53,7 +53,7 @@ export default async function RootLayout({
             <Header contributorsCount={contributorsCount} />
 
             {/* 主内容 */}
-            <main className="flex flex-1 flex-col">{children}</main>
+            <main className="flex flex-1 flex-col safe-area-x">{children}</main>
 
             {/* 页脚 */}
             <Footer />

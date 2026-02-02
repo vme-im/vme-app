@@ -38,6 +38,7 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
+
   *,
   ::after,
   ::before,
@@ -78,21 +79,40 @@
 
 @utility scrollbar-hide {
   /* 隐藏滚动条但保持滚动功能 */
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 
   &::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none;
+    /* Chrome, Safari and Opera */
   }
+}
+
+@utility safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+@utility safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility safe-area-x {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 @layer base {
   :root {
     --background: #ffffff;
     --foreground: #171717;
-    --page-bg: #f4f1ea; /* 牛皮纸底色 */
-    --safe-area-top-bg: #c41200; /* KFC 红 */
-    --safe-area-bottom-bg: #121212; /* 纯黑 */
+    --page-bg: #f4f1ea;
+    /* 牛皮纸底色 */
+    --safe-area-top-bg: #c41200;
+    /* KFC 红 */
+    --safe-area-bottom-bg: #121212;
+    /* 纯黑 */
   }
 
   @media (prefers-color-scheme: dark) {
@@ -123,7 +143,7 @@
 
   @supports (padding: max(0px)) {
     body {
-      padding-bottom: max(env(safe-area-inset-bottom), 0px);
+      padding-bottom: 0px;
     }
 
     body::before,
@@ -140,12 +160,14 @@
       top: 0;
       height: max(env(safe-area-inset-top), 0px);
       background: var(--safe-area-top-bg);
+      transition: all 0s ease-in-out;
     }
 
     body::after {
       bottom: 0;
       height: max(env(safe-area-inset-bottom), 0px);
       background: var(--safe-area-bottom-bg);
+      transition: all 0s ease-in-out;
     }
   }
 
@@ -161,6 +183,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

@@ -35,8 +35,8 @@ const Header = memo(function Header({ contributorsCount }: HeaderProps) {
   ]
 
   return (
-    <header className="sticky top-0 z-50 border-b-4 border-black bg-kfc-red text-white shadow-neo-sm">
-      <div className="container mx-auto px-4">
+    <header className="sticky top-0 z-50 border-b-4 border-black bg-kfc-red text-white shadow-neo-sm safe-area-top">
+      <div className="container mx-auto px-4 safe-area-x">
         <div className="flex items-center justify-between py-2 md:py-3">
           {/* 左侧：Logo / 标题 */}
           <div className="flex items-center gap-3">
