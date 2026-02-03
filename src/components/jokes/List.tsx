@@ -45,7 +45,11 @@ export default async function JokesList({ currentPage, type, tag }: JokesListPro
       </div>
 
       {/* 段子列表（含批量反应数据注入） */}
-      <ListWithReactions items={items} showTags={true} />
+      <ListWithReactions
+        items={items}
+        showTags={true}
+        layout={type === 'meme' ? 'masonry' : 'list'}
+      />
 
       {/* 分页 */}
       <Pagination

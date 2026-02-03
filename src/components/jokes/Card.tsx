@@ -1,6 +1,7 @@
 'use client'
 
 import { memo, useMemo } from 'react'
+import clsx from 'clsx'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -18,6 +19,7 @@ interface JokeCardProps {
   initialReactionNodes?: ReactionNode[]
   waitForBatchData?: boolean // 是否等待批量数据
   showTags?: boolean // 是否显示标签
+  className?: string // 允许外部注入样式
 }
 
 /**
@@ -31,6 +33,7 @@ const JokeCard = memo(function JokeCard({
   initialReactionNodes = [],
   waitForBatchData = false,
   showTags = false,
+  className = '',
 }: JokeCardProps) {
   const searchParams = useSearchParams()
   const currentType = searchParams.get('type')
@@ -45,7 +48,12 @@ const JokeCard = memo(function JokeCard({
   }, [item.reactions?.totalCount])
 
   return (
-    <div className="group relative border-3 border-black bg-white p-4 transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-neo-xl shadow-neo md:p-6">
+    <div
+      className={clsx(
+        'group relative border-3 border-black bg-white p-4 shadow-neo transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-neo-xl md:p-6',
+        className,
+      )}
+    >
       {/* 热门标签 - 暴躁风 */}
       {isHot && (
         <div className="absolute -right-2 -top-2 z-10 -rotate-3 border-2 border-black bg-kfc-yellow px-3 py-1 text-xs font-black uppercase italic text-black shadow-neo-sm">
