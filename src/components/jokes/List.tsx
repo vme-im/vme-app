@@ -5,21 +5,30 @@ import ListWithReactions from './ListWithReactions'
 interface JokesListProps {
   currentPage: number
   type?: 'text' | 'meme'
+  tag?: string
 }
 
 /**
  * 段子列表容器（服务端组件）
  * 职责：获取分页数据，渲染列表结构
  */
-export default async function JokesList({ currentPage, type }: JokesListProps) {
-  const { items, totalPages, total } = await getKfcItemsWithPagination(
-    currentPage,
-    10,
-    type,
-  )
+export default async function JokesList({ currentPage, type, tag }: JokesListProps) {
+  const { items, totalPages, total } = await getKfcItemsWithPagination(currentPage, 10, type, tag)
 
-  const title = type === 'meme' ? 'Memes / 梗图库' : type === 'text' ? 'Texts / 文案库' : 'All Entries / 全部收录'
-  const icon = type === 'meme' ? 'fa-image' : type === 'text' ? 'fa-quote-left' : 'fa-folder-open'
+  const title = tag
+    ? `Tag: ${tag}`
+    : type === 'meme'
+      ? 'Memes / 梗图库'
+      : type === 'text'
+        ? 'Texts / 文案库'
+        : 'All Entries / 全部收录'
+  const icon = tag
+    ? 'fa-tags'
+    : type === 'meme'
+      ? 'fa-image'
+      : type === 'text'
+        ? 'fa-quote-left'
+        : 'fa-folder-open'
 
   return (
     <section id="jokes-list" className="mb-12">
@@ -44,7 +53,10 @@ export default async function JokesList({ currentPage, type }: JokesListProps) {
         totalPages={totalPages}
         totalItems={total}
         pageSize={10}
-        extraParams={type ? { type } : undefined}
+        extraParams={{
+          ...(type ? { type } : {}),
+          ...(tag ? { tag } : {}),
+        }}
       />
     </section>
   )

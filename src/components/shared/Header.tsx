@@ -28,6 +28,7 @@ const Header = memo(function Header({ contributorsCount }: HeaderProps) {
   }, [])
 
   const navLinks = [
+    { label: '首页', href: '/' },
     { label: '文案仓库', href: '/jokes' },
     { label: '英雄榜', href: '/leaderboard' },
     { label: '我要投稿', href: '/submit' },
@@ -84,8 +85,7 @@ const Header = memo(function Header({ contributorsCount }: HeaderProps) {
           <nav className="hidden items-center gap-3 lg:flex">
             {navLinks.map((link) => {
               const isActive =
-                pathname === link.href ||
-                (link.href !== '/' && pathname?.startsWith(link.href))
+                pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href))
 
               return (
                 <Link
@@ -119,19 +119,9 @@ const Header = memo(function Header({ contributorsCount }: HeaderProps) {
           }}
         >
           <nav className="flex flex-col gap-2 p-4">
-            <Link
-              href="/"
-              onClick={closeMobileMenu}
-              className={`shadow-neo-sm block border-2 border-black px-4 py-3 text-sm font-black text-black active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${
-                pathname === '/' ? 'bg-kfc-yellow' : 'bg-white'
-              }`}
-            >
-              首页
-            </Link>
             {navLinks.map((link) => {
               const isActive =
-                pathname === link.href ||
-                (link.href !== '/' && pathname?.startsWith(link.href))
+                pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href))
               return (
                 <Link
                   key={link.href}
@@ -146,8 +136,7 @@ const Header = memo(function Header({ contributorsCount }: HeaderProps) {
               )
             })}
             <div className="bg-kfc-red shadow-neo-sm mt-2 border-2 border-black px-4 py-2 text-xs font-bold text-white">
-              <span className="text-kfc-yellow">{contributorsCount}</span> 位 🍗
-              信徒在线
+              <span className="text-kfc-yellow">{contributorsCount}</span> 位 🍗 段子手在线
             </div>
           </nav>
         </div>

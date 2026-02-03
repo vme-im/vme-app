@@ -4,6 +4,7 @@ import { memo, useMemo } from 'react'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import CopyButton from '@/components/shared/CopyButton'
 import InteractiveReactions from '@/components/reactions/Interactive'
 import ReactionsLoading from '@/components/reactions/Loading'
@@ -29,14 +30,17 @@ const JokeCard = memo(function JokeCard({
   initialReactionDetails = [],
   initialReactionNodes = [],
   waitForBatchData = false,
-  showTags = false
+  showTags = false,
 }: JokeCardProps) {
+  const searchParams = useSearchParams()
+  const currentType = searchParams.get('type')
+
   // 使用 useMemo 缓存热门状态计算
   const { totalReactions, isHot } = useMemo(() => {
     const totalReactions = item.reactions?.totalCount || 0
     return {
       totalReactions,
-      isHot: totalReactions >= 10
+      isHot: totalReactions >= 10,
     }
   }, [item.reactions?.totalCount])
 
@@ -71,23 +75,27 @@ const JokeCard = memo(function JokeCard({
               },
               p: ({ node, children, ...props }: any) => {
                 // 检查子元素是否包含块级元素（如 img 转换后的 div）
-                const hasBlockChild = node?.children?.some(
-                  (child: any) => child.tagName === 'img'
-                )
+                const hasBlockChild = node?.children?.some((child: any) => child.tagName === 'img')
                 // 如果包含块级元素，使用 div 代替 p 避免 hydration error
                 if (hasBlockChild) {
                   return (
-                    <div className="whitespace-pre-wrap text-justify-cn text-base md:text-lg" {...props}>
+                    <div
+                      className="whitespace-pre-wrap text-justify-cn text-base md:text-lg"
+                      {...props}
+                    >
                       {children}
                     </div>
                   )
                 }
                 return (
-                  <p className="whitespace-pre-wrap text-justify-cn text-base md:text-lg" {...props}>
+                  <p
+                    className="whitespace-pre-wrap text-justify-cn text-base md:text-lg"
+                    {...props}
+                  >
                     {children}
                   </p>
                 )
-              }
+              },
             }}
           >
             {item.body}
@@ -109,14 +117,22 @@ const JokeCard = memo(function JokeCard({
         {/* 标签列表 */}
         {showTags && item.tags && item.tags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            {item.tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-block border-2 border-black bg-kfc-yellow px-2 py-0.5 text-xs font-black text-black shadow-neo-sm even:-rotate-1 odd:rotate-1"
-              >
-                #{tag}
-              </span>
-            ))}
+            {item.tags.map((tag) => {
+              const nextParams = new URLSearchParams()
+              nextParams.set('tag', tag)
+              if (currentType) {
+                nextParams.set('type', currentType)
+              }
+              return (
+                <Link
+                  key={tag}
+                  href={`/jokes?${nextParams.toString()}`}
+                  className="inline-block border-2 border-black bg-kfc-yellow px-2 py-0.5 text-xs font-black text-black shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none even:-rotate-1 odd:rotate-1"
+                >
+                  #{tag}
+                </Link>
+              )
+            })}
           </div>
         )}
 
@@ -132,9 +148,7 @@ const JokeCard = memo(function JokeCard({
               />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-sm font-black text-black">
-                @{item.author.username}
-              </span>
+              <span className="text-sm font-black text-black">@{item.author.username}</span>
               <div className="mt-1 text-[10px] font-bold uppercase text-gray-500">
                 <FormattedDate date={item.createdAt} />
               </div>

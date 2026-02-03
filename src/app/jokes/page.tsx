@@ -8,14 +8,18 @@ interface PageProps {
   searchParams: Promise<{
     page?: string
     type?: 'text' | 'meme'
+    tag?: string
   }>
 }
 
 export default async function JokesPage(props: PageProps) {
-  const searchParams = await props.searchParams;
+  const searchParams = await props.searchParams
   // 从URL参数获取页码和类型
   const page = parseInt(searchParams.page || '1')
   const type = searchParams.type
+  const tag = searchParams.tag
+  const tagParam = tag ? `?tag=${encodeURIComponent(tag)}` : ''
+  const typeTagParam = tag ? `&tag=${encodeURIComponent(tag)}` : ''
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -25,27 +29,23 @@ export default async function JokesPage(props: PageProps) {
           文案<span className="text-kfc-red underline decoration-4 underline-offset-4">总仓库</span>
         </h1>
         <div className="inline-block rotate-1 border-2 border-black bg-black px-6 py-2 shadow-neo-sm">
-          <p className="font-bold uppercase text-white md:text-lg">
-            ARCHIVE: 历年疯四文案大赏
-          </p>
+          <p className="font-bold uppercase text-white md:text-lg">ARCHIVE: 历年疯四文案大赏</p>
         </div>
       </div>
 
       {/* 类型切换 Tab */}
       <div className="mb-8 flex flex-wrap justify-center gap-2">
         <Link
-          href="/jokes"
+          href={`/jokes${tagParam}`}
           className={`flex items-center gap-2 border-2 border-black px-4 py-2 font-bold uppercase shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
-            !type
-              ? 'bg-kfc-red text-white'
-              : 'bg-white text-black hover:bg-black hover:text-white'
+            !type ? 'bg-kfc-red text-white' : 'bg-white text-black hover:bg-black hover:text-white'
           }`}
         >
           <i className="fa fa-folder-open"></i>
           All / 全部
         </Link>
         <Link
-          href="/jokes?type=text"
+          href={`/jokes?type=text${typeTagParam}`}
           className={`flex items-center gap-2 border-2 border-black px-4 py-2 font-bold uppercase shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
             type === 'text'
               ? 'bg-kfc-red text-white'
@@ -56,7 +56,7 @@ export default async function JokesPage(props: PageProps) {
           Texts / 文案
         </Link>
         <Link
-          href="/jokes?type=meme"
+          href={`/jokes?type=meme${typeTagParam}`}
           className={`flex items-center gap-2 border-2 border-black px-4 py-2 font-bold uppercase shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
             type === 'meme'
               ? 'bg-kfc-red text-white'
@@ -79,7 +79,7 @@ export default async function JokesPage(props: PageProps) {
           </div>
         }
       >
-        <JokesList currentPage={page} type={type} />
+        <JokesList currentPage={page} type={type} tag={tag} />
       </Suspense>
 
       {/* 返回首页 */}

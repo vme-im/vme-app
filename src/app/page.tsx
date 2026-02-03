@@ -2,19 +2,16 @@ import Image from 'next/image'
 import Link from 'next/link'
 import NeoButton from '@/components/shared/NeoButton'
 
-import {
-  getFeaturedJokes,
-  getRandomKfcItem,
-  isMeme,
-  extractImageUrl,
-} from '@/lib/server-utils'
+import { getFeaturedJokes, getRandomKfcItem, extractImageUrl, getTopTags } from '@/lib/server-utils'
+import { getTagDisplay } from '@/lib/tags/taxonomy'
 
 export default async function Page() {
   // 并行获取所有首页数据
-  const [selectedJokes, headlineJoke, randomMeme] = await Promise.all([
+  const [selectedJokes, headlineJoke, randomMeme, topTags] = await Promise.all([
     getFeaturedJokes(), // 在服务端确保获取3个不同作者的段子
     getRandomKfcItem('text'),
     getRandomKfcItem('meme'),
+    getTopTags(),
   ])
 
   const memeImageUrl = randomMeme ? extractImageUrl(randomMeme.body) : null
@@ -31,7 +28,28 @@ export default async function Page() {
 
   // 随机选择一个文案
   const randomCopy = HERO_COPIES[Math.floor(Math.random() * HERO_COPIES.length)]
-
+  const TAG_STYLES = [
+    {
+      bg: 'bg-[#F4E4BC]',
+      text: 'text-[#8B4513]',
+      emoji: '🔥',
+    },
+    {
+      bg: 'bg-[#FFD1DC]',
+      text: 'text-[#C41200]',
+      emoji: '💥',
+    },
+    {
+      bg: 'bg-[#E0F7FA]',
+      text: 'text-[#006064]',
+      emoji: '✨',
+    },
+    {
+      bg: 'bg-[#E1BEE7]',
+      text: 'text-[#4A148C]',
+      emoji: '⚡️',
+    },
+  ]
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
       {/* 1. Hero / 顶部横幅 */}
@@ -64,9 +82,7 @@ export default async function Page() {
             <p className="text-lg font-bold text-black md:text-xl">
               全网爆文 / 纳趣段子 / 文案 / 梗图
               <br />
-              <span className="bg-kfc-red px-1 text-white">
-                精神状态遥遥领先！
-              </span>
+              <span className="bg-kfc-red px-1 text-white">精神状态遥遥领先！</span>
             </p>
           </div>
         </div>
@@ -77,9 +93,7 @@ export default async function Page() {
         <div className="mb-6 flex items-center justify-between border-b-4 border-black pb-2">
           <div className="flex items-center gap-2">
             <span className="text-2xl">⚡️</span>
-            <h2 className="text-2xl font-black text-black italic md:text-3xl">
-              今日精选文案
-            </h2>
+            <h2 className="text-2xl font-black text-black italic md:text-3xl">今日精选文案</h2>
           </div>
           <Link
             href="/jokes"
@@ -129,18 +143,14 @@ export default async function Page() {
                   <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">
                     Top Pick #{index + 1}
                   </span>
-                  <span className="text-xs font-black text-black">
-                    精选推荐
-                  </span>
+                  <span className="text-xs font-black text-black">精选推荐</span>
                 </div>
               </div>
               <p className="relative z-10 mb-4 line-clamp-4 flex-1 text-justify leading-relaxed font-medium break-all text-gray-800">
                 {item.body}
               </p>
               <div className="relative z-10 mt-auto flex items-center justify-between border-t-2 border-dashed border-gray-200 pt-3 text-xs font-bold text-gray-400">
-                <span className="max-w-40 truncate">
-                  @{item.author?.username || 'KFC Lover'}
-                </span>
+                <span className="max-w-40 truncate">@{item.author?.username || 'KFC Lover'}</span>
                 <span className="shrink-0">🔥 Hot / 热门</span>
               </div>
             </Link>
@@ -160,9 +170,7 @@ export default async function Page() {
       <div className="mb-16">
         <div className="border-kfc-red mb-2 flex items-center gap-2 border-b-4 pb-2">
           <span className="text-2xl">🚀</span>
-          <h2 className="text-kfc-red text-2xl font-black italic md:text-3xl">
-            今日爆款段子
-          </h2>
+          <h2 className="text-kfc-red text-2xl font-black italic md:text-3xl">今日爆款段子</h2>
         </div>
         <div className="bg-kfc-red/5 p-2 md:p-4">
           <div className="flex flex-col gap-6 md:h-96 md:flex-row">
@@ -176,9 +184,7 @@ export default async function Page() {
                     HEADLINE
                   </span>
                   <span className="text-xs font-bold text-gray-400">
-                    {new Date(
-                      headlineJoke?.createdAt || Date.now(),
-                    ).toLocaleDateString('zh-CN')}
+                    {new Date(headlineJoke?.createdAt || Date.now()).toLocaleDateString('zh-CN')}
                   </span>
                 </div>
                 {/* 限制高度，超出隐藏 */}
@@ -214,9 +220,7 @@ export default async function Page() {
                       @{headlineJoke?.author?.username || '匿名疯四人'}
                     </span>
                   </div>
-                  <div className="text-kfc-red text-xl font-black italic">
-                    V 我 50
-                  </div>
+                  <div className="text-kfc-red text-xl font-black italic">V 我 50</div>
                 </div>
               </Link>
             </div>
@@ -261,92 +265,42 @@ export default async function Page() {
       <div className="mb-12">
         <div className="mb-6 flex items-center gap-2 border-b-4 border-black pb-2">
           <span className="text-2xl">📚</span>
-          <h2 className="text-2xl font-black text-black italic md:text-3xl">
-            疯狂语录库
-          </h2>
+          <h2 className="text-2xl font-black text-black italic md:text-3xl">疯狂语录库</h2>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {/* 乞讨 */}
-          <Link
-            href="/jokes?tag=乞讨"
-            className="group shadow-neo relative block h-24 overflow-hidden border-2 border-black bg-[#F4E4BC] transition-all hover:translate-y-1 hover:shadow-none"
-          >
-            <div className="flex h-full items-center justify-between px-4">
-              <div className="z-10">
-                <h3 className="text-xl font-black text-[#8B4513] italic">
-                  🥺 乞讨
-                </h3>
-                <p className="text-xs font-bold text-[#8B4513]/70">
-                  硬核乞讨 v50
-                </p>
-              </div>
-              <div className="absolute -right-4 -bottom-4 text-6xl opacity-20 grayscale transition-all group-hover:scale-110 group-hover:grayscale-0">
-                🥺
-              </div>
-            </div>
-          </Link>
-
-          {/* 感情 */}
-          <Link
-            href="/jokes?tag=感情"
-            className="group shadow-neo relative block h-24 overflow-hidden border-2 border-black bg-[#FFD1DC] transition-all hover:translate-y-1 hover:shadow-none"
-          >
-            <div className="flex h-full items-center justify-between px-4">
-              <div className="z-10">
-                <h3 className="text-xl font-black text-[#C41200] italic">
-                  💔 感情
-                </h3>
-                <p className="text-xs font-bold text-[#C41200]/70">
-                  破碎感拉满
-                </p>
-              </div>
-              <div className="absolute -right-4 -bottom-4 text-6xl opacity-20 grayscale transition-all group-hover:scale-110 group-hover:grayscale-0">
-                💔
-              </div>
-            </div>
-          </Link>
-
-          {/* 哲学 */}
-          <Link
-            href="/jokes?tag=哲学"
-            className="group shadow-neo relative block h-24 overflow-hidden border-2 border-black bg-[#E0F7FA] transition-all hover:translate-y-1 hover:shadow-none"
-          >
-            <div className="flex h-full items-center justify-between px-4">
-              <div className="z-10">
-                <h3 className="text-xl font-black text-[#006064] italic">
-                  � 哲学
-                </h3>
-                <p className="text-xs font-bold text-[#006064]/70">
-                  废话文学大赏
-                </p>
-              </div>
-              <div className="absolute -right-4 -bottom-4 text-6xl opacity-20 grayscale transition-all group-hover:scale-110 group-hover:grayscale-0">
-                �
-              </div>
-            </div>
-          </Link>
-
-          {/* 职场 */}
-          <Link
-            href="/jokes?tag=职场"
-            className="group shadow-neo relative block h-24 overflow-hidden border-2 border-black bg-[#E1BEE7] transition-all hover:translate-y-1 hover:shadow-none"
-          >
-            <div className="flex h-full items-center justify-between px-4">
-              <div className="z-10">
-                <h3 className="text-xl font-black text-[#4A148C] italic">
-                  💼 职场
-                </h3>
-                <p className="text-xs font-bold text-[#4A148C]/70">
-                  打工人的怒吼
-                </p>
-              </div>
-              <div className="absolute -right-4 -bottom-4 text-6xl opacity-20 grayscale transition-all group-hover:scale-110 group-hover:grayscale-0">
-                💼
-              </div>
-            </div>
-          </Link>
-        </div>
+        {topTags.length === 0 ? (
+          <div className="border-2 border-black bg-white p-4 text-center text-sm font-bold text-black shadow-neo-sm">
+            暂无高频标签，去上交文案吧
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {topTags.map((tagItem, index) => {
+              const style = TAG_STYLES[index % TAG_STYLES.length]
+              const displayTag = getTagDisplay(tagItem.tag)
+              return (
+                <Link
+                  key={tagItem.tag}
+                  href={`/jokes?tag=${encodeURIComponent(tagItem.tag)}`}
+                  className={`group shadow-neo relative block h-24 overflow-hidden border-2 border-black ${style.bg} transition-all hover:translate-y-1 hover:shadow-none`}
+                >
+                  <div className="flex h-full items-center justify-between px-4">
+                    <div className="z-10">
+                      <h3 className={`text-xl font-black italic ${style.text}`}>
+                        {style.emoji} {displayTag.label}
+                      </h3>
+                      <p className={`text-xs font-bold ${style.text}/70`}>
+                        {displayTag.description}
+                      </p>
+                    </div>
+                    <div className="absolute -right-4 -bottom-4 text-6xl opacity-20 grayscale transition-all group-hover:scale-110 group-hover:grayscale-0">
+                      {style.emoji}
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* 5. 底部功能区 (Footer CTA) */}
@@ -356,17 +310,10 @@ export default async function Page() {
             文案品评会
           </h2>
           <div className="bg-kfc-yellow mx-auto mb-8 max-w-xl rotate-2 transform border-2 border-black p-4 shadow-[8px_8px_0_0_#000]">
-            <h3 className="text-2xl font-black text-black italic">
-              疯狂星期四！
-            </h3>
+            <h3 className="text-2xl font-black text-black italic">疯狂星期四！</h3>
           </div>
 
-          <NeoButton
-            href="/submit"
-            variant="secondary"
-            size="lg"
-            icon="fa-arrow-right"
-          >
+          <NeoButton href="/submit" variant="secondary" size="lg" icon="fa-arrow-right">
             Start Submission / 开始上交你的疯狂文案
           </NeoButton>
         </div>

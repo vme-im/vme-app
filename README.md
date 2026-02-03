@@ -37,9 +37,48 @@ https://vme.im/submit
 
 _包含本地开发、技术架构、[UI 风格指南](./docs/dev/style-guide.md)、[组件说明](./docs/dev/components.md) 以及 **AI Agent 专项指令**。_
 
+## 🔌 API 接入指南
+
+本项目提供开放 API 供第三方服务调用，所有接口均支持跨域（CORS）。
+
+### 1. 随机获取文案
+
+获取库中的一条随机文案。
+
+- **URL**: `/api/random`
+- **Method**: `GET`
+- **Params**:
+  - `format`: 可选。设为 `text` 仅返回纯文本内容，否则返回 JSON。
+- **Example**: `https://vme.im/api/random?format=text`
+
+### 2. 分页获取文案
+
+获取分页后的文案列表。
+
+- **URL**: `/api/items/page`
+- **Method**: `GET`
+- **Params**:
+  - `page`: 页码（默认 1）
+  - `pageSize`: 每页数量（默认 10）
+- **Example**: `https://vme.im/api/items/page?page=1&pageSize=20`
+
+### 3. 获取特定文案
+
+通过 ID 获取指定文案的详细信息。
+
+- **URL**: `/api/items/[id]`
+- **Method**: `GET`
+- **Example**: `https://vme.im/api/items/MDEyOklzc3VlNjM0NTY3ODkw`
+
+### 4. 获取所有文案
+
+一次性获取所有文案（最多 1000 条）。
+
+- **URL**: `/api/items`
+- **Method**: `GET`
+- **Example**: `https://vme.im/api/items`
+
 ## 🔗 相关仓库
 
-```
-https://github.com/vme-im/vme-app
-https://github.com/vme-im/vme-content
-```
+- [vme-app](https://github.com/vme-im/vme-app) - Web 应用与同步服务
+- [vme-content](https://github.com/vme-im/vme-content) - 文案数据与自动化脚本

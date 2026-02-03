@@ -1,6 +1,11 @@
 // 数据访问层类型定义
 import { IKfcItem, Summary, Contributor } from '@/types'
 
+export interface TopTag {
+  tag: string
+  count: number
+}
+
 export interface GetItemsParams {
   page?: number
   limit?: number
@@ -9,6 +14,7 @@ export interface GetItemsParams {
   author?: string
   type?: 'text' | 'meme'
   search?: string
+  tag?: string
 }
 
 export interface PaginatedItems {
@@ -24,6 +30,7 @@ export interface DataProvider {
   getRandomItem(type?: 'text' | 'meme'): Promise<IKfcItem | null>
   getItemById(id: string): Promise<IKfcItem | null>
   getStats(): Promise<Summary>
+  getTopTags(limit?: number): Promise<TopTag[]>
   searchItems(query: string, limit?: number): Promise<IKfcItem[]>
   getContributors(): Promise<Contributor[]>
   getTopContributors(limit?: number): Promise<Contributor[]>

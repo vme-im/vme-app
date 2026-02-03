@@ -1,13 +1,7 @@
 // Neon 数据库提供者
 import { Pool } from '@neondatabase/serverless'
 import { IKfcItem, Summary, Contributor } from '@/types'
-import {
-  DataProvider,
-  GetItemsParams,
-  PaginatedItems,
-  ItemRow,
-} from './types'
-
+import { DataProvider, GetItemsParams, PaginatedItems, ItemRow, TopTag } from './types'
 
 // 拼接 GitHub 头像 URL
 function getAvatarUrl(username: string): string {
@@ -81,7 +75,7 @@ export class NeonProvider implements DataProvider {
 
     if (search) {
       conditions.push(
-        `(to_tsvector('simple', title) @@ plainto_tsquery('simple', $${paramIndex}) OR to_tsvector('simple', body) @@ plainto_tsquery('simple', $${paramIndex}))`
+        `(to_tsvector('simple', title) @@ plainto_tsquery('simple', $${paramIndex}) OR to_tsvector('simple', body) @@ plainto_tsquery('simple', $${paramIndex}))`,
       )
       queryParams.push(search)
       paramIndex++
@@ -90,6 +84,12 @@ export class NeonProvider implements DataProvider {
     if (type) {
       conditions.push(`content_type = $${paramIndex}`)
       queryParams.push(type)
+      paramIndex++
+    }
+
+    if (params.tag) {
+      conditions.push(`$${paramIndex} = ANY(tags)`)
+      queryParams.push(params.tag)
       paramIndex++
     }
 
@@ -112,10 +112,7 @@ export class NeonProvider implements DataProvider {
     // 获取总数
     const countQuery = `SELECT COUNT(*) as count FROM items WHERE ${whereClause}`
     // remove limit and offset params for count query
-    const countResult = await this.pool.query(
-      countQuery,
-      queryParams.slice(0, -2)
-    )
+    const countResult = await this.pool.query(countQuery, queryParams.slice(0, -2))
     const total = parseInt(countResult.rows[0].count, 10)
 
     return {
@@ -131,23 +128,29 @@ export class NeonProvider implements DataProvider {
     const typeCondition = type ? `AND content_type = $1` : ''
     const params = type ? [type] : []
 
-    const result = await this.pool.query(`
+    const result = await this.pool.query(
+      `
       SELECT * FROM items
       WHERE moderation_status = 'approved' ${typeCondition}
       ORDER BY RANDOM()
       LIMIT 1
-    `, params)
+    `,
+      params,
+    )
     const rows = result.rows as ItemRow[]
 
     return rows.length ? rowToItem(rows[0]) : null
   }
 
   async getItemById(id: string): Promise<IKfcItem | null> {
-    const result = await this.pool.query(`
+    const result = await this.pool.query(
+      `
       SELECT * FROM items
       WHERE id = $1 AND moderation_status = 'approved'
       LIMIT 1
-    `, [id])
+    `,
+      [id],
+    )
     const rows = result.rows as ItemRow[]
 
     return rows.length ? rowToItem(rows[0]) : null
@@ -197,8 +200,32 @@ export class NeonProvider implements DataProvider {
     }
   }
 
+  async getTopTags(limit = 4): Promise<TopTag[]> {
+    const result = await this.pool.query(
+      `
+      SELECT tag, COUNT(*)::int AS count
+      FROM items, unnest(tags) AS tag
+      WHERE moderation_status = 'approved'
+        AND tags IS NOT NULL
+        AND array_length(tags, 1) > 0
+        AND tag IS NOT NULL
+        AND tag <> ''
+      GROUP BY tag
+      ORDER BY count DESC, tag ASC
+      LIMIT $1
+    `,
+      [limit],
+    )
+
+    return result.rows.map((row: { tag: string; count: number }) => ({
+      tag: row.tag,
+      count: row.count,
+    }))
+  }
+
   async searchItems(query: string, limit = 50): Promise<IKfcItem[]> {
-    const result = await this.pool.query(`
+    const result = await this.pool.query(
+      `
       SELECT * FROM items
       WHERE
         moderation_status = 'approved' AND
@@ -208,7 +235,9 @@ export class NeonProvider implements DataProvider {
         )
       ORDER BY created_at DESC
       LIMIT $2
-    `, [query, limit])
+    `,
+      [query, limit],
+    )
     const rows = result.rows as ItemRow[]
 
     return rows.map(rowToItem)
@@ -236,7 +265,8 @@ export class NeonProvider implements DataProvider {
 
   async getTopContributors(limit = 10): Promise<Contributor[]> {
     // 从 items 表实时聚合
-    const result = await this.pool.query(`
+    const result = await this.pool.query(
+      `
       SELECT
         author_username as username,
         COUNT(*) as count
@@ -245,7 +275,9 @@ export class NeonProvider implements DataProvider {
       GROUP BY author_username
       ORDER BY count DESC
       LIMIT $1
-    `, [limit])
+    `,
+      [limit],
+    )
 
     return result.rows.map((row: { username: string; count: string }) => ({
       username: row.username,
@@ -268,7 +300,8 @@ export class NeonProvider implements DataProvider {
     const params = excludeId ? [excludeId] : []
     const limitParam = `$${excludeId ? 2 : 1}`
 
-    const result = await this.pool.query(`
+    const result = await this.pool.query(
+      `
       WITH featured AS (
         -- 为每个作者选择其互动最多的段子
         SELECT DISTINCT ON (author_username)
@@ -285,7 +318,9 @@ export class NeonProvider implements DataProvider {
       SELECT * FROM featured
       ORDER BY reactions_count DESC, created_at DESC
       LIMIT ${limitParam}
-    `, [...params, limit])
+    `,
+      [...params, limit],
+    )
 
     const rows = result.rows as ItemRow[]
     return rows.map(rowToItem)
