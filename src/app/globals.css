@@ -158,14 +158,14 @@
 
     body::before {
       top: 0;
-      height: max(env(safe-area-inset-top), 0px);
+      height: max(20vh, 0px);
       background: var(--safe-area-top-bg);
       transition: all 0s ease-in-out;
     }
 
     body::after {
       bottom: 0;
-      height: max(env(safe-area-inset-bottom), 0px);
+      height: max(20vh, 0px);
       background: var(--safe-area-bottom-bg);
       transition: all 0s ease-in-out;
     }
