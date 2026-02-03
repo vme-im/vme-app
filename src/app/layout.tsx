@@ -46,11 +46,7 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const contributorsCount = await getUniqueContributorsCount()
 
   return (
@@ -67,10 +63,9 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="bg-transparent text-gray-900">
+      <body className="text-gray-900">
         <PWARegistration />
         <Providers>
-          <div className="bg-kfc-newsprint" aria-hidden="true" />
           <div className="relative z-10 flex min-h-screen flex-col">
             <Header contributorsCount={contributorsCount} />
 
