@@ -4,8 +4,8 @@ export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="border-t-4 border-black bg-black text-white safe-area-bottom">
-      <div className="container mx-auto px-4 safe-area-x py-8 md:py-12">
+    <footer className="bg-kfc-red safe-area-bottom border-t-4 border-black text-white">
+      <div className="safe-area-x container mx-auto px-4 py-8 md:py-12">
         {/* 主要内容区域 */}
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row md:gap-8">
           {/* Logo 和品牌 */}
@@ -20,29 +20,37 @@ export default function Footer() {
               />
             </div>
             <div>
-              <h3 className="text-xl font-black italic tracking-tighter text-white md:text-2xl">
+              <h3 className="text-xl font-black tracking-tighter text-white italic md:text-2xl">
                 CRAZY THURSDAY
               </h3>
-              <p className="text-xs font-bold uppercase tracking-widest text-white/70">
+              <p className="text-xs font-bold tracking-widest text-white/70 uppercase">
                 Official Meme Headquarters
               </p>
             </div>
           </div>
 
           {/* 导航链接 */}
-          <nav className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold uppercase tracking-wider md:gap-8 md:text-sm">
-            {['首页', '文案库', '英雄榜', '我要投稿', '状态'].map((item, index) => {
-               const hrefs = ['/', '/jokes', '/leaderboard', '/submit', '/status'];
-               return (
-                <a
-                  key={item}
-                  href={hrefs[index]}
-                  className="border-b-2 border-transparent hover:border-kfc-yellow hover:text-kfc-yellow transition-all"
-                >
-                  {item}
-                </a>
-               )
-            })}
+          <nav className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold tracking-wider uppercase md:gap-8 md:text-sm">
+            {['首页', '文案库', '英雄榜', '我要投稿', '状态'].map(
+              (item, index) => {
+                const hrefs = [
+                  '/',
+                  '/jokes',
+                  '/leaderboard',
+                  '/submit',
+                  '/status',
+                ]
+                return (
+                  <a
+                    key={item}
+                    href={hrefs[index]}
+                    className="hover:border-kfc-yellow hover:text-kfc-yellow border-b-2 border-transparent transition-all"
+                  >
+                    {item}
+                  </a>
+                )
+              },
+            )}
           </nav>
         </div>
 
@@ -59,7 +67,7 @@ export default function Footer() {
           </div>
 
           <div className="text-center md:text-right">
-            <p className="text-base font-black italic text-kfc-yellow md:text-lg">
+            <p className="text-kfc-yellow text-base font-black italic md:text-lg">
               &quot;V ME 50 IS A LIFESTYLE&quot;
             </p>
           </div>
@@ -68,4 +76,3 @@ export default function Footer() {
     </footer>
   )
 }
-

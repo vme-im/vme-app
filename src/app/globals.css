@@ -20,13 +20,13 @@
 
   --border-width-3: 3px;
 
-  --font-sans:
-    'PingFang SC', 'Microsoft YaHei', 'Heiti SC', var(--font-inter), sans-serif;
-  --font-display:
-    var(--font-mona-sans), 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Heiti SC', var(--font-inter),
+    sans-serif;
+  --font-display: var(--font-mona-sans), 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
   --font-kfc: 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
-  --font-funny:
-    'Comic Sans MS', 'Bubblegum Sans', 'PingFang SC', 'Microsoft YaHei', cursive;
+  --font-funny: 'Comic Sans MS', 'Bubblegum Sans', 'PingFang SC',
+    'Microsoft YaHei', cursive;
 }
 
 /*
@@ -38,7 +38,6 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
-
   *,
   ::after,
   ::before,
@@ -123,52 +122,21 @@
   }
 
   html {
-    background: var(--page-bg);
+    background: var(--color-kfc-red);
     min-height: 100%;
   }
 
   body {
     color: #121212;
     background: transparent;
-    font-family:
-      -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei',
-      'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC',
+      'Microsoft YaHei', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.75;
     letter-spacing: 0.025em;
     position: relative;
     min-height: 100%;
-  }
-
-  @supports (padding: max(0px)) {
-    body {
-      padding-bottom: 0px;
-    }
-
-    body::before,
-    body::after {
-      content: '';
-      position: fixed;
-      left: 0;
-      width: 100%;
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    body::before {
-      top: 0;
-      height: max(20vh, 0px);
-      background: var(--safe-area-top-bg);
-      transition: all 0s ease-in-out;
-    }
-
-    body::after {
-      bottom: 0;
-      height: max(20vh, 0px);
-      background: var(--safe-area-bottom-bg);
-      transition: all 0s ease-in-out;
-    }
   }
 
   ::selection {
