@@ -34,7 +34,8 @@ https://vme.im/submit
 如果您是开发者或 AI Agent，请查阅：
 
 ### 💻 [开发者与 Agent 协作指南](./docs/dev/README.md)
-*包含本地开发、技术架构、[UI 风格指南](./docs/dev/style-guide.md)、[组件说明](./docs/dev/components.md) 以及 **AI Agent 专项指令**。*
+
+_包含本地开发、技术架构、[UI 风格指南](./docs/dev/style-guide.md)、[组件说明](./docs/dev/components.md) 以及 **AI Agent 专项指令**。_
 
 ## 🔗 相关仓库
 
