@@ -1,4 +1,5 @@
 // LLM 内容分析模块
+import OpenAI from 'openai'
 import type { GitHubIssuePayload } from './types'
 
 const TONE_TAGS = [
@@ -94,106 +95,163 @@ const STYLE_TAGS = [
   '反讽',
   '隐喻',
   '蒙太奇',
+  '字符画',
 ]
 const FALLBACK_TAG = '其他'
-const ALL_TAGS_LIST = [...TONE_TAGS, ...THEME_TAGS, ...STYLE_TAGS, FALLBACK_TAG]
-const ALL_TAGS_SET = new Set(ALL_TAGS_LIST)
+
+// 标签设置工具定义
+const SET_TAGS_TOOL: OpenAI.Chat.Completions.ChatCompletionTool = {
+  type: 'function',
+  function: {
+    name: 'set_tags',
+    description: '为文案设置标签',
+    parameters: {
+      type: 'object',
+      properties: {
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            '选中的标签（可以是参考列表中的，也可以是自创的），最多5个',
+        },
+      },
+      required: ['tags'],
+    },
+  },
+}
+
+// 构建系统 Prompt
+function buildSystemPrompt(): string {
+  return `# Role
+You are a Senior Content Analyst specializing in Chinese internet culture, specifically the "Crazy Thursday" (肯德基疯狂星期四) meme.
+
+# Context
+"Crazy Thursday" is a viral marketing meme on Chinese social media. Netizens write misleading stories (genres: CEO romance, Wuxia, Sci-Fi, emotional drama, news, etc.) that end with a sudden twist requesting money for KFC: "It's KFC Crazy Thursday, V me 50" (transfer me 50 yuan).
+**The artistic value lies in the creative story in the first half, NOT the fixed ending.**
+
+# Taxonomy Targets
+Select 0-5 tags TOTAL from ANY of the following dimensions.
+You do NOT need to select one from each dimension. Focus on the most prominent features.
+For example, you can select 2 TONE tags and 1 THEME tag, or just 1 STYLE tag.
+
+## TONE (Emotional atmosphere)
+${TONE_TAGS.join('、')}
+
+## THEME (Story background/topic)
+${THEME_TAGS.join('、')}
+
+## STYLE (Narrative technique)
+${STYLE_TAGS.join('、')}
+
+# Analysis Workflow
+1. **Check for ASCII Art**: If the content is primarily visual/ASCII art, tag as "字符画".
+2. **Strip Ending**: IGNORE fixed endings like "肯德基" (KFC), "疯狂星期四" (Crazy Thursday), "V我50".
+3. **Extract Core**: What is the story actually about? Who is the protagonist? What happened?
+4. **Identify Atmosphere**: What is the reader's emotional reaction? (Funny, sad, absurd, healing...)
+5. **Match Tags**: Select tags that best summarize the core features from the three dimensions.
+
+# ⚠️ Negative Constraints (CRITICAL)
+- **NO "美食" (Food) Tag**: Unless the story is LEGITIMATELY about cooking or tasting food. Mentioning KFC at the end does NOT count.
+- **NO "节日" (Festival) Tag**: "Thursday" is not a traditional festival. Only use if the story is about Spring Festival, etc.
+- **"正能量" (Positive Energy)**: Use cautiously. Satirical chicken soup or irony should be classified as "讽刺" (Satire) or "反讽" (Irony).
+- **"自嘲" (Self-mockery) vs "卑微" (Humble/Pathetic)**: Self-mockery has humor; Humble is genuinely low-status/sad.
+- **"抽象" (Abstract) vs "无厘头" (Nonsense)**: "Abstract" refers to the specific absurd style of Chinese internet culture; "Nonsense" is more like Stephen Chow's comedy.
+
+# Few-Shot Examples
+
+## ✅ Good Example
+Input: "我是个普通程序员，每天加班到凌晨两点，老板说年终奖会有的，结果年底只发了个文件夹...... 今天是肯德基疯狂星期四，V我50"
+Tags: ["社畜", "心酸", "反转"]
+Reasoning: The core is the sad experience of an overworked programmer. Tone is "心酸" (Sad). Structure contains a twist "反转".
+
+## ❌ Bad Example
+Input: (Same text as above)
+Bad Tags: ["美食", "节日", "正能量"]
+Reasoning: KFC ending != "美食" (Food); Thursday != "节日" (Festival); Sad story != "正能量".
+
+# Output Requirements
+- Return a JSON array of strings.
+- Aim for 3 tags usually, but up to 5 is allowed if the content is complex.
+- Tags implies the core selling point of the copy.`
+}
 
 function normalizeTags(tags: string[]): string[] {
   // 过滤掉空字符串和多余空格，限制在前3个
   const valid = tags
-    .map(t => t.trim())
-    .filter(t => t.length > 0 && t.length <= 10) // 限制标签长度在10字符以内防止长句被误认为标签
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0 && t.length <= 10) // 限制标签长度在10字符以内防止长句被误认为标签
 
   if (valid.length === 0) {
     return [FALLBACK_TAG]
   }
 
-  return valid.slice(0, 3)
+  return valid.slice(0, 5)
+}
+
+// 创建 OpenAI 客户端（支持自定义 baseURL）
+function createClient(): OpenAI | null {
+  const apiKey = process.env.AI_API_KEY
+  if (!apiKey) {
+    return null
+  }
+
+  const baseURL =
+    (process.env.AI_API_BASE_URL || 'https://api.openai.com').replace(
+      /\/$/,
+      '',
+    ) + '/v1'
+
+  return new OpenAI({
+    apiKey,
+    baseURL,
+    defaultHeaders: {
+      'APP-Code': 'USYC0298',
+    },
+  })
 }
 
 export async function analyzeContent(
-  issue: Pick<GitHubIssuePayload, 'title' | 'body'>
+  issue: Pick<GitHubIssuePayload, 'title' | 'body'>,
 ): Promise<string[]> {
   const fallback: string[] = []
 
-  const apiKey = process.env.AI_API_KEY
-  if (!apiKey) {
+  const client = createClient()
+  if (!client) {
     return fallback
   }
 
-  const baseUrl = (process.env.AI_API_BASE_URL || 'https://api.openai.com').replace(/\/$/, '')
   const model = process.env.LLM_MODEL || 'gpt-5-nano'
   const content = `${issue.title}\n\n${issue.body || ''}`.slice(0, 6000)
 
   try {
-    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'APP-Code': 'USYC0298',
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.2,
-        messages: [
-          {
-            role: 'system',
-            content: `你是内容分析专家，专门负责为“肯德基疯狂星期四”系列文案生成标签。
+    const response = await client.chat.completions.create({
+      model,
+      temperature: 0.2,
+      messages: [
+        { role: 'system', content: buildSystemPrompt() },
+        {
+          role: 'user',
+          content: `请分析以下文案并生成标签：
 
-背景知识：
-“肯德基疯狂星期四”是中国社交网络上的一种病毒式营销文化。网友会创作各种极具误导性的长篇故事（涵盖霸总、武侠、科幻、情感、社会新闻等各种题材），但在结尾处突然反转，引向“今天是肯德基疯狂星期四，谁请我吃”的主题。
+---
+${content}
+---
 
-任务要求：
-1. **侧重故事内容**：忽略结尾固定的“肯德基”、“星期四”、“V 我 50”等话术。重点分析文案前半部分所讲述的故事、情感和背景（如职场、中二、恋爱等）。
-2. **避免泛化标签**：除非文案主体内容确实是关于烹饪或品鉴美食的，否则**严禁使用“美食”标签**。不要因为结尾提到了肯德基就打上“美食”标签。
-3. **识别核心特征**：优先从参考列表中选择最能体现文案故事内核的标签。
-4. 参考标签列表：${ALL_TAGS_LIST.join('、')}
-5. 最多输出 3 个最贴切的标签。
-`
-          },
-          {
-            role: 'user',
-            content: `请为以下文案生成标签：\n\n${content}`
-          }
-        ],
-        tools: [
-          {
-            type: 'function',
-            function: {
-              name: 'set_tags',
-              description: '为文案设置标签',
-              parameters: {
-                type: 'object',
-                properties: {
-                  tags: {
-                    type: 'array',
-                    items: {
-                      type: 'string',
-                    },
-                    description: '选中的标签（可以是参考列表中的，也可以是自创的），最多3个',
-                    maxItems: 3
-                  }
-                },
-                required: ['tags']
-              }
-            }
-          }
-        ],
-        tool_choice: { type: 'function', function: { name: 'set_tags' } }
-      }),
+请运用上述分析流程，输出最贴切的标签。`,
+        },
+      ],
+      tools: [SET_TAGS_TOOL],
+      tool_choice: { type: 'function', function: { name: 'set_tags' } },
     })
 
-    if (!response.ok) {
-      console.warn('LLM analyze failed:', response.status, response.statusText)
-      return fallback
-    }
+    const toolCall = response.choices[0]?.message?.tool_calls?.[0]
 
-    const data = await response.json()
-    const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0]
-
-    if (!toolCall || toolCall.function.name !== 'set_tags') {
+    // 类型守卫：确保是 function 类型的 tool call
+    if (
+      !toolCall ||
+      toolCall.type !== 'function' ||
+      toolCall.function.name !== 'set_tags'
+    ) {
       console.warn('No valid tool call in response')
       return fallback
     }
