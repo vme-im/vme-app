@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useRef, useState, useEffect } from 'react'
 import clsx from 'clsx'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
@@ -37,6 +37,21 @@ const JokeCard = memo(function JokeCard({
 }: JokeCardProps) {
   const searchParams = useSearchParams()
   const currentType = searchParams.get('type')
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [isOverflowing, setIsOverflowing] = useState(false)
+
+  // 检测内容是否包含图片
+  const hasImage = useMemo(() => {
+    return item.body.includes('![') || item.body.includes('<img')
+  }, [item.body])
+
+  // 检测内容是否溢出
+  useEffect(() => {
+    if (contentRef.current && !hasImage) {
+      const { scrollHeight, clientHeight } = contentRef.current
+      setIsOverflowing(scrollHeight > clientHeight)
+    }
+  }, [item.body, hasImage])
 
   // 使用 useMemo 缓存热门状态计算
   const { totalReactions, isHot } = useMemo(() => {
@@ -63,51 +78,68 @@ const JokeCard = memo(function JokeCard({
 
       {/* 段子内容 */}
       <div className="mb-4">
-        <div className="prose prose-p:my-1 prose-img:my-0 mb-4 overflow-hidden text-black prose-p:leading-snug prose-headings:font-black prose-p:font-bold prose-a:text-blue-600 prose-blockquote:border-l-4 prose-blockquote:border-black prose-blockquote:bg-gray-100 prose-blockquote:py-1 prose-blockquote:pl-2">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              img: ({ node, src, alt, ...props }: any) => {
-                if (!src) return null
-                return (
-                  <div className="relative my-2 h-64 w-full overflow-hidden rounded-xs border-2 border-black bg-gray-100">
-                    <Image
-                      src={src}
-                      alt={alt || 'Meme'}
-                      fill
-                      className="object-contain p-2"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                  </div>
-                )
-              },
-              p: ({ node, children, ...props }: any) => {
-                // 检查子元素是否包含块级元素（如 img 转换后的 div）
-                const hasBlockChild = node?.children?.some((child: any) => child.tagName === 'img')
-                // 如果包含块级元素，使用 div 代替 p 避免 hydration error
-                if (hasBlockChild) {
+        <div className="relative">
+          <div
+            ref={contentRef}
+            className={clsx(
+              'prose prose-p:my-1 prose-img:my-0 mb-4 text-black prose-p:leading-snug prose-headings:font-black prose-p:font-bold prose-a:text-blue-600 prose-blockquote:border-l-4 prose-blockquote:border-black prose-blockquote:bg-gray-100 prose-blockquote:py-1 prose-blockquote:pl-2',
+              !hasImage && 'max-h-48 overflow-hidden',
+            )}
+          >
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                img: ({ node, src, alt, ...props }: any) => {
+                  if (!src) return null
                   return (
-                    <div
-                      className="whitespace-pre-wrap text-justify-cn text-base md:text-lg"
+                    <div className="relative my-2 h-64 w-full overflow-hidden rounded-xs border-2 border-black bg-gray-100">
+                      <Image
+                        src={src}
+                        alt={alt || 'Meme'}
+                        fill
+                        className="object-contain p-2"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                    </div>
+                  )
+                },
+                p: ({ node, children, ...props }: any) => {
+                  // 检查子元素是否包含块级元素（如 img 转换后的 div）
+                  const hasBlockChild = node?.children?.some(
+                    (child: any) => child.tagName === 'img',
+                  )
+                  // 如果包含块级元素，使用 div 代替 p 避免 hydration error
+                  if (hasBlockChild) {
+                    return (
+                      <div
+                        className="whitespace-pre-wrap text-justify-cn text-base md:text-lg"
+                        {...props}
+                      >
+                        {children}
+                      </div>
+                    )
+                  }
+                  return (
+                    <p
+                      className={clsx(
+                        'whitespace-pre-wrap text-justify-cn text-base md:text-lg',
+                        !hasImage && 'line-clamp-6',
+                      )}
                       {...props}
                     >
                       {children}
-                    </div>
+                    </p>
                   )
-                }
-                return (
-                  <p
-                    className="whitespace-pre-wrap text-justify-cn text-base md:text-lg"
-                    {...props}
-                  >
-                    {children}
-                  </p>
-                )
-              },
-            }}
-          >
-            {item.body}
-          </ReactMarkdown>
+                },
+              }}
+            >
+              {item.body}
+            </ReactMarkdown>
+          </div>
+          {/* 渐变遮罩 - 仅当内容溢出时显示 */}
+          {!hasImage && isOverflowing && (
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
+          )}
         </div>
         <div className="mt-4 flex items-center justify-between gap-2">
           <Link
