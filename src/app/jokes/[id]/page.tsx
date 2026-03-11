@@ -3,7 +3,12 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
-import { getAllKfcItems, getRandomKfcItem, getItemById, normalizeItemContent } from '@/lib/server-utils'
+import {
+  getAllKfcItems,
+  getRandomKfcItem,
+  getItemById,
+  normalizeItemContent,
+} from '@/lib/server-utils'
 import { authOptions } from '@/lib/auth'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
@@ -13,7 +18,6 @@ import NeoButton from '@/components/shared/NeoButton'
 import { IKfcItem } from '@/types'
 import ClassifyTrigger from '@/components/jokes/ClassifyTrigger'
 
-
 interface PageProps {
   params: Promise<{
     id: string
@@ -21,7 +25,7 @@ interface PageProps {
 }
 
 function isIssueNumberParam(id: string) {
-  return /^\d+$/.test(id);
+  return /^\d+$/.test(id)
 }
 
 async function fetchIssueByNumber(issueNumber: number): Promise<IKfcItem | null> {
@@ -29,14 +33,17 @@ async function fetchIssueByNumber(issueNumber: number): Promise<IKfcItem | null>
   const repo = process.env.GITHUB_REPO || 'vme'
 
   try {
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'User-Agent': 'vme',
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+      {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'User-Agent': 'vme',
+        },
+        next: { revalidate: 60 },
       },
-      next: { revalidate: 60 },
-    })
+    )
 
     if (!response.ok) return null
 
@@ -44,6 +51,10 @@ async function fetchIssueByNumber(issueNumber: number): Promise<IKfcItem | null>
 
     if (!issue?.node_id || !issue?.user?.login) return null
     if (issue?.pull_request) return null
+
+    const isApproved =
+      Array.isArray(issue.labels) &&
+      issue.labels.some((l: any) => (typeof l === 'string' ? l : l?.name) === '收录')
 
     return {
       id: issue.node_id,
@@ -60,7 +71,8 @@ async function fetchIssueByNumber(issueNumber: number): Promise<IKfcItem | null>
       reactions: {
         totalCount: issue.reactions?.total_count || 0,
       },
-    }
+      _approved: isApproved,
+    } as IKfcItem & { _approved: boolean }
   } catch {
     return null
   }
@@ -85,7 +97,7 @@ export async function generateStaticParams() {
 
 // 生成页面元数据
 export async function generateMetadata(props: PageProps) {
-  const params = await props.params;
+  const params = await props.params
   const joke = await getJokeForParams(params.id)
 
   if (!joke) {
@@ -104,9 +116,10 @@ export async function generateMetadata(props: PageProps) {
     : '疯狂星期四段子 - KFC 段子库'
 
   // 生成描述：使用段子内容前 150 字符
-  const description = normalizedJoke.body.length > 150
-    ? normalizedJoke.body.slice(0, 150) + '...'
-    : normalizedJoke.body
+  const description =
+    normalizedJoke.body.length > 150
+      ? normalizedJoke.body.slice(0, 150) + '...'
+      : normalizedJoke.body
 
   // 生成关键词
   const keywords = `疯狂星期四,KFC段子,${normalizedJoke.author.username},搞笑段子,文案`
@@ -136,11 +149,11 @@ export async function generateMetadata(props: PageProps) {
 export const revalidate = 3600 // 1小时重新验证一次
 
 export default async function JokeDetailPage(props0: PageProps) {
-  const params = await props0.params;
+  const params = await props0.params
   // 并行获取段子和会话数据
   const [joke, session] = await Promise.all([
     getJokeForParams(params.id),
-    getServerSession(authOptions)
+    getServerSession(authOptions),
   ])
 
   if (!joke) {
@@ -197,7 +210,12 @@ export default async function JokeDetailPage(props0: PageProps) {
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      p: ({ node, ...props }) => <p className="mb-4 last:mb-0 wrap-break-word whitespace-pre-wrap" {...props} />,
+                      p: ({ node, ...props }) => (
+                        <p
+                          className="mb-4 last:mb-0 wrap-break-word whitespace-pre-wrap"
+                          {...props}
+                        />
+                      ),
                       img: ({ node, ...props }) => (
                         <span className="my-6 flex justify-center w-full">
                           <img
@@ -207,12 +225,29 @@ export default async function JokeDetailPage(props0: PageProps) {
                         </span>
                       ),
                       a: ({ node, ...props }) => (
-                        <a {...props} className="text-kfc-red hover:underline decoration-2 underline-offset-2" target="_blank" rel="noopener noreferrer" />
+                        <a
+                          {...props}
+                          className="text-kfc-red hover:underline decoration-2 underline-offset-2"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
                       ),
                       ul: ({ node, ...props }) => <ul className="mb-4 list-disc pl-5" {...props} />,
-                      ol: ({ node, ...props }) => <ol className="mb-4 list-decimal pl-5" {...props} />,
-                      blockquote: ({ node, ...props }) => <blockquote className="my-4 border-l-4 border-black bg-white/50 p-4 italic" {...props} />,
-                      code: ({ node, ...props }) => <code className="rounded-sm bg-black/10 px-1 py-0.5 font-mono text-base" {...props} />,
+                      ol: ({ node, ...props }) => (
+                        <ol className="mb-4 list-decimal pl-5" {...props} />
+                      ),
+                      blockquote: ({ node, ...props }) => (
+                        <blockquote
+                          className="my-4 border-l-4 border-black bg-white/50 p-4 italic"
+                          {...props}
+                        />
+                      ),
+                      code: ({ node, ...props }) => (
+                        <code
+                          className="rounded-sm bg-black/10 px-1 py-0.5 font-mono text-base"
+                          {...props}
+                        />
+                      ),
                     }}
                   >
                     {normalizedJoke.body}
@@ -224,11 +259,15 @@ export default async function JokeDetailPage(props0: PageProps) {
               </div>
 
               {/* 标签列表 - 自动后台加载 */}
-              <JokeTags id={joke.id} initialTags={joke.tags} />
+              <JokeTags
+                id={joke.id}
+                initialTags={joke.tags}
+                approved={(joke as any)._approved ?? true}
+              />
             </div>
 
             {/* 作者信息 */}
-            < div className="mb-8" >
+            <div className="mb-8">
               <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
                 <i className="fa fa-user text-xl text-kfc-red md:text-2xl"></i>
                 <h2 className="text-xl font-black italic text-black md:text-2xl">文案鬼才</h2>
@@ -256,42 +295,40 @@ export default async function JokeDetailPage(props0: PageProps) {
                   </div>
                 </div>
               </div>
-            </div >
+            </div>
 
             {/* 互动区域 - 仅登录用户显示 */}
-            {
-              isAuthenticated && (
-                <>
-                  <div className="mb-6">
-                    <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
-                      <i className="fa fa-heart text-xl text-kfc-red md:text-2xl"></i>
-                      <h2 className="text-xl font-black italic text-black md:text-2xl">互动反馈</h2>
-                    </div>
-
-                    <div className="border-3 border-black bg-gray-50 p-4 shadow-neo">
-                      <Suspense
-                        fallback={
-                          <div className="flex items-center gap-2 text-gray-500">
-                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-kfc-red border-t-transparent"></div>
-                            <span>加载互动数据中...</span>
-                          </div>
-                        }
-                      >
-                        <InteractiveReactions
-                          issueId={normalizedJoke.id}
-                          className="flex-wrap gap-2"
-                        />
-                      </Suspense>
-                    </div>
+            {isAuthenticated && (
+              <>
+                <div className="mb-6">
+                  <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
+                    <i className="fa fa-heart text-xl text-kfc-red md:text-2xl"></i>
+                    <h2 className="text-xl font-black italic text-black md:text-2xl">互动反馈</h2>
                   </div>
-                </>
-              )
-            }
-          </div >
-        </article >
+
+                  <div className="border-3 border-black bg-gray-50 p-4 shadow-neo">
+                    <Suspense
+                      fallback={
+                        <div className="flex items-center gap-2 text-gray-500">
+                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-kfc-red border-t-transparent"></div>
+                          <span>加载互动数据中...</span>
+                        </div>
+                      }
+                    >
+                      <InteractiveReactions
+                        issueId={normalizedJoke.id}
+                        className="flex-wrap gap-2"
+                      />
+                    </Suspense>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </article>
 
         {/* 底部操作按钮 */}
-        < div className="mt-8 flex flex-col gap-4 md:flex-row md:justify-center" >
+        <div className="mt-8 flex flex-col gap-4 md:flex-row md:justify-center">
           <NeoButton href={nextJokeUrl} variant="secondary" size="lg" icon="fa-arrow-right">
             Next Joke / 再来一条
           </NeoButton>
@@ -299,17 +336,24 @@ export default async function JokeDetailPage(props0: PageProps) {
           <NeoButton href="/" variant="black" size="lg" icon="fa-home">
             Back Home / 返回首页
           </NeoButton>
-        </div >
-      </div >
-    </div >
+        </div>
+      </div>
+    </div>
   )
 }
 
 // 异步标签组件
-async function JokeTags({ id, initialTags }: { id: string, initialTags?: string[] }) {
+async function JokeTags({
+  id,
+  initialTags,
+  approved,
+}: {
+  id: string
+  initialTags?: string[]
+  approved: boolean
+}) {
   const tags = initialTags || []
 
   // 直接返回 ClassifyTrigger 组件，它会自动处理所有逻辑
-  return <ClassifyTrigger itemId={id} initialTags={tags} />
+  return <ClassifyTrigger itemId={id} initialTags={tags} approved={approved} />
 }
-

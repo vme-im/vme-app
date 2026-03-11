@@ -5,16 +5,21 @@ import { useEffect, useState } from 'react'
 interface ClassifyTriggerProps {
   itemId: string
   initialTags?: string[]
+  approved?: boolean
 }
 
-export default function ClassifyTrigger({ itemId, initialTags = [] }: ClassifyTriggerProps) {
+export default function ClassifyTrigger({
+  itemId,
+  initialTags = [],
+  approved = false,
+}: ClassifyTriggerProps) {
   const [tags, setTags] = useState<string[]>(initialTags)
   const [isLoading, setIsLoading] = useState(false)
   const [hasTriggered, setHasTriggered] = useState(false)
 
   useEffect(() => {
-    // 如果已经有标签，或者已经触发过，就不再执行
-    if (tags.length > 0 || hasTriggered) return
+    // 未审核通过、已有标签、或已触发过，不执行
+    if (!approved || tags.length > 0 || hasTriggered) return
 
     const triggerClassification = async () => {
       setIsLoading(true)
@@ -50,7 +55,7 @@ export default function ClassifyTrigger({ itemId, initialTags = [] }: ClassifyTr
     }
 
     triggerClassification()
-  }, [itemId, tags, hasTriggered])
+  }, [itemId, tags, hasTriggered, approved])
 
   // 加载中状态
   if (isLoading) {
