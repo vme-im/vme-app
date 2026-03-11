@@ -1,103 +1,141 @@
 // LLM 内容分析模块
 import OpenAI from 'openai'
 import type { GitHubIssuePayload } from './types'
-import {
-  TONE_TAGS,
-  THEME_TAGS,
-  STYLE_TAGS,
-  FALLBACK_TAG,
-} from '@/lib/tags/taxonomy'
+import { TONE_TAGS, THEME_TAGS, STYLE_TAGS, FALLBACK_TAG } from '@/lib/tags/taxonomy'
 
-// 标签设置工具定义
+// === 预处理 ===
+
+/** 去掉疯四结尾套话、图片链接、多余空白 */
+function preprocessContent(title: string, body: string): string {
+  let text = `${title}\n\n${body}`.slice(0, 6000)
+
+  // 去掉 markdown 图片
+  text = text.replace(/!\[.*?\]\(.*?\)/g, '')
+
+  // 去掉疯四结尾套话（贪婪匹配到末尾）
+  text = text.replace(/[，,。！!？?\s\n]*(今天是?|因为)?(肯德基|KFC)?疯狂星期四[\s\S]*$/i, '')
+  // 去掉散落的 V我50 / vivo50 / V50 等变体
+  text = text.replace(/[Vv](我|ivo)?\s*\d{1,3}(块|元)?/g, '')
+
+  // 压缩多余空行
+  text = text.replace(/\n{3,}/g, '\n\n').trim()
+
+  return text
+}
+
+/** 检测是否为纯图片内容（无实质文字） */
+function isImageOnly(title: string, body: string): boolean {
+  const textContent = `${title}\n${body}`
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/https?:\/\/\S+/g, '')
+    .trim()
+  return textContent.length < 10
+}
+
+// === Tool 定义 ===
+
 const SET_TAGS_TOOL: OpenAI.Chat.Completions.ChatCompletionTool = {
   type: 'function',
   function: {
     name: 'set_tags',
-    description: '为文案设置标签',
+    description: '为疯四文案打标签',
     parameters: {
       type: 'object',
       properties: {
+        core: {
+          type: 'string',
+          description: '一句话概括：去掉KFC结尾后，这篇文案讲了什么？',
+        },
         tags: {
           type: 'array',
           items: { type: 'string' },
-          description:
-            '选中的标签（可以是参考列表中的，也可以是自创的），最多5个',
+          description: '2-3个最精准的标签',
         },
       },
-      required: ['tags'],
+      required: ['core', 'tags'],
     },
   },
 }
 
-// 构建系统 Prompt
+// === Prompt ===
+
 function buildSystemPrompt(): string {
-  return `# Role
-You are a Senior Content Analyst specializing in Chinese internet culture, specifically the "Crazy Thursday" (肯德基疯狂星期四) meme.
+  return `你是疯四文案标签员。给文案打 2-3 个标签。
 
-# Context
-"Crazy Thursday" is a viral marketing meme on Chinese social media. Netizens write misleading stories (genres: CEO romance, Wuxia, Sci-Fi, emotional drama, news, etc.) that end with a sudden twist requesting money for KFC: "It's KFC Crazy Thursday, V me 50" (transfer me 50 yuan).
-**The artistic value lies in the creative story in the first half, NOT the fixed ending.**
+## 规则
+- 文案的KFC/V50结尾已被删除，你看到的是纯正文
+- 标签要描述正文的核心创意，不要描述文体格式
+- 优先从参考列表选，也可自创2-4字短词
+- 每个标签必须具体、有区分度
 
-# Taxonomy Targets
-Select 0-5 tags TOTAL from ANY of the following dimensions.
-You do NOT need to select one from each dimension. Focus on the most prominent features.
-For example, you can select 2 TONE tags and 1 THEME tag, or just 1 STYLE tag.
+## 参考标签
+情绪：${TONE_TAGS.join('、')}
+题材：${THEME_TAGS.join('、')}
+手法：${STYLE_TAGS.join('、')}
 
-## TONE (Emotional atmosphere)
-${TONE_TAGS.join('、')}
+## 禁止使用的标签
+- "反转" — 所有疯四都有反转，标了等于没标
+- "故事" — 太笼统，要说清什么类型的故事
+- "独白" — 大部分文案都是第一人称，标了没意义
+- "美食""外卖""节日" — 已从标签体系移除
+- "无厘头" — 已改为"荒诞"，请使用新标签
 
-## THEME (Story background/topic)
-${THEME_TAGS.join('、')}
+## 示例
 
-## STYLE (Narrative technique)
-${STYLE_TAGS.join('、')}
+文案：少林寺的方丈位置空出来了，有兴趣的可以转我50，我帮你写推荐信
+→ core: 恶搞少林寺方丈招聘
+→ tags: ["八卦", "讽刺"]
 
-# Analysis Workflow
-1. **Check for ASCII Art**: If the content is primarily visual/ASCII art, tag as "字符画".
-2. **Strip Ending**: IGNORE fixed endings like "肯德基" (KFC), "疯狂星期四" (Crazy Thursday), "V我50".
-3. **Extract Core**: What is the story actually about? Who is the protagonist? What happened?
-4. **Identify Atmosphere**: What is the reader's emotional reaction? (Funny, sad, absurd, healing...)
-5. **Match Tags**: Select tags that best summarize the core features from the three dimensions.
+文案：我是盗号的，看了这个人聊天记录发现他过得非常艰苦
+→ core: 假装盗号者同情号主
+→ tags: ["社交", "黑色幽默"]
 
-# ⚠️ Negative Constraints (CRITICAL)
-- **NO "美食" (Food) Tag**: Unless the story is LEGITIMATELY about cooking or tasting food. Mentioning KFC at the end does NOT count.
-- **NO "节日" (Festival) Tag**: "Thursday" is not a traditional festival. Only use if the story is about Spring Festival, etc.
-- **"正能量" (Positive Energy)**: Use cautiously. Satirical chicken soup or irony should be classified as "讽刺" (Satire) or "反讽" (Irony).
-- **"自嘲" (Self-mockery) vs "卑微" (Humble/Pathetic)**: Self-mockery has humor; Humble is genuinely low-status/sad.
-- **"抽象" (Abstract) vs "无厘头" (Nonsense)**: "Abstract" refers to the specific absurd style of Chinese internet culture; "Nonsense" is more like Stephen Chow's comedy.
+文案：假如你是李华，你的英国笔友Peter向你询问周四的安排，请写一封回信
+→ core: 模仿高考英语作文题
+→ tags: ["考试", "书信"]
 
-# Few-Shot Examples
+文案：全员核酸检测通知，明日本群进行全员核酸检测，地点：肯德基大门口
+→ core: 模仿疫情核酸通知格式
+→ tags: ["通知", "讽刺"]
 
-## ✅ Good Example
-Input: "我是个普通程序员，每天加班到凌晨两点，老板说年终奖会有的，结果年底只发了个文件夹...... 今天是肯德基疯狂星期四，V我50"
-Tags: ["社畜", "心酸", "反转"]
-Reasoning: The core is the sad experience of an overworked programmer. Tone is "心酸" (Sad). Structure contains a twist "反转".
+文案：和你分手20年了，你还是那个能影响我情绪的人，整整爱了你二十八年
+→ core: 伤感情书风格的感情回忆
+→ tags: ["恋爱", "心酸"]
 
-## ❌ Bad Example
-Input: (Same text as above)
-Bad Tags: ["美食", "节日", "正能量"]
-Reasoning: KFC ending != "美食" (Food); Thursday != "节日" (Festival); Sad story != "正能量".
-
-# Output Requirements
-- Return a JSON array of strings.
-- Aim for 3 tags usually, but up to 5 is allowed if the content is complex.
-- Tags implies the core selling point of the copy.`
+文案：KFC和vivo合作推出了一款手机，叫肯德基疯狂星期四vivo50
+→ core: vivo50谐音梗
+→ tags: ["谐音梗", "冷幽默"]`
 }
 
+// === 后处理 ===
+
+// 硬过滤：这些标签区分度太低或经常误判
+const BLOCKED_TAGS = new Set([
+  '反转',
+  '故事',
+  '独白',
+  '美食',
+  '外卖',
+  '节日',
+  '无厘头', // 已改为"荒诞"
+  '科技', // 高频误判
+])
+
 function normalizeTags(tags: string[]): string[] {
-  // 过滤掉空字符串和多余空格，限制在前3个
   const valid = tags
     .map((t) => t.trim())
-    .filter((t) => t.length > 0 && t.length <= 10) // 限制标签长度在10字符以内防止长句被误认为标签
+    .filter((t) => t.length >= 2 && t.length <= 6 && !BLOCKED_TAGS.has(t))
 
   if (valid.length === 0) {
     return [FALLBACK_TAG]
   }
 
-  return valid.slice(0, 5)
+  // 去重并限制数量
+  return [...new Set(valid)].slice(0, 3)
 }
 
-// 创建 OpenAI 客户端（支持自定义 baseURL）
+// === OpenAI 客户端 ===
+
 function createClient(): OpenAI | null {
   const apiKey = process.env.AI_API_KEY
   if (!apiKey) {
@@ -105,10 +143,7 @@ function createClient(): OpenAI | null {
   }
 
   const baseURL =
-    (process.env.AI_API_BASE_URL || 'https://api.openai.com').replace(
-      /\/$/,
-      '',
-    ) + '/v1'
+    (process.env.AI_API_BASE_URL || 'https://api.openai.com').replace(/\/$/, '') + '/v1'
 
   return new OpenAI({
     apiKey,
@@ -119,10 +154,17 @@ function createClient(): OpenAI | null {
   })
 }
 
+// === 主函数 ===
+
 export async function analyzeContent(
   issue: Pick<GitHubIssuePayload, 'title' | 'body'>,
 ): Promise<string[]> {
   const fallback: string[] = []
+
+  // 纯图片跳过
+  if (isImageOnly(issue.title, issue.body || '')) {
+    return fallback
+  }
 
   const client = createClient()
   if (!client) {
@@ -130,24 +172,20 @@ export async function analyzeContent(
   }
 
   const model = process.env.LLM_MODEL || 'gpt-5-nano'
-  const content = `${issue.title}\n\n${issue.body || ''}`.slice(0, 6000)
+  const content = preprocessContent(issue.title, issue.body || '')
+
+  // 预处理后内容太短，跳过
+  if (content.length < 15) {
+    return fallback
+  }
 
   try {
     const response = await client.chat.completions.create({
       model,
-      temperature: 0.2,
+      temperature: 0.1,
       messages: [
         { role: 'system', content: buildSystemPrompt() },
-        {
-          role: 'user',
-          content: `请分析以下文案并生成标签：
-
----
-${content}
----
-
-请运用上述分析流程，输出最贴切的标签。`,
-        },
+        { role: 'user', content: `打标签：\n\n${content}` },
       ],
       tools: [SET_TAGS_TOOL],
       tool_choice: { type: 'function', function: { name: 'set_tags' } },
@@ -155,12 +193,7 @@ ${content}
 
     const toolCall = response.choices[0]?.message?.tool_calls?.[0]
 
-    // 类型守卫：确保是 function 类型的 tool call
-    if (
-      !toolCall ||
-      toolCall.type !== 'function' ||
-      toolCall.function.name !== 'set_tags'
-    ) {
+    if (!toolCall || toolCall.type !== 'function' || toolCall.function.name !== 'set_tags') {
       console.warn('No valid tool call in response')
       return fallback
     }
