@@ -57,7 +57,7 @@ export class GitHubServiceError extends Error {
     public readonly code: string,
     public readonly status?: number,
     public readonly originalError?: any,
-    public readonly rateLimitInfo?: RateLimitStatus
+    public readonly rateLimitInfo?: RateLimitStatus,
   ) {
     super(message)
     this.name = 'GitHubServiceError'
@@ -88,7 +88,7 @@ class RateLimitManager {
   static setCachedRateLimit(status: RateLimitStatus): void {
     this.cache = {
       data: status,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
   }
 
@@ -108,31 +108,37 @@ class RateLimitManager {
     const isNearLimit = minRatio <= this.WARNING_THRESHOLD
 
     const status: RateLimitStatus = {
-      core: core ? {
-        limit: core.limit,
-        remaining: core.remaining,
-        reset: core.reset,
-        used: core.used || (core.limit - core.remaining),
-        resource: 'core'
-      } : { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'core' },
+      core: core
+        ? {
+            limit: core.limit,
+            remaining: core.remaining,
+            reset: core.reset,
+            used: core.used || core.limit - core.remaining,
+            resource: 'core',
+          }
+        : { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'core' },
 
-      search: search ? {
-        limit: search.limit,
-        remaining: search.remaining,
-        reset: search.reset,
-        used: search.used || (search.limit - search.remaining),
-        resource: 'search'
-      } : { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'search' },
+      search: search
+        ? {
+            limit: search.limit,
+            remaining: search.remaining,
+            reset: search.reset,
+            used: search.used || search.limit - search.remaining,
+            resource: 'search',
+          }
+        : { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'search' },
 
-      graphql: graphql ? {
-        limit: graphql.limit,
-        remaining: graphql.remaining,
-        reset: graphql.reset,
-        used: graphql.used || (graphql.limit - graphql.remaining),
-        resource: 'graphql'
-      } : { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'graphql' },
+      graphql: graphql
+        ? {
+            limit: graphql.limit,
+            remaining: graphql.remaining,
+            reset: graphql.reset,
+            used: graphql.used || graphql.limit - graphql.remaining,
+            resource: 'graphql',
+          }
+        : { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'graphql' },
 
-      isNearLimit
+      isNearLimit,
     }
 
     // 缓存状态
@@ -148,7 +154,7 @@ class RateLimitManager {
 export class GitHubService {
   private octokit: Octokit
   private readonly repoOwner = 'vme-im'
-  private readonly repoName = 'vme-app'
+  private readonly repoName = 'vme-content'
 
   constructor(octokit: Octokit) {
     this.octokit = octokit
@@ -174,9 +180,11 @@ export class GitHubService {
       throw new GitHubServiceError('认证信息无效', 'INVALID_TOKEN', 401)
     }
 
-    return new GitHubService(new Octokit({
-      auth: accessToken,
-    }))
+    return new GitHubService(
+      new Octokit({
+        auth: accessToken,
+      }),
+    )
   }
 
   // === 限流检查方法 ===
@@ -202,7 +210,7 @@ export class GitHubService {
         core: { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'core' },
         search: { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'search' },
         graphql: { limit: 0, remaining: 0, reset: 0, used: 0, resource: 'graphql' },
-        isNearLimit: true
+        isNearLimit: true,
       }
     }
   }
@@ -223,7 +231,11 @@ export class GitHubService {
   /**
    * 创建文案 Issue
    */
-  async createJokeIssue(title: string, content: string, labels: string[] = ['文案']): Promise<GitHubIssue> {
+  async createJokeIssue(
+    title: string,
+    content: string,
+    labels: string[] = ['文案'],
+  ): Promise<GitHubIssue> {
     await this.validateRateLimit()
 
     try {
@@ -234,8 +246,8 @@ export class GitHubService {
         body: content.trim(),
         labels: labels,
         headers: {
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
       })
 
       return {
@@ -265,8 +277,8 @@ export class GitHubService {
         content: contentBase64,
         branch: 'assets',
         headers: {
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
       })
 
       return { url: rawUrl, path }
@@ -280,8 +292,8 @@ export class GitHubService {
             path,
             ref: 'assets',
             headers: {
-              'X-GitHub-Api-Version': '2022-11-28'
-            }
+              'X-GitHub-Api-Version': '2022-11-28',
+            },
           })
 
           const downloadUrl = (existing.data as any)?.download_url
@@ -400,7 +412,11 @@ export class GitHubService {
   /**
    * 获取用户特定反应的 ID
    */
-  private async getUserReactionId(issueId: string, reaction: ReactionType, userLogin: string): Promise<string | null> {
+  private async getUserReactionId(
+    issueId: string,
+    reaction: ReactionType,
+    userLogin: string,
+  ): Promise<string | null> {
     const query = `
       query GetIssueReactions($id: ID!) {
         node(id: $id) {
@@ -430,7 +446,7 @@ export class GitHubService {
     if (!response.node) return null
 
     const userReaction = response.node.reactions.nodes.find(
-      r => r.user.login === userLogin && r.content === reaction
+      (r) => r.user.login === userLogin && r.content === reaction,
     )
 
     return userReaction?.id || null
@@ -510,7 +526,7 @@ export class GitHubService {
         'RATE_LIMIT_EXCEEDED',
         403,
         error,
-        rateLimit
+        rateLimit,
       )
     }
 
@@ -552,7 +568,9 @@ export async function getCurrentUser(request?: Request): Promise<{ username: str
 /**
  * 检查是否需要用户认证的操作
  */
-export function requireUserAuth(user: { username: string } | null): asserts user is { username: string } {
+export function requireUserAuth(
+  user: { username: string } | null,
+): asserts user is { username: string } {
   if (!user) {
     throw new GitHubServiceError('需要认证', 'AUTHENTICATION_REQUIRED', 401)
   }
