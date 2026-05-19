@@ -62,8 +62,14 @@ const getContributorsCountCached = unstable_cache(
 )
 
 // 获取所有唯一贡献者数量
+// 数据库不可用时（如 Neon 免费额度耗尽被 paused）降级返回 0，
+// 因本函数被根布局 layout.tsx 调用，抛错会导致整站 500。
 export async function getUniqueContributorsCount(): Promise<number> {
-  return await getContributorsCountCached()
+  try {
+    return await getContributorsCountCached()
+  } catch {
+    return 0
+  }
 }
 
 // 获取所有热门标签
