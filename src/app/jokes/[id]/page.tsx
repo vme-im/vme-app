@@ -29,8 +29,8 @@ function isIssueNumberParam(id: string) {
 }
 
 async function fetchIssueByNumber(issueNumber: number): Promise<IKfcItem | null> {
-  const owner = process.env.GITHUB_OWNER || 'zkl2333'
-  const repo = process.env.GITHUB_REPO || 'vme'
+  const owner = process.env.GITHUB_OWNER || 'vme-im'
+  const repo = process.env.GITHUB_REPO || 'vme-content'
 
   try {
     const response = await fetch(
