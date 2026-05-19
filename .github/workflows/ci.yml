@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # 非阻塞：当前存在与本次改动无关的历史 lint 报错
+      # （src/components/status/Dashboard.tsx 等），先纳入可见性，
+      # 待历史问题清理后可去掉 continue-on-error 转为硬性闸门。
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
+
+# 说明：不在 CI 跑 `next build`，因其会预渲染页面而依赖 DATABASE_URL；
+# 生产构建已由 Vercel 在部署时把关，CI 只做轻量、无密钥依赖的检查。

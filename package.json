@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "vitest run",
     "prepare": "husky"
   },
   "browserslist": "defaults, not ie <= 11",
@@ -47,7 +48,8 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "sharp": "0.33.1",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.6"
   },
   "volta": {
     "node": "24.13.0"
