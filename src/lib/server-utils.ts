@@ -36,17 +36,34 @@ const getTopTagsCached = unstable_cache(
   { revalidate: 600 },
 )
 
+// 全量段子（限制 1000 条）缓存：被排行榜与 /api/items 复用，
+// 避免每次请求都拉一遍 1000 行
+const getAllKfcItemsCached = unstable_cache(
+  async () => {
+    const result = await provider.getItems({ limit: 1000 })
+    return result.items.map(normalizeItemContent)
+  },
+  ['all-kfc-items'],
+  { revalidate: 600 },
+)
+
 // 获取所有KFC项目（不分页）- 服务端专用
 // 注意：对于数据库模式，获取"所有"可能非常大，这里默认限制 1000 条
 export async function getAllKfcItems(): Promise<IKfcItem[]> {
-  const result = await provider.getItems({ limit: 1000 })
-  return result.items.map(normalizeItemContent)
+  return await getAllKfcItemsCached()
 }
+
+// 轻量贡献者计数缓存：单条 COUNT(DISTINCT)，1 小时刷新一次。
+// 此前走 getStats()（5 次全表聚合），且被 layout.tsx 在每个页面调用。
+const getContributorsCountCached = unstable_cache(
+  async () => provider.getContributorsCount(),
+  ['contributors-count'],
+  { revalidate: 3600 },
+)
 
 // 获取所有唯一贡献者数量
 export async function getUniqueContributorsCount(): Promise<number> {
-  const summary = await provider.getStats()
-  return summary.totalContributors
+  return await getContributorsCountCached()
 }
 
 // 获取所有热门标签
@@ -89,22 +106,35 @@ export async function getKfcItemsWithPagination(
  * @param excludeId 要排除的段子ID（通常是 headlineJoke 的 ID）
  * @returns 3个不同作者的段子
  */
+const getFeaturedJokesCached = unstable_cache(
+  async (excludeId?: string) => {
+    const items = await provider.getFeaturedItems(3, excludeId)
+    return items.map(normalizeItemContent)
+  },
+  ['featured-jokes'],
+  { revalidate: 600 },
+)
+
 export async function getFeaturedJokes(excludeId?: string): Promise<IKfcItem[]> {
-  const items = await provider.getFeaturedItems(3, excludeId)
-  return items.map(normalizeItemContent)
+  return await getFeaturedJokesCached(excludeId ?? '')
 }
+
+// 随机候选池缓存：DB 至多每个刷新窗口拉一次池子，
+// 随机性在内存里完成，不再每个请求都打一次 ORDER BY RANDOM()
+const getRandomPoolCached = unstable_cache(
+  async (type?: 'text' | 'meme') => {
+    const { items } = await provider.getItems({ limit: 50, type })
+    return items.map(normalizeItemContent)
+  },
+  ['random-pool'],
+  { revalidate: 300 },
+)
 
 // 获取随机项目
 export async function getRandomKfcItem(type?: 'text' | 'meme'): Promise<IKfcItem> {
-  const item = await provider.getRandomItem(type)
-  if (item) {
-    return normalizeItemContent(item)
-  }
-
-  // Fallback: fetch general items and pick one
-  const { items } = await provider.getItems({ limit: 20, type })
-  if (items.length > 0) {
-    return normalizeItemContent(items[Math.floor(Math.random() * items.length)])
+  const pool = await getRandomPoolCached(type)
+  if (pool.length > 0) {
+    return pool[Math.floor(Math.random() * pool.length)]
   }
   throw new Error('No items found')
 }

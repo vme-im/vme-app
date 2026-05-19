@@ -30,6 +30,7 @@ export interface DataProvider {
   getRandomItem(type?: 'text' | 'meme'): Promise<IKfcItem | null>
   getItemById(id: string): Promise<IKfcItem | null>
   getStats(): Promise<Summary>
+  getContributorsCount(): Promise<number>
   getTopTags(limit?: number): Promise<TopTag[]>
   searchItems(query: string, limit?: number): Promise<IKfcItem[]>
   getContributors(): Promise<Contributor[]>

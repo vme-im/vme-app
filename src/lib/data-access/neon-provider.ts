@@ -1,5 +1,7 @@
 // Neon 数据库提供者
-import { Pool } from '@neondatabase/serverless'
+// 使用 HTTP 驱动（neon），每次查询是一次性 HTTP 请求，无长连接，
+// 让 Neon 计算实例可以更快自动挂起（scale-to-zero），显著降低 CU-hours 消耗。
+import { neon, NeonQueryFunction } from '@neondatabase/serverless'
 import { IKfcItem, Summary, Contributor } from '@/types'
 import { DataProvider, GetItemsParams, PaginatedItems, ItemRow, TopTag } from './types'
 
@@ -20,8 +22,8 @@ function rowToItem(row: ItemRow): IKfcItem {
     title: row.title,
     url: row.url,
     body: row.body,
-    createdAt: row.created_at.toISOString(),
-    updatedAt: row.updated_at.toISOString(),
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString(),
     author: {
       username: row.author_username,
       avatarUrl: getAvatarUrl(row.author_username),
@@ -35,10 +37,15 @@ function rowToItem(row: ItemRow): IKfcItem {
 }
 
 export class NeonProvider implements DataProvider {
-  private pool: Pool
+  private sql: NeonQueryFunction<false, false>
 
   constructor(databaseUrl: string) {
-    this.pool = new Pool({ connectionString: databaseUrl })
+    this.sql = neon(databaseUrl)
+  }
+
+  // HTTP 驱动下 sql.query 直接返回行数组
+  private async query<T>(text: string, params: (string | number)[] = []): Promise<T[]> {
+    return (await this.sql.query(text, params)) as T[]
   }
 
   async getItems(params: GetItemsParams): Promise<PaginatedItems> {
@@ -95,25 +102,19 @@ export class NeonProvider implements DataProvider {
 
     const whereClause = conditions.join(' AND ')
 
-    // 获取数据
+    // 单次查询同时取数据和总数（窗口函数），避免额外一次 count 往返
     const itemsQuery = `
-      SELECT * FROM items
+      SELECT *, COUNT(*) OVER() AS total_count FROM items
       WHERE ${whereClause}
       ORDER BY ${sortColumn} ${sortOrder}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
     queryParams.push(limit, offset)
 
-    const result = await this.pool.query(itemsQuery, queryParams)
-    const rows = result.rows as ItemRow[]
+    const rows = await this.query<ItemRow & { total_count: string }>(itemsQuery, queryParams)
 
     const items = rows.map(rowToItem)
-
-    // 获取总数
-    const countQuery = `SELECT COUNT(*) as count FROM items WHERE ${whereClause}`
-    // remove limit and offset params for count query
-    const countResult = await this.pool.query(countQuery, queryParams.slice(0, -2))
-    const total = parseInt(countResult.rows[0].count, 10)
+    const total = rows.length ? parseInt(rows[0].total_count, 10) : 0
 
     return {
       items,
@@ -128,7 +129,7 @@ export class NeonProvider implements DataProvider {
     const typeCondition = type ? `AND content_type = $1` : ''
     const params = type ? [type] : []
 
-    const result = await this.pool.query(
+    const rows = await this.query<ItemRow>(
       `
       SELECT * FROM items
       WHERE moderation_status = 'approved' ${typeCondition}
@@ -137,13 +138,12 @@ export class NeonProvider implements DataProvider {
     `,
       params,
     )
-    const rows = result.rows as ItemRow[]
 
     return rows.length ? rowToItem(rows[0]) : null
   }
 
   async getItemById(id: string): Promise<IKfcItem | null> {
-    const result = await this.pool.query(
+    const rows = await this.query<ItemRow>(
       `
       SELECT * FROM items
       WHERE id = $1 AND moderation_status = 'approved'
@@ -151,26 +151,34 @@ export class NeonProvider implements DataProvider {
     `,
       [id],
     )
-    const rows = result.rows as ItemRow[]
 
     return rows.length ? rowToItem(rows[0]) : null
   }
 
-  async getStats(): Promise<Summary> {
-    // 实时查询总数
-    const totalResult = await this.pool.query(`
-      SELECT COUNT(*) as total FROM items WHERE moderation_status = 'approved'
-    `)
-    const totalItems = parseInt(totalResult.rows[0].total, 10)
-
-    // 实时查询贡献者数
-    const contributorResult = await this.pool.query(`
+  // 轻量贡献者计数：单条 COUNT(DISTINCT)，供布局等高频路径使用，
+  // 避免为了一个数字而跑 getStats() 的多次全表聚合。
+  async getContributorsCount(): Promise<number> {
+    const rows = await this.query<{ total: string }>(`
       SELECT COUNT(DISTINCT author_username) as total FROM items WHERE moderation_status = 'approved'
     `)
-    const totalContributors = parseInt(contributorResult.rows[0].total, 10)
+    return parseInt(rows[0].total, 10)
+  }
+
+  async getStats(): Promise<Summary> {
+    // 实时查询总数
+    const totalRows = await this.query<{ total: string }>(`
+      SELECT COUNT(*) as total FROM items WHERE moderation_status = 'approved'
+    `)
+    const totalItems = parseInt(totalRows[0].total, 10)
+
+    // 实时查询贡献者数
+    const contributorRows = await this.query<{ total: string }>(`
+      SELECT COUNT(DISTINCT author_username) as total FROM items WHERE moderation_status = 'approved'
+    `)
+    const totalContributors = parseInt(contributorRows[0].total, 10)
 
     // 实时查询月度统计 (使用 UTC+8)
-    const monthlyResult = await this.pool.query(`
+    const monthlyRows = await this.query<{ month: string; count: string }>(`
       SELECT
         TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'YYYY-MM') as month,
         COUNT(*) as count
@@ -179,7 +187,7 @@ export class NeonProvider implements DataProvider {
       GROUP BY month
       ORDER BY month DESC
     `)
-    const months = monthlyResult.rows.map((row: { month: string; count: string }) => ({
+    const months = monthlyRows.map((row) => ({
       month: row.month,
       count: parseInt(row.count, 10),
     }))
@@ -201,7 +209,7 @@ export class NeonProvider implements DataProvider {
   }
 
   async getTopTags(limit = 4): Promise<TopTag[]> {
-    const result = await this.pool.query(
+    const rows = await this.query<{ tag: string; count: number }>(
       `
       SELECT tag, COUNT(*)::int AS count
       FROM items, unnest(tags) AS tag
@@ -217,14 +225,14 @@ export class NeonProvider implements DataProvider {
       [limit],
     )
 
-    return result.rows.map((row: { tag: string; count: number }) => ({
+    return rows.map((row) => ({
       tag: row.tag,
       count: row.count,
     }))
   }
 
   async searchItems(query: string, limit = 50): Promise<IKfcItem[]> {
-    const result = await this.pool.query(
+    const rows = await this.query<ItemRow>(
       `
       SELECT * FROM items
       WHERE
@@ -238,14 +246,13 @@ export class NeonProvider implements DataProvider {
     `,
       [query, limit],
     )
-    const rows = result.rows as ItemRow[]
 
     return rows.map(rowToItem)
   }
 
   async getContributors(): Promise<Contributor[]> {
     // 从 items 表实时聚合
-    const result = await this.pool.query(`
+    const rows = await this.query<{ username: string; count: string }>(`
       SELECT
         author_username as username,
         COUNT(*) as count
@@ -255,7 +262,7 @@ export class NeonProvider implements DataProvider {
       ORDER BY count DESC
     `)
 
-    return result.rows.map((row: { username: string; count: string }) => ({
+    return rows.map((row) => ({
       username: row.username,
       avatarUrl: getAvatarUrl(row.username),
       url: getUserUrl(row.username),
@@ -265,7 +272,7 @@ export class NeonProvider implements DataProvider {
 
   async getTopContributors(limit = 10): Promise<Contributor[]> {
     // 从 items 表实时聚合
-    const result = await this.pool.query(
+    const rows = await this.query<{ username: string; count: string }>(
       `
       SELECT
         author_username as username,
@@ -279,7 +286,7 @@ export class NeonProvider implements DataProvider {
       [limit],
     )
 
-    return result.rows.map((row: { username: string; count: string }) => ({
+    return rows.map((row) => ({
       username: row.username,
       avatarUrl: getAvatarUrl(row.username),
       url: getUserUrl(row.username),
@@ -300,7 +307,7 @@ export class NeonProvider implements DataProvider {
     const params = excludeId ? [excludeId] : []
     const limitParam = `$${excludeId ? 2 : 1}`
 
-    const result = await this.pool.query(
+    const rows = await this.query<ItemRow>(
       `
       WITH featured AS (
         -- 为每个作者选择其互动最多的段子
@@ -322,14 +329,13 @@ export class NeonProvider implements DataProvider {
       [...params, limit],
     )
 
-    const rows = result.rows as ItemRow[]
     return rows.map(rowToItem)
   }
 
   // 健康检查
   async healthCheck(): Promise<boolean> {
     try {
-      await this.pool.query('SELECT 1')
+      await this.sql.query('SELECT 1')
       return true
     } catch {
       return false
