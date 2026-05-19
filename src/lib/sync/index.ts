@@ -1,12 +1,6 @@
 // 同步层入口模块
 import { neon, NeonQueryFunction } from '@neondatabase/serverless'
-import {
-  SyncRequest,
-  SyncResult,
-  ItemToSync,
-  GitHubIssuePayload,
-  SyncLogEntry,
-} from './types'
+import { SyncRequest, SyncResult, ItemToSync, GitHubIssuePayload, SyncLogEntry } from './types'
 import {
   fetchAllApprovedIssues,
   fetchIssuesSinceForRepo,
@@ -14,7 +8,6 @@ import {
   payloadToItemSync,
 } from './github-fetcher'
 import { getSyncRepos } from './types'
-import { analyzeContent } from './content-analyzer'
 
 // 获取数据库连接
 function getDb() {
@@ -32,7 +25,7 @@ function createSyncResult(
   synced: number,
   skipped: number,
   errors: string[],
-  startTime: number
+  startTime: number,
 ): SyncResult {
   return {
     success,
@@ -45,23 +38,22 @@ function createSyncResult(
   }
 }
 
-
 async function createSyncLog(
   sql: NeonQueryFunction<false, false>,
-  payload: { mode: string; source: string }
+  payload: { mode: string; source: string },
 ): Promise<number> {
-  const result = await sql`
+  const result = (await sql`
     INSERT INTO sync_logs (mode, source, items_synced, started_at)
     VALUES (${payload.mode}, ${payload.source}, 0, NOW())
     RETURNING id
-  ` as { id: number }[]
+  `) as { id: number }[]
 
   return result[0]?.id ?? 0
 }
 
 async function finishSyncLog(
   sql: NeonQueryFunction<false, false>,
-  payload: { id: number; items_synced: number; error: string | null }
+  payload: { id: number; items_synced: number; error: string | null },
 ) {
   await sql`
     UPDATE sync_logs
@@ -73,14 +65,14 @@ async function finishSyncLog(
 }
 
 async function getLastIncrementalSyncTimes(
-  sql: NeonQueryFunction<false, false>
+  sql: NeonQueryFunction<false, false>,
 ): Promise<Map<string, Date>> {
-  const result = await sql`
+  const result = (await sql`
     SELECT source, MAX(finished_at) as last_finished
     FROM sync_logs
     WHERE mode = 'incremental' AND error IS NULL AND finished_at IS NOT NULL
     GROUP BY source
-  ` as { source: string; last_finished: Date | null }[]
+  `) as { source: string; last_finished: Date | null }[]
 
   const map = new Map<string, Date>()
   for (const row of result) {
@@ -94,7 +86,10 @@ async function getLastIncrementalSyncTimes(
 /**
  * Upsert 单条 Item 到数据库
  */
-async function upsertItem(sql: NeonQueryFunction<false, false>, item: ItemToSync): Promise<boolean> {
+async function upsertItem(
+  sql: NeonQueryFunction<false, false>,
+  item: ItemToSync,
+): Promise<boolean> {
   try {
     await sql`
       INSERT INTO items (
@@ -147,7 +142,7 @@ async function upsertItem(sql: NeonQueryFunction<false, false>, item: ItemToSync
  */
 async function upsertItemsBatch(
   sql: NeonQueryFunction<false, false>,
-  items: ItemToSync[]
+  items: ItemToSync[],
 ): Promise<{ synced: number; skipped: number }> {
   if (items.length === 0) {
     return { synced: 0, skipped: 0 }
@@ -160,16 +155,16 @@ async function upsertItemsBatch(
     const batch = items.slice(i, i + BATCH_SIZE)
 
     // 准备批量数据数组
-    const ids = batch.map(item => item.id)
-    const titles = batch.map(item => item.title)
-    const urls = batch.map(item => item.url)
-    const bodies = batch.map(item => item.body)
-    const createdAts = batch.map(item => item.created_at)
-    const updatedAts = batch.map(item => item.updated_at)
-    const authorUsernames = batch.map(item => item.author_username)
-    const sourceRepos = batch.map(item => item.source_repo)
-    const contentTypes = batch.map(item => item.content_type)
-    const reactionsCounts = batch.map(item => item.reactions_count)
+    const ids = batch.map((item) => item.id)
+    const titles = batch.map((item) => item.title)
+    const urls = batch.map((item) => item.url)
+    const bodies = batch.map((item) => item.body)
+    const createdAts = batch.map((item) => item.created_at)
+    const updatedAts = batch.map((item) => item.updated_at)
+    const authorUsernames = batch.map((item) => item.author_username)
+    const sourceRepos = batch.map((item) => item.source_repo)
+    const contentTypes = batch.map((item) => item.content_type)
+    const reactionsCounts = batch.map((item) => item.reactions_count)
 
     try {
       await sql`
@@ -231,7 +226,7 @@ async function upsertItemsBatch(
  * 获取各仓库上次更新时间 (从 sync_logs 表推断)
  */
 async function getLastUpdatedTimes(
-  sql: NeonQueryFunction<false, false>
+  sql: NeonQueryFunction<false, false>,
 ): Promise<Map<string, Date>> {
   return getLastIncrementalSyncTimes(sql)
 }
@@ -241,12 +236,12 @@ async function getLastUpdatedTimes(
  */
 export async function getRecentSyncLogs(limit: number = 20): Promise<SyncLogEntry[]> {
   const sql = getDb()
-  const result = await sql`
+  const result = (await sql`
     SELECT mode, source, items_synced, started_at, finished_at, error
     FROM sync_logs
     ORDER BY started_at DESC
     LIMIT ${limit}
-  ` as SyncLogEntry[]
+  `) as SyncLogEntry[]
 
   return result
 }
@@ -257,7 +252,7 @@ export async function getRecentSyncLogs(limit: number = 20): Promise<SyncLogEntr
 export async function syncSingleIssue(
   payload: GitHubIssuePayload,
   repo: { owner: string; name: string },
-  overrides?: { content_type?: 'text' | 'meme'; tags?: string[] }
+  overrides?: { content_type?: 'text' | 'meme'; tags?: string[] },
 ): Promise<SyncResult> {
   const startTime = Date.now()
   const sql = getDb()
@@ -316,9 +311,7 @@ export async function syncIncremental(since?: string): Promise<SyncResult> {
 
     for (const { owner, repo, labels, typeLabels } of repos) {
       const sourceRepo = `${owner}/${repo}`
-      const sinceDate = since
-        ? new Date(since)
-        : (lastUpdatedTimes.get(sourceRepo) || defaultSince)
+      const sinceDate = since ? new Date(since) : lastUpdatedTimes.get(sourceRepo) || defaultSince
 
       console.log(`Fetching issues since: ${sinceDate.toISOString()} (${sourceRepo})`)
 
@@ -330,10 +323,10 @@ export async function syncIncremental(since?: string): Promise<SyncResult> {
           repo,
           labels,
           sinceDate,
-          typeLabels
+          typeLabels,
         )
         const items = issuesWithRepo.map(({ issue, typeLabels }) =>
-          issueToItemSync(issue, sourceRepo, typeLabels)
+          issueToItemSync(issue, sourceRepo, typeLabels),
         )
 
         console.log(`Found ${items.length} issues to sync (${sourceRepo})`)
@@ -380,7 +373,7 @@ export async function syncFull(): Promise<SyncResult> {
     // 抓取全部数据
     const issuesWithRepo = await fetchAllApprovedIssues()
     const items = issuesWithRepo.map(({ issue, sourceRepo, typeLabels }) =>
-      issueToItemSync(issue, sourceRepo, typeLabels)
+      issueToItemSync(issue, sourceRepo, typeLabels),
     )
 
     console.log(`Found ${items.length} issues to sync`)
@@ -431,61 +424,6 @@ export async function sync(request: SyncRequest): Promise<SyncResult> {
     case 'full':
     default:
       return syncFull()
-  }
-}
-
-/**
- * 为单条段子触发AI分类
- * 如果段子已有标签则跳过，否则调用AI分类并更新数据库
- *
- * @param itemId 段子ID
- * @returns 是否成功分类
- */
-export async function classifyItem(itemId: string): Promise<{ success: boolean; tags: string[] }> {
-  const sql = getDb()
-
-  try {
-    // 1. 查询段子当前状态
-    const result = await sql`
-      SELECT id, title, body, tags
-      FROM items
-      WHERE id = ${itemId}
-        AND moderation_status = 'approved'
-    ` as { id: string; title: string; body: string; tags: string[] | null }[]
-
-    if (!result || result.length === 0) {
-      console.warn(`Item not found: ${itemId}`)
-      return { success: false, tags: [] }
-    }
-
-    const item = result[0]
-
-    // 2. 检查是否已有标签
-    if (item.tags && item.tags.length > 0) {
-      console.log(`Item ${itemId} already has tags:`, item.tags)
-      return { success: true, tags: item.tags }
-    }
-
-    // 3. 调用AI分类
-    console.log(`AI classifying item: ${itemId}`)
-    const tags = await analyzeContent({
-      title: item.title,
-      body: item.body,
-    })
-
-    // 4. 更新数据库
-    await sql`
-      UPDATE items
-      SET tags = ${tags},
-          synced_at = NOW()
-      WHERE id = ${itemId}
-    `
-
-    console.log(`Item ${itemId} classified with tags:`, tags)
-    return { success: true, tags }
-  } catch (error) {
-    console.error(`Failed to classify item ${itemId}:`, error)
-    return { success: false, tags: [] }
   }
 }
 

@@ -1,7 +1,6 @@
 // 同步 API 路由
 import { NextRequest, NextResponse } from 'next/server'
 import { waitUntil } from '@vercel/functions'
-import { analyzeContent } from '@/lib/sync/content-analyzer'
 import { sync, SyncRequest } from '@/lib/sync'
 
 /**
@@ -41,7 +40,7 @@ function respondAccepted(mode: SyncRequest['mode']) {
       mode,
       async: true,
     },
-    { status: 202 }
+    { status: 202 },
   )
 }
 
@@ -67,7 +66,7 @@ export async function POST(request: NextRequest) {
     })
     return NextResponse.json(
       { error: 'Unauthorized', message: 'Invalid or missing authentication' },
-      { status: 401 }
+      { status: 401 },
     )
   }
 
@@ -98,26 +97,16 @@ export async function POST(request: NextRequest) {
     if (body.mode === 'single' && (!body.issue || !body.repo)) {
       return NextResponse.json(
         { error: 'Bad Request', message: 'Single mode requires issue and repo' },
-        { status: 400 }
+        { status: 400 },
       )
     }
-
 
     const runSync = async () => {
       const analyzeStartedAt = Date.now()
       if (body.mode === 'single' && body.issue) {
         const issueBody = body.issue.body || ''
         if (!body.content_type) {
-          body.content_type = /!\[.*?\]\(https?:\/\/[^\s)]+\)/.test(issueBody)
-            ? 'meme'
-            : 'text'
-        }
-
-        if (body.tags === undefined) {
-          body.tags = await analyzeContent({
-            title: body.issue.title,
-            body: issueBody,
-          })
+          body.content_type = /!\[.*?\]\(https?:\/\/[^\s)]+\)/.test(issueBody) ? 'meme' : 'text'
         }
       }
       console.log('Sync analyze done', {
@@ -145,7 +134,7 @@ export async function POST(request: NextRequest) {
       waitUntil(
         runSync().catch((error) => {
           console.error('Sync background task failed:', error)
-        })
+        }),
       )
 
       return respondAccepted(body.mode)
@@ -173,7 +162,7 @@ export async function POST(request: NextRequest) {
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -186,10 +175,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const auth = authenticate(request)
   if (!auth.valid) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   return NextResponse.json({

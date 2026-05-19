@@ -16,7 +16,6 @@ import CopyButton from '@/components/shared/CopyButton'
 import InteractiveReactions from '@/components/reactions/Interactive'
 import NeoButton from '@/components/shared/NeoButton'
 import { IKfcItem } from '@/types'
-import ClassifyTrigger from '@/components/jokes/ClassifyTrigger'
 
 interface PageProps {
   params: Promise<{
@@ -258,12 +257,23 @@ export default async function JokeDetailPage(props0: PageProps) {
                 </div>
               </div>
 
-              {/* 标签列表 - 自动后台加载 */}
-              <JokeTags
-                id={joke.id}
-                initialTags={joke.tags}
-                approved={(joke as any)._approved ?? true}
-              />
+              {/* 标签（来自快照，静态渲染） */}
+              {joke.tags && joke.tags.length > 0 && (
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 border-2 border-black bg-white px-3 py-1 text-sm font-bold shadow-neo-sm">
+                    <i className="fa fa-tags text-kfc-red"></i>
+                    <span>标签</span>
+                  </div>
+                  {joke.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-block transform cursor-default border-2 border-black bg-kfc-yellow px-3 py-1 text-sm font-black text-black shadow-neo-sm transition-all odd:rotate-1 even:-rotate-1 hover:-translate-y-1 hover:shadow-neo"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 作者信息 */}
@@ -340,20 +350,4 @@ export default async function JokeDetailPage(props0: PageProps) {
       </div>
     </div>
   )
-}
-
-// 异步标签组件
-async function JokeTags({
-  id,
-  initialTags,
-  approved,
-}: {
-  id: string
-  initialTags?: string[]
-  approved: boolean
-}) {
-  const tags = initialTags || []
-
-  // 直接返回 ClassifyTrigger 组件，它会自动处理所有逻辑
-  return <ClassifyTrigger itemId={id} initialTags={tags} approved={approved} />
 }
