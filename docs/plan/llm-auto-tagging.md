@@ -1,3 +1,5 @@
+> ⚠️ **已被取代（2026-05-19，历史存档）**：本文所述设计（single-sync LLM 打标 + Neon 为库 + 路径相关打标）已被**跨仓权威规格**取代，该规格已移至 vme-content：[`vme-content/docs/architecture.md`](https://github.com/vme-im/vme-content/blob/main/docs/architecture.md)。本文仅作历史参考，**实施一律以该规格为准**。（删除待用户确认）
+
 # LLM 自动打标设计（Actions 版）
 
 ## 概述
@@ -42,11 +44,13 @@ upsert 写入 Neon（幂等）
 ## 事件来源与接入策略
 
 ### 自有仓库（同组织）
+
 - 由 Actions 触发（实时或近实时）
 - 触发事件：`issues` 的 `labeled`
 - 过滤：label 为 `文案` 或 `梗图`（当前审核入口）
 
 ### 第三方仓库（仅采集）
+
 - **不接入 Webhook**
 - 使用 `vme-app` 的增量同步（cron 或手动）
 
@@ -73,9 +77,9 @@ upsert 写入 Neon（幂等）
 
 ### content_type（互斥，必选）
 
-| 值 | 说明 |
-|---|---|
-| `text` | 纯文字文案 |
+| 值     | 说明            |
+| ------ | --------------- |
+| `text` | 纯文字文案      |
 | `meme` | 包含图片/表情包 |
 
 ### tags（多选，0-3 个）
@@ -127,6 +131,7 @@ upsert 写入 Neon（幂等）
 ### types
 
 `SyncRequest` 允许携带：
+
 - `content_type?: 'text' | 'meme'`
 - `tags?: string[]`
 
