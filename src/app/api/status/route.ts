@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GitHubService, GitHubServiceError } from '@/lib/github-service'
-import { getRecentSyncLogs } from '@/lib/sync'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,8 +11,8 @@ export async function GET(request: NextRequest) {
           status: 'unknown',
           rateLimit: null,
           error: null,
-        }
-      }
+        },
+      },
     }
 
     // 检查用户token状态
@@ -62,19 +61,9 @@ export async function GET(request: NextRequest) {
       } else {
         status.github.userToken.status = 'not_available'
         const statusCode = error?.status || error?.response?.status || 'Unknown'
-        status.github.userToken.error = error instanceof Error
-          ? `${error.message} (${statusCode})`
-          : 'Unknown error'
+        status.github.userToken.error =
+          error instanceof Error ? `${error.message} (${statusCode})` : 'Unknown error'
       }
-    }
-
-    // 获取最近同步记录
-    try {
-      status.syncLogs = await getRecentSyncLogs(10)
-    } catch (error) {
-      console.error('Failed to fetch sync logs:', error)
-      status.syncLogs = []
-      status.syncLogsError = error instanceof Error ? error.message : 'Unknown error'
     }
 
     return NextResponse.json(status, {
@@ -82,7 +71,6 @@ export async function GET(request: NextRequest) {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     })
-
   } catch (error) {
     console.error('Error checking system status:', error)
     return NextResponse.json(
@@ -91,7 +79,7 @@ export async function GET(request: NextRequest) {
         message: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
