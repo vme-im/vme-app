@@ -16,7 +16,11 @@ jobs:
           node-version: 24
           cache: npm
 
-      - run: npm ci
+      # 用 npm install 而非 npm ci：开发机为 Windows、CI 为 Linux，npm
+      # 跨平台 lockfile 会漏记对方平台的 optional 原生/wasm 兜底依赖，
+      # npm ci 严格校验会失败；npm install 容忍并自动补全（与 Vercel
+      # 默认安装方式一致）。
+      - run: npm install
 
       # 非阻塞：当前存在与本次改动无关的历史 lint 报错
       # （src/components/status/Dashboard.tsx 等），先纳入可见性，
