@@ -41,8 +41,8 @@ const ReactionsUI = memo(function ReactionsUI({
   return (
     <>
       {warning && (
-        <span className="mb-2 inline-block rounded-full border border-amber-200 bg-amber-100 px-2 py-1 text-xs text-amber-700">
-          {warning}
+        <span className="mb-2 inline-block border-2 border-black bg-kfc-yellow px-2 py-0.5 text-xs font-black text-black shadow-neo-sm">
+          ⚠ {warning}
         </span>
       )}
       <ReactionsContainer className={className}>
@@ -71,4 +71,3 @@ const ReactionsUI = memo(function ReactionsUI({
 })
 
 export default ReactionsUI
-

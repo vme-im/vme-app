@@ -158,3 +158,36 @@
 #mobile-menu:not(.hidden) {
   animation: slideDown 0.3s ease-out;
 }
+
+/* 跑马灯动画 */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@utility animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+@utility animate-marquee-slow {
+  animation: marquee 45s linear infinite;
+}
+
+/* 闪烁动画（用于 HOT 标签） */
+@keyframes neo-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@utility animate-neo-blink {
+  animation: neo-blink 1.5s ease-in-out infinite;
+}

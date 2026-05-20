@@ -65,7 +65,7 @@ const JokeCard = memo(function JokeCard({
   return (
     <div
       className={clsx(
-        'group relative border-3 border-black bg-white p-4 shadow-neo transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-neo-xl md:p-6',
+        'group relative border-3 border-black bg-white p-4 shadow-neo transition-all hover:-translate-y-1 hover:shadow-neo-xl md:p-6',
         className,
       )}
     >

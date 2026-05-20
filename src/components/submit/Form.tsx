@@ -20,7 +20,10 @@ export default function SubmitForm() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [pendingFiles, setPendingFiles] = useState<Map<string, File>>(new Map())
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null)
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error' | 'info'
+    text: string
+  } | null>(null)
 
   // 登录后恢复表单数据
   useEffect(() => {
@@ -50,20 +53,20 @@ export default function SubmitForm() {
 
   const handleFileSelected = (file: File) => {
     const previewUrl = URL.createObjectURL(file)
-    setPendingFiles(prev => new Map(prev).set(previewUrl, file))
-    setUploadedImages(prev => [...prev, previewUrl])
+    setPendingFiles((prev) => new Map(prev).set(previewUrl, file))
+    setUploadedImages((prev) => [...prev, previewUrl])
   }
 
   const handleImageRemoved = (url: string) => {
     if (url.startsWith('blob:')) {
       URL.revokeObjectURL(url)
-      setPendingFiles(prev => {
+      setPendingFiles((prev) => {
         const newMap = new Map(prev)
         newMap.delete(url)
         return newMap
       })
     }
-    setUploadedImages(prev => prev.filter(img => img !== url))
+    setUploadedImages((prev) => prev.filter((img) => img !== url))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,7 +109,7 @@ export default function SubmitForm() {
 
               const res = await fetch('/api/image-upload', {
                 method: 'POST',
-                body: formData
+                body: formData,
               })
 
               const data = await res.json()
@@ -125,7 +128,7 @@ export default function SubmitForm() {
         try {
           const results = await Promise.all(uploadPromises)
           // 按原顺序重建数组
-          finalImages = results.sort((a, b) => a.index - b.index).map(r => r.url)
+          finalImages = results.sort((a, b) => a.index - b.index).map((r) => r.url)
         } catch (error: any) {
           setMessage({ type: 'error', text: error.message || '图片上传失败，请重试' })
           setIsSubmitting(false)
@@ -138,7 +141,7 @@ export default function SubmitForm() {
 
       // 如果是梗图模式，将图片追加到内容末尾
       if (activeTab === 'meme' && finalImages.length > 0) {
-        const imageMarkdown = finalImages.map(url => `![](${url})`).join('\n')
+        const imageMarkdown = finalImages.map((url) => `![](${url})`).join('\n')
         finalContent = finalContent ? `${finalContent}\n\n${imageMarkdown}` : imageMarkdown
       }
 
@@ -159,7 +162,10 @@ export default function SubmitForm() {
       const data = await response.json()
 
       if (data.success) {
-        setMessage({ type: 'success', text: activeTab === 'meme' ? '梗图上交成功！' : '文案上交成功！正在跳转到详情页...' })
+        setMessage({
+          type: 'success',
+          text: activeTab === 'meme' ? '梗图上交成功！' : '文案上交成功！正在跳转到详情页...',
+        })
         setTitle('')
         setContent('')
         setUploadedImages([])
@@ -167,7 +173,8 @@ export default function SubmitForm() {
         // 清理可能存在的草稿
         localStorage.removeItem(FORM_STORAGE_KEY)
 
-        const targetUrl = data.detailPath || (data.issueNumber ? `/jokes/${data.issueNumber}` : data.issueUrl)
+        const targetUrl =
+          data.detailPath || (data.issueNumber ? `/jokes/${data.issueNumber}` : data.issueUrl)
 
         if (targetUrl) {
           setTimeout(() => {
@@ -181,16 +188,19 @@ export default function SubmitForm() {
           const isExpired = errorMsg.includes('无效') || errorMsg.includes('过期')
 
           // 保存表单数据
-          localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify({
-            title,
-            content,
-            mode: activeTab,
-            images: uploadedImages.filter(url => !url.startsWith('blob:'))
-          }))
+          localStorage.setItem(
+            FORM_STORAGE_KEY,
+            JSON.stringify({
+              title,
+              content,
+              mode: activeTab,
+              images: uploadedImages.filter((url) => !url.startsWith('blob:')),
+            }),
+          )
 
           setMessage({
             type: 'error',
-            text: isExpired ? '登录已过期，请重新登录' : '请先登录以继续提交'
+            text: isExpired ? '登录已过期，请重新登录' : '请先登录以继续提交',
           })
 
           // 显示登录确认弹窗
@@ -215,12 +225,15 @@ export default function SubmitForm() {
   const handleLoginClick = () => {
     // 保存表单数据
     if (title.trim() || content.trim() || uploadedImages.length > 0) {
-      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify({
-        title,
-        content,
-        mode: activeTab,
-        images: uploadedImages.filter(url => !url.startsWith('blob:'))
-      }))
+      localStorage.setItem(
+        FORM_STORAGE_KEY,
+        JSON.stringify({
+          title,
+          content,
+          mode: activeTab,
+          images: uploadedImages.filter((url) => !url.startsWith('blob:')),
+        }),
+      )
     }
 
     // 显示登录确认弹窗
@@ -232,8 +245,8 @@ export default function SubmitForm() {
 
   if (status === 'loading') {
     return (
-      <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+      <div className="flex h-32 items-center justify-center border-4 border-black bg-white p-8 shadow-neo">
+        <span className="animate-neo-blink text-3xl font-black uppercase text-black">Loading…</span>
       </div>
     )
   }
@@ -242,7 +255,10 @@ export default function SubmitForm() {
     return (
       <div className="mx-auto max-w-2xl border-4 border-black bg-white p-6 shadow-neo-xl md:p-8">
         <h2 className="mb-4 text-center text-3xl font-black italic uppercase text-black md:text-4xl">
-          上交我的<span className="ml-2 text-kfc-red underline decoration-4 underline-offset-4">疯四文案</span>
+          上交我的
+          <span className="ml-2 text-kfc-red underline decoration-4 underline-offset-4">
+            疯四文案
+          </span>
         </h2>
         <p className="mb-6 text-center font-bold text-gray-600">
           请先登录 GitHub 账号以提交您的创意
@@ -252,12 +268,7 @@ export default function SubmitForm() {
             onClick={handleLoginClick}
             className="flex min-h-[48px] items-center gap-2 border-3 border-black bg-kfc-yellow px-6 py-2 text-lg font-black uppercase text-black shadow-neo transition-all hover:-translate-y-1 hover:bg-black hover:text-white hover:shadow-neo-lg"
           >
-            <svg
-              className="h-6 w-6"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
+            <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fillRule="evenodd"
                 d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
@@ -277,22 +288,24 @@ export default function SubmitForm() {
         上交我的<span className="text-kfc-red underline decoration-4">疯四文案</span>
       </h2>
 
-      <div className="mb-6 flex space-x-4 border-b-2 border-gray-200 pb-1">
+      <div className="mb-6 flex gap-2 border-b-4 border-black pb-4">
         <button
           onClick={() => setActiveTab('text')}
-          className={`pb-2 text-lg font-black uppercase transition-colors ${activeTab === 'text'
-            ? 'border-b-4 border-kfc-red text-black'
-            : 'text-gray-400 hover:text-gray-600'
-            }`}
+          className={`border-2 border-black px-4 py-2 text-sm font-black uppercase shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
+            activeTab === 'text'
+              ? 'bg-kfc-red text-white'
+              : 'bg-white text-black hover:bg-black hover:text-white'
+          }`}
         >
           📝 纯文本 / Text
         </button>
         <button
           onClick={() => setActiveTab('meme')}
-          className={`pb-2 text-lg font-black uppercase transition-colors ${activeTab === 'meme'
-            ? 'border-b-4 border-kfc-red text-black'
-            : 'text-gray-400 hover:text-gray-600'
-            }`}
+          className={`border-2 border-black px-4 py-2 text-sm font-black uppercase shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
+            activeTab === 'meme'
+              ? 'bg-kfc-red text-white'
+              : 'bg-white text-black hover:bg-black hover:text-white'
+          }`}
         >
           🖼️ 梗图 / Meme
         </button>
@@ -304,9 +317,7 @@ export default function SubmitForm() {
             <label htmlFor="title" className="block text-sm font-black uppercase text-black">
               标题 / Title *
             </label>
-            <p className="text-xs font-bold text-gray-500">
-              {title.length}/100
-            </p>
+            <p className="text-xs font-bold text-gray-500">{title.length}/100</p>
           </div>
           <input
             type="text"
@@ -341,15 +352,13 @@ export default function SubmitForm() {
             <label htmlFor="content" className="block text-sm font-black uppercase text-black">
               {activeTab === 'meme' ? '补充说明 / Description (Optional)' : '文案内容 / Content *'}
             </label>
-            <p className="text-xs font-bold text-gray-500">
-              {content.length}/2000
-            </p>
+            <p className="text-xs font-bold text-gray-500">{content.length}/2000</p>
           </div>
           <textarea
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={activeTab === 'meme' ? "可以说说这张图的梗点..." : "开始你的表演..."}
+            placeholder={activeTab === 'meme' ? '可以说说这张图的梗点...' : '开始你的表演...'}
             rows={6}
             className="w-full resize-none border-2 border-black bg-white px-4 py-3 font-bold text-black shadow-neo-sm transition-all placeholder:text-gray-400 focus:bg-kfc-cream focus:shadow-neo focus:outline-hidden"
             disabled={isSubmitting}
@@ -358,10 +367,16 @@ export default function SubmitForm() {
         </div>
 
         {message && (
-          <div className={`border-2 border-black p-4 font-bold shadow-neo-sm ${message.type === 'success'
-            ? 'bg-green-100 text-green-800'
-            : 'bg-red-100 text-red-800'
-            }`}>
+          <div
+            className={`border-2 border-black p-4 font-black shadow-neo-sm uppercase ${
+              message.type === 'success'
+                ? 'bg-kfc-yellow text-black'
+                : message.type === 'info'
+                  ? 'bg-white text-black'
+                  : 'bg-kfc-red text-white'
+            }`}
+          >
+            {message.type === 'success' ? '✓ ' : message.type === 'error' ? '✗ ' : '→ '}
             {message.text}
           </div>
         )}
@@ -390,7 +405,12 @@ export default function SubmitForm() {
           <li>• 请确保内容原创，避免重复提交</li>
           <li>• 内容应当积极健康，符合社区规范</li>
           <li>• 提交后将自动创建 GitHub Issue，经审核后显示</li>
-          <li>• {activeTab === 'meme' ? '梗图将自动合成为 Markdown 格式提交' : '文案支持 Markdown 格式 (但不推荐过度使用)'}</li>
+          <li>
+            •{' '}
+            {activeTab === 'meme'
+              ? '梗图将自动合成为 Markdown 格式提交'
+              : '文案支持 Markdown 格式 (但不推荐过度使用)'}
+          </li>
         </ul>
       </div>
     </div>

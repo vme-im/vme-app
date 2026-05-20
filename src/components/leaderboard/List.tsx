@@ -119,10 +119,12 @@ export default async function LeaderboardServer({ sortBy = 'score' }: Leaderboar
 
   if (!data) {
     return (
-      <div className="rounded-lg bg-red-50 p-8 text-center">
+      <div className="border-4 border-black bg-white p-8 text-center shadow-neo">
         <div className="text-6xl">😅</div>
-        <h2 className="mt-4 text-2xl font-bold text-red-600">英雄榜暂时无法加载</h2>
-        <p className="mt-2 text-red-500">请稍后再试</p>
+        <h2 className="mt-4 text-2xl font-black uppercase italic text-black">英雄榜暂时无法加载</h2>
+        <p className="mt-2 border-2 border-black bg-kfc-yellow px-4 py-1 font-bold text-black inline-block shadow-neo-sm">
+          请稍后再试
+        </p>
       </div>
     )
   }
@@ -130,7 +132,7 @@ export default async function LeaderboardServer({ sortBy = 'score' }: Leaderboar
   return (
     <>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-800">
+        <h2 className="flex items-center gap-2 text-2xl font-black uppercase italic text-black">
           <i className="fa fa-book text-kfc-red"></i> V50 英雄榜
         </h2>
 

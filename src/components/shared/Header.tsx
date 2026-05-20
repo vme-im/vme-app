@@ -103,8 +103,14 @@ const Header = memo(function Header({ contributorsCount }: HeaderProps) {
             })}
           </nav>
 
-          {/* 右侧：登录按钮 */}
+          {/* 右侧：在线人数 + 登录按钮 */}
           <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-1.5 border-2 border-black bg-kfc-yellow px-3 py-1 shadow-neo-sm lg:flex">
+              <span className="animate-neo-blink h-2 w-2 rounded-full bg-green-600"></span>
+              <span className="text-xs font-black text-black uppercase">
+                <span className="text-kfc-red">{contributorsCount}</span> 段子手
+              </span>
+            </div>
             <LoginButton />
           </div>
         </div>

@@ -78,9 +78,7 @@ const LikeButton = memo(function LikeButton({
 
           showLoginDialog({
             title: isExpired ? '登录已过期' : '需要登录',
-            message: isExpired
-              ? '您的登录已过期，请重新登录以继续互动'
-              : '请登录后继续添加反应',
+            message: isExpired ? '您的登录已过期，请重新登录以继续互动' : '请登录后继续添加反应',
           })
         } else {
           alert(data.message)
@@ -109,25 +107,16 @@ const LikeButton = memo(function LikeButton({
     <button
       onClick={handleReactionToggle}
       disabled={isLoading}
-      className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm transition-all duration-200 ${
+      className={`flex items-center gap-1 border-2 border-black px-2 py-0.5 text-sm font-bold transition-all ${
         isUserReacted
-          ? 'bg-kfc-red text-white shadow-md ring-2 ring-kfc-red/20 hover:bg-red-600 hover:ring-red-400/30'
-          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-xs'
-      } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'} ${className}`}
+          ? 'bg-kfc-red text-white shadow-neo-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none'
+          : 'bg-white text-black shadow-neo-sm hover:bg-black hover:text-white hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none'
+      } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
       title={getTitle()}
     >
-      <span className={`text-base ${isUserReacted ? 'animate-pulse' : ''}`}>
-        {emoji}
-      </span>
-      <span className={`font-medium ${isUserReacted ? 'font-bold' : ''}`}>
-        {count}
-      </span>
-      {isUserReacted && (
-        <span className="ml-1 text-xs opacity-80">✓</span>
-      )}
-      {isLoading && (
-        <div className="h-3 w-3 animate-spin rounded-full border border-current border-t-transparent"></div>
-      )}
+      <span className="text-base leading-none">{emoji}</span>
+      <span className={isUserReacted ? 'font-black' : ''}>{count}</span>
+      {isLoading && <span className="text-xs opacity-60">…</span>}
     </button>
   )
 })

@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import { Providers } from '@/app/providers'
 import { VercelAnalytics } from '@/components/vercel-analytics'
 import { Header, Footer } from '@/components/shared'
+import TickerBanner from '@/components/shared/TickerBanner'
 import { getUniqueContributorsCount } from '@/lib/server-utils'
 import { PWARegistration } from '@/components/pwa-registration'
 
@@ -68,6 +69,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Providers>
           <div className="relative z-10 flex min-h-screen flex-col">
             <Header contributorsCount={contributorsCount} />
+            <TickerBanner />
 
             {/* 主内容 */}
             <main className="flex flex-1 flex-col safe-area-x">{children}</main>

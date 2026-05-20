@@ -304,18 +304,49 @@ export default async function Page() {
       </div>
 
       {/* 5. 底部功能区 (Footer CTA) */}
-      <section className="bg-kfc-red relative mt-20 border-t-4 border-black py-12 text-center text-white">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-4 text-4xl font-black italic drop-shadow-[4px_4px_0_#000]">
-            文案品评会
-          </h2>
-          <div className="bg-kfc-yellow mx-auto mb-8 max-w-xl rotate-2 transform border-2 border-black p-4 shadow-[8px_8px_0_0_#000]">
-            <h3 className="text-2xl font-black text-black italic">疯狂星期四！</h3>
+      <section className="bg-kfc-red relative mt-20 overflow-hidden border-t-4 border-black py-16 text-center text-white">
+        {/* 背景圆点 */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: 'radial-gradient(#fff 1.5px, transparent 1.5px)',
+            backgroundSize: '16px 16px',
+          }}
+        />
+        <div className="relative container mx-auto px-4">
+          <div className="mb-3 flex flex-wrap justify-center gap-3">
+            <span className="bg-kfc-yellow shadow-neo-sm -rotate-1 border-2 border-black px-3 py-1 text-xs font-black text-black uppercase">
+              User Submissions / 全民共创
+            </span>
+            <span className="bg-white shadow-neo-sm rotate-1 border-2 border-black px-3 py-1 text-xs font-black text-black uppercase">
+              Since 2024 / 始于疯狂
+            </span>
           </div>
 
-          <NeoButton href="/submit" variant="secondary" size="lg" icon="fa-arrow-right">
-            Start Submission / 开始上交你的疯狂文案
-          </NeoButton>
+          <h2 className="mb-6 text-4xl font-black italic drop-shadow-[4px_4px_0_#000] md:text-5xl">
+            你的文案，
+            <br className="md:hidden" />
+            今天上交了吗？
+          </h2>
+
+          <div className="bg-kfc-yellow mx-auto mb-8 max-w-xl rotate-2 transform border-2 border-black p-4 shadow-[8px_8px_0_0_#000]">
+            <h3 className="text-xl font-black text-black italic md:text-2xl">
+              🍗 疯狂星期四！把你的好活交出来 🍗
+            </h3>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-4">
+            <NeoButton href="/submit" variant="secondary" size="lg" icon="fa-arrow-right">
+              Start Submission / 开始上交
+            </NeoButton>
+            <NeoButton href="/leaderboard" variant="black" size="lg" icon="fa-trophy">
+              英雄榜 / Hall of Fame
+            </NeoButton>
+          </div>
+
+          <p className="mt-8 text-sm font-bold text-white/60 uppercase">
+            * All submissions reviewed via GitHub Issues for full transparency
+          </p>
         </div>
       </section>
     </div>

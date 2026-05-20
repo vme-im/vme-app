@@ -14,7 +14,7 @@ interface PageProps {
 export const revalidate = 1800 // 30分钟重新验证，用于排行榜数据
 
 export default async function LeaderboardPage(props: PageProps) {
-  const searchParams = await props.searchParams;
+  const searchParams = await props.searchParams
   // 从URL参数获取排序方式
   const sortBy = searchParams.sortBy || 'score'
 
@@ -27,21 +27,25 @@ export default async function LeaderboardPage(props: PageProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* 页面标题 */}
-      <div className="mb-8 text-center">
-        <h1 className="mb-4 text-3xl font-bold text-gray-800 md:text-4xl">
-          V50 英雄榜
+      <div className="mb-12 text-center md:mb-16">
+        <h1 className="mb-6 text-5xl font-black italic tracking-tighter text-black md:text-7xl">
+          V50 <span className="text-kfc-red underline decoration-4 underline-offset-4">英雄榜</span>
         </h1>
-        <p className="text-lg text-gray-600">
-          看看谁是真正的文案鬼才，谁的文案最能打
-        </p>
+        <div className="inline-block -rotate-1 border-2 border-black bg-black px-6 py-2 shadow-neo-sm">
+          <p className="font-bold uppercase text-white md:text-lg">
+            HALL OF FAME / 看看谁是真正的文案鬼才，谁的文案最能打
+          </p>
+        </div>
       </div>
 
       {/* 梗王排行榜 - 服务端渲染 */}
       <Suspense
         fallback={
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-kfc-red border-t-transparent"></div>
-            <span className="ml-2 text-gray-600">正在加载英雄榜...</span>
+          <div className="flex h-64 items-center justify-center border-4 border-black bg-white p-8 shadow-neo">
+            <div className="flex flex-col items-center gap-4 text-black">
+              <span className="text-4xl animate-neo-blink">🏆</span>
+              <span className="text-xl font-black uppercase">英雄榜加载中...</span>
+            </div>
           </div>
         }
       >
