@@ -28,7 +28,7 @@
 - 🔌 **开放 API** —— 全接口支持跨域，欢迎二次创作机器人
 - 📱 **新野兽派 UI** —— 响应式、粗黑边、够「疯」
 
-> 想了解整个生态：本仓库是 **Web 应用 + 同步服务**；文案数据与自动化脚本在 [vme-content](https://github.com/vme-im/vme-content)。
+> 想了解整个生态：本仓库是 **Web 应用**；文案数据与自动化脚本在 [vme-content](https://github.com/vme-im/vme-content)。
 
 ## 🧩 仓库职责
 
