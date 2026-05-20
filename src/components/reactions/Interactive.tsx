@@ -6,7 +6,6 @@ import useSWR from 'swr'
 import { ReactionGroup, ReactionNode } from '@/types'
 import ReactionsUI from './UI'
 import ReactionsLoading from './Loading'
-import ReactionsLogin from './Login'
 
 interface InteractiveReactionsProps {
   issueId: string
@@ -70,8 +69,8 @@ export default function InteractiveReactions({
   const shouldAutoFetch = !hasInitialData
 
   const { data: liveData, mutate: refreshReactions } = useSWR(
-    // 会话加载中或未登录时，不初始化 SWR
-    status === 'loading' || status === 'unauthenticated' ? null : `/api/reactions/${issueId}`,
+    // 会话加载中不初始化 SWR；未登录可正常拉取（API 会回退到只读 token）
+    status === 'loading' ? null : `/api/reactions/${issueId}`,
     reactionsFetcher,
     {
       refreshInterval: 30000, // 30秒自动刷新
@@ -81,12 +80,14 @@ export default function InteractiveReactions({
       errorRetryInterval: 5000,
       keepPreviousData: true,
       // 使用初始数据作为 fallback
-      fallbackData: hasInitialData ? {
-        totalCount: initialReactionDetails.reduce((sum, r) => sum + r.users.totalCount, 0),
-        details: initialReactionDetails,
-        nodes: initialReactionNodes,
-        warning: null,
-      } : undefined,
+      fallbackData: hasInitialData
+        ? {
+            totalCount: initialReactionDetails.reduce((sum, r) => sum + r.users.totalCount, 0),
+            details: initialReactionDetails,
+            nodes: initialReactionNodes,
+            warning: null,
+          }
+        : undefined,
     },
   )
 
@@ -129,7 +130,7 @@ export default function InteractiveReactions({
       reactionCounts: counts,
       userReactionMap,
       reactionUsers: users,
-      warning: liveData?.warning || null
+      warning: liveData?.warning || null,
     }
   }, [liveData, session?.user?.username])
 
@@ -138,17 +139,12 @@ export default function InteractiveReactions({
     refreshReactions()
   }
 
-  // 1. 未登录状态
-  if (status === 'unauthenticated') {
-    return <ReactionsLogin className={className} />
-  }
-
-  // 2. 会话加载中
+  // 会话加载中 - 显示骨架
   if (status === 'loading') {
     return <ReactionsLoading className={className} />
   }
 
-  // 3. 已登录 - 渲染UI（数据由SWR + 批量缓存提供）
+  // 未登录与已登录共用同一 UI；LikeButton 内部会拦截未登录点击并弹出登录对话框
   return (
     <ReactionsUI
       issueId={issueId}
@@ -161,4 +157,3 @@ export default function InteractiveReactions({
     />
   )
 }
-

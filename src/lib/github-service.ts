@@ -187,6 +187,39 @@ export class GitHubService {
     )
   }
 
+  /**
+   * 创建使用系统只读 token 的服务实例
+   * 用于未登录用户查看公开数据（issue / reactions）
+   * 依赖环境变量 GITHUB_TOKEN（已用于数据同步）
+   */
+  static createReadOnly(): GitHubService {
+    const token = process.env.GITHUB_TOKEN
+
+    if (!token) {
+      throw new GitHubServiceError('系统只读 token 未配置', 'READONLY_UNAVAILABLE', 503)
+    }
+
+    return new GitHubService(new Octokit({ auth: token }))
+  }
+
+  /**
+   * 优先用户 token，回退到只读 token
+   * 用于既要支持登录态个性化（如 viewerReaction），又允许匿名查看的接口
+   */
+  static async createWithUserTokenOrReadOnly(request: Request): Promise<GitHubService> {
+    try {
+      return await GitHubService.createWithUserToken(request)
+    } catch (error) {
+      if (
+        error instanceof GitHubServiceError &&
+        (error.code === 'NOT_AUTHENTICATED' || error.code === 'INVALID_TOKEN')
+      ) {
+        return GitHubService.createReadOnly()
+      }
+      throw error
+    }
+  }
+
   // === 限流检查方法 ===
 
   /**

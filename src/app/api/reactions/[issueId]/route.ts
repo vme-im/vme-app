@@ -2,19 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { GitHubService, GitHubServiceError } from '@/lib/github-service'
 
 export async function GET(request: NextRequest, props: { params: Promise<{ issueId: string }> }) {
-  const params = await props.params;
+  const params = await props.params
   const { issueId } = params
 
   if (!issueId) {
-    return NextResponse.json(
-      { error: 'Issue ID is required' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Issue ID is required' }, { status: 400 })
   }
 
   try {
-    // 使用用户 token 查询 reactions
-    const githubService = await GitHubService.createWithUserToken(request)
+    // 未登录用户使用只读 token，只能查看；登录用户使用自身 token（同时返回个人反应状态）
+    const githubService = await GitHubService.createWithUserTokenOrReadOnly(request)
 
     // 获取实时 reactions 数据
     const stats = await githubService.getIssueStats(issueId)
@@ -32,7 +29,6 @@ export async function GET(request: NextRequest, props: { params: Promise<{ issue
         'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
       },
     })
-
   } catch (error) {
     console.error(`Error fetching reactions for issue ${issueId}:`, error)
 
@@ -43,9 +39,9 @@ export async function GET(request: NextRequest, props: { params: Promise<{ issue
           {
             error: 'Authentication required',
             message: 'Please login to view reactions',
-            code: error.code
+            code: error.code,
           },
-          { status: 401 }
+          { status: 401 },
         )
       }
 
@@ -56,15 +52,15 @@ export async function GET(request: NextRequest, props: { params: Promise<{ issue
             error: 'Rate limit exceeded',
             message: 'API calls per hour limit reached. Please try again later.',
             code: 'RATE_LIMIT_EXCEEDED',
-            rateLimitInfo: error.rateLimitInfo
+            rateLimitInfo: error.rateLimitInfo,
           },
-          { 
+          {
             status: 429,
             headers: {
               'X-Rate-Limit-Warning': 'GitHub API rate limit reached',
               'Retry-After': '3600',
-            }
-          }
+            },
+          },
         )
       }
 
@@ -73,9 +69,9 @@ export async function GET(request: NextRequest, props: { params: Promise<{ issue
           {
             error: 'Issue not found',
             message: 'The specified issue does not exist or is not accessible.',
-            code: 'ISSUE_NOT_FOUND'
+            code: 'ISSUE_NOT_FOUND',
           },
-          { status: 404 }
+          { status: 404 },
         )
       }
 
@@ -84,9 +80,9 @@ export async function GET(request: NextRequest, props: { params: Promise<{ issue
         {
           error: 'GitHub API error',
           message: error.message,
-          code: error.code
+          code: error.code,
         },
-        { status: error.status || 500 }
+        { status: error.status || 500 },
       )
     }
 
@@ -94,9 +90,9 @@ export async function GET(request: NextRequest, props: { params: Promise<{ issue
     return NextResponse.json(
       {
         error: 'Internal server error',
-        message: 'Failed to fetch reactions data'
+        message: 'Failed to fetch reactions data',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

@@ -6,11 +6,14 @@ interface BatchReactionsRequest {
 }
 
 interface BatchReactionsResponse {
-  data: Record<string, {
-    reactions: number
-    details: any[]
-    nodes: any[]
-  }>
+  data: Record<
+    string,
+    {
+      reactions: number
+      details: any[]
+      nodes: any[]
+    }
+  >
   errors: Record<string, string>
   metadata: {
     total: number
@@ -26,21 +29,18 @@ export async function POST(request: NextRequest) {
     const { issueIds } = body
 
     if (!Array.isArray(issueIds) || issueIds.length === 0) {
-      return NextResponse.json(
-        { error: 'issueIds must be a non-empty array' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'issueIds must be a non-empty array' }, { status: 400 })
     }
 
     if (issueIds.length > 20) {
       return NextResponse.json(
         { error: 'Maximum 20 issues can be queried at once' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    // 使用用户 token 查询 reactions
-    const githubService = await GitHubService.createWithUserToken(request)
+    // 未登录用户使用只读 token，只能查看；登录用户使用自身 token
+    const githubService = await GitHubService.createWithUserTokenOrReadOnly(request)
 
     const data: Record<string, any> = {}
     const errors: Record<string, string> = {}
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     for (const [batchIndex, batch] of batches.entries()) {
       // 批次间添加延迟，避免触发rate limiting
       if (batchIndex > 0) {
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise((resolve) => setTimeout(resolve, 100))
       }
 
       // 并发处理当前批次
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         successful: Object.keys(data).length,
         failed: Object.keys(errors).length,
         processedAt: new Date().toISOString(),
-      }
+      },
     }
 
     return NextResponse.json(response, {
@@ -93,10 +93,9 @@ export async function POST(request: NextRequest) {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
       },
     })
-
   } catch (error) {
     console.error('Error in batch reactions API:', error)
-    
+
     // 处理认证错误
     if (error instanceof GitHubServiceError) {
       if (error.code === 'NOT_AUTHENTICATED' || error.code === 'INVALID_TOKEN') {
@@ -104,19 +103,19 @@ export async function POST(request: NextRequest) {
           {
             error: 'Authentication required',
             message: 'Please login to view reactions',
-            code: error.code
+            code: error.code,
           },
-          { status: 401 }
+          { status: 401 },
         )
       }
     }
-    
+
     return NextResponse.json(
       {
         error: 'Internal server error',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

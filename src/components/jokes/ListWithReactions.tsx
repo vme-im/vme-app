@@ -26,19 +26,16 @@ const ListWithReactions = memo(function ListWithReactions({
   const { status } = useSession()
   const isMasonry = layout === 'masonry'
 
-  // 使用 useMemo 缓存 issueIds 计算
+  // 未登录用户也批量获取（后端会用只读 token 回退）；会话加载中暂不请求
   const issueIds = useMemo(
-    () => (status === 'authenticated' ? items.map((item) => item.id) : []),
+    () => (status === 'loading' ? [] : items.map((item) => item.id)),
     [status, items],
   )
 
   const { data, isLoading } = useBatchReactions(issueIds)
 
   // 使用 useMemo 缓存等待状态
-  const waitForBatchData = useMemo(
-    () => status === 'loading' || (status === 'authenticated' && isLoading),
-    [status, isLoading],
-  )
+  const waitForBatchData = useMemo(() => status === 'loading' || isLoading, [status, isLoading])
 
   return (
     <div

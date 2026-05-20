@@ -2,14 +2,12 @@ import { Suspense } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { notFound } from 'next/navigation'
-import { getServerSession } from 'next-auth/next'
 import {
   getAllKfcItems,
   getRandomKfcItem,
   getItemById,
   normalizeItemContent,
 } from '@/lib/server-utils'
-import { authOptions } from '@/lib/auth'
 import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
 import CopyButton from '@/components/shared/CopyButton'
@@ -149,11 +147,7 @@ export const revalidate = 3600 // 1小时重新验证一次
 
 export default async function JokeDetailPage(props0: PageProps) {
   const params = await props0.params
-  // 并行获取段子和会话数据
-  const [joke, session] = await Promise.all([
-    getJokeForParams(params.id),
-    getServerSession(authOptions),
-  ])
+  const joke = await getJokeForParams(params.id)
 
   if (!joke) {
     notFound()
@@ -161,8 +155,6 @@ export default async function JokeDetailPage(props0: PageProps) {
 
   // 规范化内容，兼容 title 是正文的情况
   const normalizedJoke = normalizeItemContent(joke)
-
-  const isAuthenticated = !!session?.user
 
   // 计算热门状态
   const totalReactions = normalizedJoke.reactions?.totalCount || 0
@@ -313,33 +305,25 @@ export default async function JokeDetailPage(props0: PageProps) {
               </div>
             </div>
 
-            {/* 互动区域 - 仅登录用户显示 */}
-            {isAuthenticated && (
-              <>
-                <div className="mb-6">
-                  <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
-                    <i className="fa fa-heart text-xl text-kfc-red md:text-2xl"></i>
-                    <h2 className="text-xl font-black italic text-black md:text-2xl">互动反馈</h2>
-                  </div>
+            {/* 互动区域 - 全员可见（未登录点击会弹出登录对话框） */}
+            <div className="mb-6">
+              <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
+                <i className="fa fa-heart text-xl text-kfc-red md:text-2xl"></i>
+                <h2 className="text-xl font-black italic text-black md:text-2xl">互动反馈</h2>
+              </div>
 
-                  <div className="border-3 border-black bg-gray-50 p-4 shadow-neo">
-                    <Suspense
-                      fallback={
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-kfc-red border-t-transparent"></div>
-                          <span>加载互动数据中...</span>
-                        </div>
-                      }
-                    >
-                      <InteractiveReactions
-                        issueId={normalizedJoke.id}
-                        className="flex-wrap gap-2"
-                      />
-                    </Suspense>
-                  </div>
-                </div>
-              </>
-            )}
+              <div className="border-3 border-black bg-gray-50 p-4 shadow-neo">
+                <Suspense
+                  fallback={
+                    <div className="flex items-center gap-2 font-bold text-black">
+                      <span className="animate-neo-blink">加载互动数据中...</span>
+                    </div>
+                  }
+                >
+                  <InteractiveReactions issueId={normalizedJoke.id} className="flex-wrap gap-2" />
+                </Suspense>
+              </div>
+            </div>
           </div>
         </article>
 
