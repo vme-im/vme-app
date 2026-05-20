@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
+  // spike/sql-snapshot：确保 sql.js 的 wasm 被打包进对应 lambda
+  outputFileTracingIncludes: {
+    '/api/spike/sql/route': ['./node_modules/sql.js/dist/sql-wasm.wasm'],
+  },
   images: {
     remotePatterns: [
       {
