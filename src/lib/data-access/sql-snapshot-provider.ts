@@ -56,7 +56,10 @@ async function getSqlJs(): Promise<SqlJsStatic> {
   if (sqlJsInstance) return sqlJsInstance
   const wasmPath = path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm')
   const buf = readFileSync(wasmPath)
-  const wasmBinary = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+  const wasmBinary = buf.buffer.slice(
+    buf.byteOffset,
+    buf.byteOffset + buf.byteLength,
+  ) as ArrayBuffer
   sqlJsInstance = await initSqlJs({ wasmBinary })
   return sqlJsInstance
 }
