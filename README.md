@@ -2,14 +2,14 @@
 
 # 🍗 vme-app
 
-**疯狂星期四文案库 · Web 应用与同步服务**
+**疯狂星期四文案库 · Web 应用**
 
 社区共创的 KFC「疯四」文案平台 —— 每个星期四都值得一句「V 我 50」。
 
 [![Live](https://img.shields.io/badge/在线访问-vme.im-C41200?style=flat-square)](https://vme.im)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=000)](https://react.dev)
-[![Neon](https://img.shields.io/badge/Neon-Postgres-00E599?style=flat-square&logo=postgresql&logoColor=fff)](https://neon.tech)
+[![SQLite](https://img.shields.io/badge/sql.js-snapshot-003B57?style=flat-square&logo=sqlite&logoColor=fff)](https://sql.js.org)
 [![Deploy](https://img.shields.io/badge/Vercel-部署-000000?style=flat-square&logo=vercel)](https://vercel.com)
 
 [在线体验](https://vme.im) · [我要投稿](https://vme.im/submit) · [开放 API](#-开放-api) · [开发指南](./docs/dev/README.md)
@@ -83,7 +83,7 @@ npm test         # 单元测试（Vitest）
 
 ## 🔗 相关仓库
 
-- **[vme-app](https://github.com/vme-im/vme-app)** —— Web 应用与同步服务（本仓库）
+- **[vme-app](https://github.com/vme-im/vme-app)** —— Web 应用（本仓库）
 - **[vme-content](https://github.com/vme-im/vme-content)** —— 文案数据与自动化脚本
 
 <div align="center">
