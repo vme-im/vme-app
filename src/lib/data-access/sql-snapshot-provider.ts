@@ -55,7 +55,8 @@ let sqlJsInstance: SqlJsStatic | null = null
 async function getSqlJs(): Promise<SqlJsStatic> {
   if (sqlJsInstance) return sqlJsInstance
   const wasmPath = path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm')
-  const wasmBinary = readFileSync(wasmPath)
+  const buf = readFileSync(wasmPath)
+  const wasmBinary = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
   sqlJsInstance = await initSqlJs({ wasmBinary })
   return sqlJsInstance
 }
