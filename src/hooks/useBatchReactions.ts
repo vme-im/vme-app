@@ -3,11 +3,14 @@ import { useEffect } from 'react'
 import { ReactionGroup, ReactionNode } from '@/types'
 
 interface BatchReactionsResponse {
-  data: Record<string, {
-    reactions: number
-    details: ReactionGroup[]
-    nodes: ReactionNode[]
-  }>
+  data: Record<
+    string,
+    {
+      reactions: number
+      details: ReactionGroup[]
+      nodes: ReactionNode[]
+    }
+  >
   errors: Record<string, string>
   metadata: {
     total: number
@@ -40,12 +43,12 @@ export function useBatchReactions(issueIds: string[]) {
     shouldFetch ? ['batch-reactions', issueIds] : null,
     ([_, ids]) => fetcher('/api/reactions/batch', ids),
     {
-      dedupingInterval: 30000, // 30秒去重，避免重复请求
+      dedupingInterval: 60_000, // 与 HTTP 缓存 max-age=60 对齐
       revalidateOnFocus: false,
       revalidateOnMount: true, // 自动加载数据
       errorRetryCount: 2,
-      errorRetryInterval: 1000,
-    }
+      errorRetryInterval: 5_000, // 旧值 1s 过于激进，错误时会风暴 GitHub
+    },
   )
 
   // 当批量数据加载完成后，填充到各个单独的 SWR 缓存中
@@ -62,7 +65,7 @@ export function useBatchReactions(issueIds: string[]) {
             nodes: reactionData.nodes,
             warning: null,
           },
-          false // 不触发重新验证
+          false, // 不触发重新验证
         )
       })
     }

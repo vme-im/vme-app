@@ -88,11 +88,9 @@ export async function POST(request: NextRequest) {
       },
     }
 
-    return NextResponse.json(response, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
-      },
-    })
+    // POST 请求浏览器与 Vercel CDN 默认都不缓存，去掉无意义的 Cache-Control 头；
+    // 客户端去重与新鲜度交给 SWR 的 dedupingInterval 控制
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Error in batch reactions API:', error)
 

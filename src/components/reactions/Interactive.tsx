@@ -73,7 +73,9 @@ export default function InteractiveReactions({
     status === 'loading' ? null : `/api/reactions/${issueId}`,
     reactionsFetcher,
     {
-      refreshInterval: 30000, // 30秒自动刷新
+      // 列表页（有批量初始数据）：依赖批量层统一节奏，自身不轮询；
+      // 详情页（无初始数据）：60s 自动刷新，与单条 API 的 max-age=60 对齐，避免空打 HTTP 缓存
+      refreshInterval: hasInitialData ? 0 : 60_000,
       revalidateOnFocus: false,
       revalidateOnMount: shouldAutoFetch, // 只有在不等待批量且无数据时才自动请求
       errorRetryCount: 2,
