@@ -2,11 +2,10 @@
 // 兑现 architecture §5「无正文索引 + 正文按需」的查询形态：API 暴露 SQL 查询粒度，
 // 调用方按需取，所有过滤维度（author/tag/type/search）走索引。
 //
-// 与 SnapshotProvider 区别：
-// - SnapshotProvider 拉 month JSON + 内存 records 数组，过滤是 O(n) 线性扫
-// - SqlSnapshotProvider 拉单文件 snapshot.sql + SQLite 索引查询，cold start 更短、warm 查询亚毫秒
+// 2026-05-20 Neon + JSON 双双退役后，本 provider 是唯一读模型；
+// summary 不再有 summary.json 兜底，全部从 SQL 现算。
 //
-// 降级语义对齐 SnapshotProvider：fetch 失败回退上次 good model，无 model 时回退空集合。
+// 降级语义：fetch 失败回退上次 good model；无 model 时回退空 db，不整站 500。
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js'
@@ -26,15 +25,6 @@ function getUserUrl(u: string): string {
   return `https://github.com/${u}`
 }
 
-interface SummaryFile {
-  totalItems: number
-  totalContributors: number
-  months: { month: string; count: number }[]
-  contributors: { username: string; count: number }[]
-  topContributors?: { username: string; count: number }[]
-  updatedAt: string
-}
-
 interface ItemRow {
   id: string
   title: string
@@ -43,11 +33,11 @@ interface ItemRow {
   created_at: number
   reactions: number
   type: 'text' | 'meme'
+  url: string
 }
 
 interface Model {
   db: Database
-  summary: SummaryFile | null
 }
 
 let sqlJsInstance: SqlJsStatic | null = null
@@ -76,23 +66,13 @@ async function fetchText(url: string): Promise<string> {
   }
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const controller = new AbortController()
-  const t = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
-  try {
-    const res = await fetch(url, { cache: 'no-store', signal: controller.signal })
-    if (!res.ok) throw new Error(`fetch ${url} -> ${res.status}`)
-    return (await res.json()) as T
-  } finally {
-    clearTimeout(t)
-  }
-}
-
 function rowToItem(r: ItemRow, tags: string[]): IKfcItem {
   return {
     id: r.id,
     title: r.title,
-    url: `https://github.com/vme-im/vme-content/issues/${r.id}`,
+    // r.url 由 snapshot.sql 写入（generateSnapshotSql 把 fetchIssues 返回的 issue url 透传）；
+    // 旧路径用 id（node_id）拼 `vme-content/issues/${id}` 是错的——跨仓时尤其错（如 archive-rin0chan）
+    url: r.url || `https://github.com/vme-im/vme-content/issues/${r.id}`,
     body: r.body,
     createdAt: new Date(r.created_at).toISOString(),
     updatedAt: new Date(r.created_at).toISOString(),
@@ -164,14 +144,10 @@ export class SqlSnapshotProvider implements DataProvider {
 
   private async loadModel(): Promise<Model> {
     const SQL = await getSqlJs()
-    // 并行 fetch
-    const [sqlText, summary] = await Promise.all([
-      fetchText(`${this.base}/data/snapshot.sql`),
-      fetchJson<SummaryFile>(`${this.base}/data/summary.json`).catch(() => null),
-    ])
+    const sqlText = await fetchText(`${this.base}/data/snapshot.sql`)
     const db = new SQL.Database()
     db.exec(sqlText)
-    return { db, summary }
+    return { db }
   }
 
   private async getModel(): Promise<Model> {
@@ -194,10 +170,10 @@ export class SqlSnapshotProvider implements DataProvider {
         const SQL = await getSqlJs()
         const emptyDb = new SQL.Database()
         emptyDb.exec(
-          'CREATE TABLE items (id TEXT PRIMARY KEY, title TEXT, body TEXT, author TEXT, created_at INTEGER, reactions INTEGER, type TEXT);' +
+          "CREATE TABLE items (id TEXT PRIMARY KEY, title TEXT, body TEXT, author TEXT, created_at INTEGER, reactions INTEGER, type TEXT, tag_hash TEXT DEFAULT '', url TEXT DEFAULT '');" +
             'CREATE TABLE item_tags (item_id TEXT, tag TEXT);',
         )
-        return { db: emptyDb, summary: null }
+        return { db: emptyDb }
       } finally {
         this.inflight = null
       }
@@ -250,7 +226,7 @@ export class SqlSnapshotProvider implements DataProvider {
       bindParams,
     )
 
-    const rowsSql = `SELECT i.id, i.title, i.body, i.author, i.created_at, i.reactions, i.type FROM ${fromClause} ${whereSql} ORDER BY ${orderField} ${direction}, i.created_at DESC LIMIT ? OFFSET ?`
+    const rowsSql = `SELECT i.id, i.title, i.body, i.author, i.created_at, i.reactions, i.type, i.url FROM ${fromClause} ${whereSql} ORDER BY ${orderField} ${direction}, i.created_at DESC LIMIT ? OFFSET ?`
     const rows = readItemRows(db, rowsSql, [...bindParams, limit, offset])
     const tagsMap = queryTagsForIds(
       db,
@@ -269,8 +245,8 @@ export class SqlSnapshotProvider implements DataProvider {
   async getRandomItem(type?: 'text' | 'meme'): Promise<IKfcItem | null> {
     const { db } = await this.getModel()
     const sql = type
-      ? 'SELECT id, title, body, author, created_at, reactions, type FROM items WHERE type = ? ORDER BY RANDOM() LIMIT 1'
-      : 'SELECT id, title, body, author, created_at, reactions, type FROM items ORDER BY RANDOM() LIMIT 1'
+      ? 'SELECT id, title, body, author, created_at, reactions, type, url FROM items WHERE type = ? ORDER BY RANDOM() LIMIT 1'
+      : 'SELECT id, title, body, author, created_at, reactions, type, url FROM items ORDER BY RANDOM() LIMIT 1'
     const rows = readItemRows(db, sql, type ? [type] : [])
     if (rows.length === 0) return null
     const tagsMap = queryTagsForIds(db, [rows[0].id])
@@ -281,7 +257,7 @@ export class SqlSnapshotProvider implements DataProvider {
     const { db } = await this.getModel()
     const rows = readItemRows(
       db,
-      'SELECT id, title, body, author, created_at, reactions, type FROM items WHERE id = ?',
+      'SELECT id, title, body, author, created_at, reactions, type, url FROM items WHERE id = ?',
       [id],
     )
     if (rows.length === 0) return null
@@ -290,25 +266,23 @@ export class SqlSnapshotProvider implements DataProvider {
   }
 
   async getStats(): Promise<Summary> {
-    const { summary } = await this.getModel()
-    if (summary) {
-      const contributors = (summary.contributors || []).map(toContributor)
-      return {
-        totalItems: summary.totalItems,
-        totalContributors: summary.totalContributors,
-        months: summary.months || [],
-        contributors,
-        topContributors: contributors.slice(0, 10),
-        updatedAt: summary.updatedAt || new Date().toISOString(),
-      }
-    }
-    // 没有 summary：从 db 兜底
+    const { db } = await this.getModel()
+    const totalItems = readScalar<number>(db, 'SELECT COUNT(*) FROM items')
     const contributors = await this.getContributors()
-    const total = await this.getContributorsCount()
+    // 月份分组：created_at 已是 UTC epoch ms，按中国时区（UTC+8）切月，与 createData 行为一致
+    const monthStmt = db.prepare(
+      "SELECT strftime('%Y-%m', datetime((created_at + 8*3600000)/1000, 'unixepoch')) AS month, COUNT(*) AS c FROM items GROUP BY month ORDER BY month DESC",
+    )
+    const months: { month: string; count: number }[] = []
+    while (monthStmt.step()) {
+      const row = monthStmt.getAsObject() as { month: string; c: number }
+      months.push({ month: row.month, count: row.c })
+    }
+    monthStmt.free()
     return {
-      totalItems: contributors.reduce((acc, c) => acc + c.count, 0),
-      totalContributors: total,
-      months: [],
+      totalItems,
+      totalContributors: contributors.length,
+      months,
       contributors,
       topContributors: contributors.slice(0, 10),
       updatedAt: new Date().toISOString(),
@@ -316,8 +290,7 @@ export class SqlSnapshotProvider implements DataProvider {
   }
 
   async getContributorsCount(): Promise<number> {
-    const { db, summary } = await this.getModel()
-    if (summary) return summary.totalContributors
+    const { db } = await this.getModel()
     return readScalar<number>(db, 'SELECT COUNT(DISTINCT author) FROM items')
   }
 
@@ -341,7 +314,7 @@ export class SqlSnapshotProvider implements DataProvider {
     const q = `%${query.toLowerCase()}%`
     const rows = readItemRows(
       db,
-      'SELECT id, title, body, author, created_at, reactions, type FROM items WHERE LOWER(title) LIKE ? OR LOWER(body) LIKE ? ORDER BY created_at DESC LIMIT ?',
+      'SELECT id, title, body, author, created_at, reactions, type, url FROM items WHERE LOWER(title) LIKE ? OR LOWER(body) LIKE ? ORDER BY created_at DESC LIMIT ?',
       [q, q, limit],
     )
     const tagsMap = queryTagsForIds(
@@ -352,10 +325,7 @@ export class SqlSnapshotProvider implements DataProvider {
   }
 
   async getContributors(): Promise<Contributor[]> {
-    const { db, summary } = await this.getModel()
-    if (summary?.contributors) {
-      return summary.contributors.map(toContributor)
-    }
+    const { db } = await this.getModel()
     const stmt = db.prepare(
       'SELECT author, COUNT(*) AS c FROM items GROUP BY author ORDER BY c DESC, author ASC',
     )
@@ -378,12 +348,12 @@ export class SqlSnapshotProvider implements DataProvider {
     // 用窗口函数 ROW_NUMBER 找每作者最佳
     const sql = `
       WITH ranked AS (
-        SELECT id, title, body, author, created_at, reactions, type,
+        SELECT id, title, body, author, created_at, reactions, type, url,
           ROW_NUMBER() OVER (PARTITION BY author ORDER BY reactions DESC, created_at DESC) AS rn
         FROM items
         WHERE type = 'text' ${excludeId ? 'AND id <> ?' : ''}
       )
-      SELECT id, title, body, author, created_at, reactions, type
+      SELECT id, title, body, author, created_at, reactions, type, url
       FROM ranked
       WHERE rn = 1
       ORDER BY reactions DESC, created_at DESC

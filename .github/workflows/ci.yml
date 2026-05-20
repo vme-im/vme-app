@@ -35,5 +35,6 @@ jobs:
       - name: Unit tests
         run: npm test
 
-# 说明：不在 CI 跑 `next build`，因其会预渲染页面而依赖 DATABASE_URL；
-# 生产构建已由 Vercel 在部署时把关，CI 只做轻量、无密钥依赖的检查。
+# 说明：不在 CI 跑 `next build`，因其会预渲染页面而要访问 vme-content 远端快照
+# 与 GitHub OAuth/NextAuth 等密钥；生产构建已由 Vercel 在部署时把关，
+# CI 只做轻量、无密钥/无网络依赖的检查。

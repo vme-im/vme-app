@@ -2,22 +2,19 @@
 
 > 本文档面向所有开发者（包括人类与 AI Agent）。
 >
-> 🏛 **架构权威规格**：本项目（vme-app + vme-content）的架构决策与实施规格以 [`vme-content/docs/architecture.md`](https://github.com/vme-im/vme-content/blob/main/docs/architecture.md) 为唯一权威；下文「🔧 系统架构」一节为旧描述，如有冲突以该规格为准。
+> 🏛 **架构权威规格**：vme-app + vme-content 的架构决策与实施规格以 [`vme-content/docs/architecture.md`](https://github.com/vme-im/vme-content/blob/main/docs/architecture.md) 为唯一权威，本仓只留指针。
 
 ## 🚀 快速开始
 
-### 本地部署
-
 ```bash
-# 1. 克隆与安装
-git clone https://github.com/zkl2333/vme.git
-cd vme && npm install
+git clone git@github.com:vme-im/vme-app.git
+cd vme-app && npm install
 
-# 2. 环境配置
-cp env.local.example .env.local
+cp .env.local.example .env.local   # 按需填入 NEXTAUTH_SECRET、GitHub OAuth、R2 凭据等
 
-# 3. 启动开发环境
-npm run dev
+npm run dev      # 启动开发服务器
+npm run lint     # ESLint
+npm test         # 单元测试（Vitest）
 ```
 
 ## 🎯 核心规范 (Human & Agent)
@@ -37,30 +34,34 @@ npm run dev
 <details>
 <summary>🤖 <b>AI Agent 协作专项指令 (点击展开)</b></summary>
 
-致 AI 智能体：此文件是项目"单一事实来源"。
+致 AI 智能体：本指南与 vme-content 的架构规格共同构成"单一事实来源"。
 
 - **术语强制**：严禁在生成内容中使用"乞讨/乞丐"等词汇。
-- **架构尊重**：优先加载静态 JSON 数据，API 路由统一使用 `NextResponse.json()`。
-- **审核逻辑**：审核相关改动必须符合 `actions_scripts/src/moderationLogic.ts`。
+- **架构尊重**：读模型默认走 [`SqlSnapshotProvider`](../../src/lib/data-access/sql-snapshot-provider.ts)；API 路由统一使用 `NextResponse.json()`。
+- **审核逻辑**：投稿审核全部在 vme-content（`actions_scripts/src/moderationLogic.ts`），本仓不重复实现。
 - **风格一致性**：强制遵循 [UI 风格指南](./style-guide.md) 中的新野兽派规范。
 </details>
 
 ---
 
-## 🔧 系统架构
+## 🔧 系统架构（速览）
 
-项目采用 **双层架构 (Two-Layer Architecture)**：
+**真相层 = GitHub Issues**，所有数据由 vme-content 的 `createData` 流水线产出 `snapshot.sql`，vme-app 仅作读模型与界面：
 
-### 层级 1：自动化与数据层
+```
+GitHub Issues (vme-im/vme-content)
+        │
+        ▼  fetchIssues + tagger + generateSnapshotSql
+data/snapshot.sql      ← 提交进 vme-content（唯一读模型产物）
+        │
+        ▼  raw.githubusercontent
+vme-app SqlSnapshotProvider (sql.js + 5min TTL)
+        │
+        ▼
+Web 展示 / 开放 API
+```
 
-- **路径：** `actions_scripts/`
-- **职责：** 处理 GitHub Issues 数据摄入、审核及 JSON 生成。
-- **关键逻辑：** AI 辅助审核 + 莱文斯坦距离查重。
-
-### 层级 2：Web 应用层
-
-- **路径：** `src/` (Next.js 14)
-- **策略：** 静态数据从 `data/` 读取，交互数据（点赞等）通过 GitHub API 实时获取。
+无 DB 应急回退：远端 fetch 失败时 provider 自身回退上次 good model 或空 db，不整站 500。`SNAPSHOT_BASE_URL` 可指向自有镜像。点赞实时拉 GitHub Reactions（详情页交互）。完整决策日志与扩张路线见架构规格。
 
 ---
 
@@ -68,10 +69,9 @@ npm run dev
 
 - 🎨 [UI 视觉风格指南 (新野兽派)](./style-guide.md)
 - 📦 [组件结构说明](./components.md)
-- 🖼 [图文投稿扩展示例](./image-plan.md)
 
 ## 🤝 贡献流程
 
 1. Fork 本仓库。
 2. 创建 `feature/` 分支。
-3. 提交 PR（请确保符合术语规范）。
+3. 提交 PR（请确保符合术语规范，本地跑通 `npm run lint` 与 `npm test`）。

@@ -1,22 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SqlSnapshotProvider } from './sql-snapshot-provider'
 
-const summary = {
-  totalItems: 4,
-  totalContributors: 2,
-  months: [
-    { month: '2026-01', count: 2 },
-    { month: '2026-02', count: 2 },
-  ],
-  contributors: [
-    { username: 'alice', count: 3 },
-    { username: 'bob', count: 1 },
-  ],
-  topContributors: [{ username: 'alice', count: 3 }],
-  updatedAt: '2026-02-01T00:00:00.000Z',
-}
-
-// 4 条 items（与 SnapshotProvider 测试同等覆盖），item_tags 5 行
+// 4 条 items（与历史 SnapshotProvider 测试同等覆盖），item_tags 4 行；
+// schema 同 generateSnapshotSql 当前定义：tag_hash + url 两列必填
 const snapshotSql = `
 -- vme snapshot fixture
 CREATE TABLE items (
@@ -26,7 +12,9 @@ CREATE TABLE items (
   author TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   reactions INTEGER NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('text','meme'))
+  type TEXT NOT NULL CHECK (type IN ('text','meme')),
+  tag_hash TEXT NOT NULL DEFAULT '',
+  url TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX idx_items_author ON items(author);
 CREATE INDEX idx_items_type ON items(type);
@@ -41,10 +29,10 @@ CREATE TABLE item_tags (
 CREATE INDEX idx_item_tags_tag ON item_tags(tag);
 
 BEGIN;
-INSERT INTO items VALUES ('a1','hi','hello world','alice',${new Date('2026-01-10T00:00:00.000Z').getTime()},5,'text');
-INSERT INTO items VALUES ('a2','m','meme ![x](http://i/x.png)','alice',${new Date('2026-01-20T00:00:00.000Z').getTime()},9,'meme');
-INSERT INTO items VALUES ('a3','s','short','alice',${new Date('2026-02-15T00:00:00.000Z').getTime()},1,'text');
-INSERT INTO items VALUES ('b1','c','another text about cats','bob',${new Date('2026-02-05T00:00:00.000Z').getTime()},2,'text');
+INSERT INTO items VALUES ('a1','hi','hello world','alice',${new Date('2026-01-10T00:00:00.000Z').getTime()},5,'text','','https://github.com/vme-im/vme-content/issues/1');
+INSERT INTO items VALUES ('a2','m','meme ![x](http://i/x.png)','alice',${new Date('2026-01-20T00:00:00.000Z').getTime()},9,'meme','','https://github.com/vme-im/vme-content/issues/2');
+INSERT INTO items VALUES ('a3','s','short','alice',${new Date('2026-02-15T00:00:00.000Z').getTime()},1,'text','','https://github.com/vme-im/vme-content/issues/3');
+INSERT INTO items VALUES ('b1','c','another text about cats','bob',${new Date('2026-02-05T00:00:00.000Z').getTime()},2,'text','','https://github.com/vme-im/vme-content/issues/4');
 INSERT INTO item_tags VALUES ('a1','恋爱');
 INSERT INTO item_tags VALUES ('a1','谐音梗');
 INSERT INTO item_tags VALUES ('a2','荒诞');
@@ -56,9 +44,6 @@ function mockFetchOk() {
   const fn = vi.fn(async (url: string) => {
     if (url.endsWith('/snapshot.sql')) {
       return { ok: true, text: async () => snapshotSql } as Response
-    }
-    if (url.endsWith('/summary.json')) {
-      return { ok: true, json: async () => summary } as Response
     }
     return { ok: false, status: 404, text: async () => '', json: async () => ({}) } as Response
   })
@@ -150,7 +135,7 @@ describe('SqlSnapshotProvider', () => {
     expect(await p.getItemById('nope')).toBeNull()
   })
 
-  it('getStats：用 summary.json 派生', async () => {
+  it('getStats：从 SQL 现算（无 summary.json 依赖）', async () => {
     mockFetchOk()
     const p = new SqlSnapshotProvider()
     const s = await p.getStats()
@@ -158,6 +143,17 @@ describe('SqlSnapshotProvider', () => {
     expect(s.totalContributors).toBe(2)
     expect(s.contributors.map((c) => c.username)).toEqual(['alice', 'bob'])
     expect(s.contributors[0].avatarUrl).toBe('https://github.com/alice.png')
+    // months：按中国时区切月，应有 2026-01（a1+a2）和 2026-02（a3+b1）
+    expect(s.months.map((m) => m.month).sort()).toEqual(['2026-01', '2026-02'])
+    expect(s.months.find((m) => m.month === '2026-01')?.count).toBe(2)
+    expect(s.months.find((m) => m.month === '2026-02')?.count).toBe(2)
+  })
+
+  it('rowToItem：url 列直接透传（不再用 node_id 错拼）', async () => {
+    mockFetchOk()
+    const p = new SqlSnapshotProvider()
+    const it = await p.getItemById('a1')
+    expect(it?.url).toBe('https://github.com/vme-im/vme-content/issues/1')
   })
 
   it('getTopTags：按 count DESC', async () => {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-// 路由级错误边界：数据库不可用（Neon 免费额度耗尽被 paused 等）时，
+// 路由级错误边界：远端快照不可用（raw.githubusercontent 抖动 / vme-content 临时 404 等）时，
 // 服务端组件取数抛错会落到这里，给一个有疯四味的友好提示而非默认报错页。
 export default function Error({ reset }: { error: Error; reset: () => void }) {
   return (

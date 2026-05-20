@@ -32,17 +32,19 @@
 
 ## 🧩 仓库职责
 
-| 模块         | 说明                                         |
-| :----------- | :------------------------------------------- |
-| **Web 应用** | 页面展示、随机推荐、V50 英雄榜、投稿入口     |
-| **同步 API** | 通过 Vercel Cron 每日增量同步文案数据到 Neon |
-| **LLM 打标** | 调用模型对文案做内容分析与标签输出           |
+| 模块         | 说明                                                          |
+| :----------- | :------------------------------------------------------------ |
+| **Web 应用** | 页面展示、随机推荐、V50 英雄榜、投稿入口、作者主页            |
+| **读模型**   | 默认装载 vme-content 的 `snapshot.sql`（sql.js + 5 分钟 TTL） |
+| **梗图上传** | 投稿表单图片 → Cloudflare R2                                  |
 
-数据流向：`GitHub Issues 投稿` → `vme-content 审核 / 生成快照` → `vme-app 同步 API 入 Neon` → `Web 展示`。
+数据流向：`GitHub Issues 投稿` → `vme-content createData 产 data/snapshot.sql` → `vme-app SqlSnapshotProvider 经 raw.githubusercontent 装载` → `Web 展示`。
+
+> 架构权威规格（含决策日志、双速架构、扩张路线）见 [`vme-content/docs/architecture.md`](https://github.com/vme-im/vme-content/blob/main/docs/architecture.md)。
 
 ## 🛠️ 技术栈
 
-Next.js 16（App Router）· React 19 · Tailwind CSS 4 · Neon（Serverless Postgres）· NextAuth · OpenAI · SWR · 部署于 Vercel。
+Next.js 16（App Router）· React 19 · Tailwind CSS 4 · sql.js · NextAuth · OpenAI · SWR · 部署于 Vercel。无独立数据库——读模型直接装载 vme-content 的 `snapshot.sql`，远端 fetch 失败时 provider 自身回退空 db 兜底（不整站 500）。
 
 ## 🚀 本地开发
 
@@ -50,12 +52,14 @@ Next.js 16（App Router）· React 19 · Tailwind CSS 4 · Neon（Serverless Pos
 git clone git@github.com:vme-im/vme-app.git
 cd vme-app && npm install
 
-cp .env.local.example .env.local   # 按需填入 DATABASE_URL 等
+cp .env.local.example .env.local   # 按需填入 NEXTAUTH_SECRET、GitHub OAuth、R2 凭据等
 
 npm run dev      # 启动开发服务器
 npm run lint     # ESLint
 npm test         # 单元测试（Vitest）
 ```
+
+> 读模型从远端 `raw.githubusercontent` 拉 `vme-content/data/snapshot.sql`，本地开发零数据库配置即可启动。需要指向自有快照镜像时设 `SNAPSHOT_BASE_URL`。
 
 > 完整的本地配置、技术架构、UI 风格规范与 **AI Agent 协作指令**，见
 > 👉 **[开发者与 Agent 协作指南](./docs/dev/README.md)**（含 [风格指南](./docs/dev/style-guide.md)、[组件说明](./docs/dev/components.md)）。
