@@ -177,7 +177,10 @@ const JokeCard = memo(function JokeCard({
         )}
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <Link
+            href={`/authors/${encodeURIComponent(item.author.username)}`}
+            className="group/author flex items-center gap-2 transition-transform hover:-translate-y-0.5"
+          >
             <div className="border-2 border-black shadow-neo-sm">
               <Image
                 src={item.author.avatarUrl}
@@ -188,12 +191,14 @@ const JokeCard = memo(function JokeCard({
               />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-sm font-black text-black">@{item.author.username}</span>
+              <span className="text-sm font-black text-black group-hover/author:underline">
+                @{item.author.username}
+              </span>
               <div className="mt-1 text-[10px] font-bold uppercase text-gray-500">
                 <FormattedDate date={item.createdAt} />
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* 互动数据展示 */}

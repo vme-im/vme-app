@@ -284,7 +284,10 @@ export default async function JokeDetailPage(props0: PageProps) {
               </div>
 
               <div className="flex items-center gap-4 border-3 border-black bg-white p-4 shadow-neo">
-                <div className="relative border-2 border-black p-1 shadow-neo-sm">
+                <a
+                  href={`/authors/${encodeURIComponent(normalizedJoke.author.username)}`}
+                  className="relative block border-2 border-black p-1 shadow-neo-sm transition-transform hover:-translate-y-0.5"
+                >
                   <Image
                     src={normalizedJoke.author.avatarUrl}
                     alt={`${normalizedJoke.author.username}的头像`}
@@ -292,12 +295,15 @@ export default async function JokeDetailPage(props0: PageProps) {
                     height={64}
                     className="h-12 w-12 object-cover md:h-16 md:w-16"
                   />
-                </div>
+                </a>
 
                 <div className="flex-1">
-                  <div className="mb-1 text-lg font-black text-black md:text-xl">
+                  <a
+                    href={`/authors/${encodeURIComponent(normalizedJoke.author.username)}`}
+                    className="mb-1 inline-block text-lg font-black text-black hover:underline md:text-xl"
+                  >
                     @{normalizedJoke.author.username}
-                  </div>
+                  </a>
                   <div className="flex items-center gap-2 text-xs font-bold uppercase text-gray-500 md:text-sm">
                     <i className="fa fa-calendar text-black"></i>
                     <span>发布于</span>

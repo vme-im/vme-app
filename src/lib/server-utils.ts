@@ -83,6 +83,7 @@ export async function getKfcItemsWithPagination(
   pageSize = 20,
   type?: 'text' | 'meme',
   tag?: string,
+  author?: string,
 ): Promise<{
   items: IKfcItem[]
   total: number
@@ -95,6 +96,7 @@ export async function getKfcItemsWithPagination(
     limit: pageSize,
     type,
     tag,
+    author,
   })
 
   return {

@@ -114,18 +114,14 @@ async function getLeaderboardData(sortBy: string = 'score') {
 // 设置组件级别的缓存时间（30分钟）
 export const revalidate = 1800
 
-export default async function LeaderboardServer({
-  sortBy = 'score',
-}: LeaderboardServerProps) {
+export default async function LeaderboardServer({ sortBy = 'score' }: LeaderboardServerProps) {
   const data = await getLeaderboardData(sortBy)
 
   if (!data) {
     return (
       <div className="rounded-lg bg-red-50 p-8 text-center">
         <div className="text-6xl">😅</div>
-        <h2 className="mt-4 text-2xl font-bold text-red-600">
-          英雄榜暂时无法加载
-        </h2>
+        <h2 className="mt-4 text-2xl font-bold text-red-600">英雄榜暂时无法加载</h2>
         <p className="mt-2 text-red-500">请稍后再试</p>
       </div>
     )
@@ -192,23 +188,26 @@ export default async function LeaderboardServer({
                       {style.badge}
                     </div>
 
-                    {/* 头像 */}
-                    <div className="mb-4 flex justify-center">
-                      <div className="border-3 border-black bg-white p-1">
-                        <Image
-                          src={author.avatarUrl}
-                          alt={`${author.username}的头像`}
-                          width={80}
-                          height={80}
-                          className="h-20 w-20 object-cover"
-                        />
+                    {/* 头像 + 用户名（→ 作者页） */}
+                    <Link
+                      href={`/authors/${encodeURIComponent(author.username)}`}
+                      className="block transition-transform hover:-translate-y-1"
+                    >
+                      <div className="mb-4 flex justify-center">
+                        <div className="border-3 border-black bg-white p-1">
+                          <Image
+                            src={author.avatarUrl}
+                            alt={`${author.username}的头像`}
+                            width={80}
+                            height={80}
+                            className="h-20 w-20 object-cover"
+                          />
+                        </div>
                       </div>
-                    </div>
-
-                    {/* 用户信息 */}
-                    <h3 className={`mb-2 text-xl font-black ${style.title}`}>
-                      @{author.username}
-                    </h3>
+                      <h3 className={`mb-2 text-xl font-black ${style.title} hover:underline`}>
+                        @{author.username}
+                      </h3>
+                    </Link>
 
                     <div className="mb-4 space-y-1 text-sm font-bold text-black/80">
                       <div className="uppercase">Posts / 投稿: {author.totalPosts}</div>
@@ -256,26 +255,30 @@ export default async function LeaderboardServer({
                       #{index + 4}
                     </div>
 
-                    {/* 头像 */}
-                    <div className="border-2 border-black p-0.5">
-                      <Image
-                        src={author.avatarUrl}
-                        alt={`${author.username}的头像`}
-                        width={48}
-                        height={48}
-                        className="h-10 w-10 object-cover"
-                      />
-                    </div>
-
-                    {/* 用户信息 */}
-                    <div className="flex-1">
-                      <h3 className="text-lg font-black text-black">
-                        @{author.username}
-                      </h3>
-                      <div className="text-xs font-bold uppercase text-gray-500">
-                        {author.totalPosts} 投稿 • Score / 分数: {Math.round(author.score)}
+                    {/* 头像 + 用户信息（→ 作者页） */}
+                    <Link
+                      href={`/authors/${encodeURIComponent(author.username)}`}
+                      className="flex flex-1 items-center gap-4"
+                    >
+                      <div className="border-2 border-black p-0.5">
+                        <Image
+                          src={author.avatarUrl}
+                          alt={`${author.username}的头像`}
+                          width={48}
+                          height={48}
+                          className="h-10 w-10 object-cover"
+                        />
                       </div>
-                    </div>
+
+                      <div className="flex-1">
+                        <h3 className="text-lg font-black text-black hover:underline">
+                          @{author.username}
+                        </h3>
+                        <div className="text-xs font-bold uppercase text-gray-500">
+                          {author.totalPosts} 投稿 • Score / 分数: {Math.round(author.score)}
+                        </div>
+                      </div>
+                    </Link>
                   </div>
 
                   {/* 统计数据 */}
