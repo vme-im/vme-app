@@ -21,9 +21,7 @@ interface ReactionsLoginProps {
  * 互动反应 - 未登录状态UI
  * 职责：显示模糊数据和登录提示
  */
-export default function ReactionsLogin({
-  className = '',
-}: ReactionsLoginProps) {
+export default function ReactionsLogin({ className = '' }: ReactionsLoginProps) {
   return (
     <div className="relative">
       <ReactionsContainer className={className}>
@@ -33,9 +31,7 @@ export default function ReactionsLogin({
             className="relative flex shrink-0 items-center gap-1 rounded-full bg-gray-100 px-2 py-1 transition-all duration-200"
           >
             <span className="text-base">{emoji}</span>
-            <span className="select-none text-xs font-medium text-gray-400 blur-xs">
-              88
-            </span>
+            <span className="select-none text-xs font-medium text-gray-400 blur-xs">88</span>
           </div>
         ))}
       </ReactionsContainer>
@@ -43,7 +39,7 @@ export default function ReactionsLogin({
         onClick={() =>
           showLoginDialog({
             title: '互动需要登录',
-            message: '登录后即可查看和添加表情反应，还能提交自己的创意文案！',
+            message: '登录后就能点表情、看热度，也能上交自己的文案。',
           })
         }
         className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-sm bg-black/0 text-xs text-transparent backdrop-blur-0 transition-all hover:bg-black/60 hover:text-white hover:backdrop-blur-xs"
@@ -53,4 +49,3 @@ export default function ReactionsLogin({
     </div>
   )
 }
-

@@ -4,7 +4,7 @@ import { unstable_cache } from 'next/cache'
 import { getDataProvider } from '@/lib/data-access'
 
 /**
- * 处理段子数据，兼容 title 是正文的情况
+ * 处理文案数据，兼容 title 是正文的情况
  * 如果 body 为空，则使用 title 作为内容
  */
 export function normalizeItemContent(item: IKfcItem): IKfcItem {
@@ -36,7 +36,7 @@ const getTopTagsCached = unstable_cache(
   { revalidate: 600 },
 )
 
-// 全量段子（限制 1000 条）缓存：被排行榜与 /api/items 复用，
+// 全量文案（限制 1000 条）缓存：被排行榜与 /api/items 复用，
 // 避免每次请求都拉一遍 1000 行
 const getAllKfcItemsCached = unstable_cache(
   async () => {
@@ -109,10 +109,10 @@ export async function getKfcItemsWithPagination(
 }
 
 /**
- * 获取今日精选文案 - 确保返回不同作者的段子
+ * 获取今日精选文案 - 确保返回不同作者的文案
  * 使用 SQL DISTINCT ON 在数据库层面去重
- * @param excludeId 要排除的段子ID（通常是 headlineJoke 的 ID）
- * @returns 3个不同作者的段子
+ * @param excludeId 要排除的文案ID（通常是 headlineJoke 的 ID）
+ * @returns 3个不同作者的文案
  */
 const getFeaturedJokesCached = unstable_cache(
   async (excludeId?: string) => {

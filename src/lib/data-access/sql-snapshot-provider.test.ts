@@ -175,7 +175,7 @@ describe('SqlSnapshotProvider', () => {
   it('getFeaturedItems：每作者一条最佳 text + excludeId', async () => {
     mockFetchOk()
     const p = new SqlSnapshotProvider()
-    // alice text 段子：a1(reactions=5)/a3(=1)；最佳 a1。b1 text reactions=2。期望按 reactions desc：a1, b1
+    // alice text 文案：a1(reactions=5)/a3(=1)；最佳 a1。b1 text reactions=2。期望按 reactions desc：a1, b1
     const items = await p.getFeaturedItems(3)
     expect(items.map((i) => i.id)).toEqual(['a1', 'b1'])
 

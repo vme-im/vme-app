@@ -23,8 +23,8 @@ interface JokeCardProps {
 }
 
 /**
- * 段子卡片组件
- * 职责：展示单个段子的内容、作者信息和互动数据
+ * 文案卡片组件
+ * 职责：展示单个文案的内容、作者信息和互动数据
  * 使用 memo 优化避免不必要的重渲染
  */
 const JokeCard = memo(function JokeCard({
@@ -76,7 +76,7 @@ const JokeCard = memo(function JokeCard({
         </div>
       )}
 
-      {/* 段子内容 */}
+      {/* 文案内容 */}
       <div className="mb-4">
         <div className="relative">
           <div

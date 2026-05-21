@@ -10,10 +10,10 @@ const NAV_LINKS = [
 ]
 
 const RANDOM_FOOTER_QUOTES = [
-  '"V ME 50 IS A LIFESTYLE"',
-  '"疯狂星期四，人生的意义"',
-  '"不疯狂，不星期四"',
-  '"今天，你V了吗？"',
+  'V ME 50 IS A LIFESTYLE',
+  '疯狂星期四，人生的意义',
+  '不疯狂不星期四',
+  '今天，你V了吗？',
 ]
 
 export default function Footer() {

@@ -41,7 +41,7 @@ const LikeButton = memo(function LikeButton({
       // 显示登录确认弹窗
       showLoginDialog({
         title: '互动需要登录',
-        message: '登录后即可互动，还能投稿自己的创意文案！',
+        message: '登录后才能点表情，也能上交自己的文案。',
       })
       return
     }
@@ -78,7 +78,7 @@ const LikeButton = memo(function LikeButton({
 
           showLoginDialog({
             title: isExpired ? '登录已过期' : '需要登录',
-            message: isExpired ? '您的登录已过期，请重新登录以继续互动' : '请登录后继续添加反应',
+            message: isExpired ? '登录过期了，重新登录就能接着点' : '登录一下才能继续点表情',
           })
         } else {
           alert(data.message)

@@ -68,7 +68,7 @@ export default async function JokesPage(props: PageProps) {
         </Link>
       </div>
 
-      {/* 段子列表 */}
+      {/* 文案列表 */}
       <Suspense
         fallback={
           <div className="flex h-64 items-center justify-center border-4 border-black bg-white p-8 shadow-neo">

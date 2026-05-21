@@ -86,7 +86,7 @@ async function getJokeForParams(id: string): Promise<IKfcItem | null> {
 // 生成静态参数（可选，用于优化）
 export async function generateStaticParams() {
   const items = await getAllKfcItems()
-  // 只为前 100 个段子生成静态页面，其他的使用 ISR
+  // 只为前 100 个文案生成静态页面，其他的使用 ISR
   return items.slice(0, 100).map((item) => ({
     id: item.id,
   }))
@@ -99,27 +99,27 @@ export async function generateMetadata(props: PageProps) {
 
   if (!joke) {
     return {
-      title: '段子不存在 - 疯狂星期四段子库',
-      description: '抱歉，您访问的段子不存在或已被删除。',
+      title: '文案不存在 - 疯狂星期四文案库',
+      description: '这条文案可能被吃掉了，或者压根没存在过。',
     }
   }
 
   // 规范化内容，兼容 title 是正文的情况
   const normalizedJoke = normalizeItemContent(joke)
 
-  // 使用段子标题作为页面标题
+  // 使用文案标题作为页面标题
   const pageTitle = normalizedJoke.title
-    ? `${normalizedJoke.title} - 疯狂星期四段子库`
-    : '疯狂星期四段子 - KFC 段子库'
+    ? `${normalizedJoke.title} - 疯狂星期四文案库`
+    : '疯狂星期四文案 - KFC 文案库'
 
-  // 生成描述：使用段子内容前 150 字符
+  // 生成描述：使用文案内容前 150 字符
   const description =
     normalizedJoke.body.length > 150
       ? normalizedJoke.body.slice(0, 150) + '...'
       : normalizedJoke.body
 
   // 生成关键词
-  const keywords = `疯狂星期四,KFC段子,${normalizedJoke.author.username},搞笑段子,文案`
+  const keywords = `疯狂星期四,KFC文案,${normalizedJoke.author.username},搞笑文案,梗图`
 
   return {
     title: pageTitle,
@@ -127,7 +127,7 @@ export async function generateMetadata(props: PageProps) {
     keywords,
     authors: [{ name: normalizedJoke.author.username, url: normalizedJoke.author.url }],
     openGraph: {
-      title: normalizedJoke.title || '疯狂星期四段子',
+      title: normalizedJoke.title || '疯狂星期四文案',
       description,
       type: 'article',
       authors: [normalizedJoke.author.username],
@@ -136,7 +136,7 @@ export async function generateMetadata(props: PageProps) {
     },
     twitter: {
       card: 'summary',
-      title: normalizedJoke.title || '疯狂星期四段子',
+      title: normalizedJoke.title || '疯狂星期四文案',
       description,
       creator: `@${normalizedJoke.author.username}`,
     },
@@ -160,7 +160,7 @@ export default async function JokeDetailPage(props0: PageProps) {
   const totalReactions = normalizedJoke.reactions?.totalCount || 0
   const isHot = totalReactions >= 10
 
-  // 获取随机段子用于"再来一条"
+  // 获取随机文案用于"再来一条"
   const randomJoke = await getRandomKfcItem()
   const nextJokeUrl = randomJoke ? `/jokes/${randomJoke.id}` : '/jokes'
 
@@ -177,7 +177,7 @@ export default async function JokeDetailPage(props0: PageProps) {
         </a>
       </div>
 
-      {/* 段子详情卡片 */}
+      {/* 文案详情卡片 */}
       <div className="mx-auto max-w-4xl">
         <article className="relative border-4 border-black bg-white shadow-neo-xl">
           {/* 热门标签 */}
@@ -189,7 +189,7 @@ export default async function JokeDetailPage(props0: PageProps) {
           )}
 
           <div className="relative z-10 p-5 md:p-8 lg:p-12">
-            {/* 段子内容 */}
+            {/* 文案内容 */}
             <div className="mb-8 md:mb-12">
               <div className="mb-6 flex items-center gap-2 border-b-4 border-black pb-2">
                 <span className="text-2xl md:text-3xl">📝</span>

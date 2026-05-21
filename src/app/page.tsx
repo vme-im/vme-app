@@ -3,12 +3,11 @@ import Link from 'next/link'
 import NeoButton from '@/components/shared/NeoButton'
 
 import { getFeaturedJokes, getRandomKfcItem, extractImageUrl, getTopTags } from '@/lib/server-utils'
-import { getTagDisplay } from '@/lib/tags/taxonomy'
 
 export default async function Page() {
   // 并行获取所有首页数据
   const [selectedJokes, headlineJoke, randomMeme, topTags] = await Promise.all([
-    getFeaturedJokes(), // 在服务端确保获取3个不同作者的段子
+    getFeaturedJokes(), // 在服务端确保获取3个不同作者的文案
     getRandomKfcItem('text'),
     getRandomKfcItem('meme'),
     getTopTags(),
@@ -18,9 +17,9 @@ export default async function Page() {
 
   // 英雄榜文案轮换配置
   const HERO_COPIES = [
-    { line1: '今天不疯狂星期四', line2: '你将失去一切' },
+    { line1: '错过今天的疯狂星期四', line2: '你将失去一切' },
     { line1: '别问这周四疯不疯', line2: '直接 V 我 50' },
-    { line1: '世界上最遥远的距离', line2: '是你读完段子 却没V我50' },
+    { line1: '世界上最遥远的距离', line2: '是你读完文案 却没V我50' },
     { line1: '注意看，这个男人叫小帅', line2: '他想请你 V 他 50' },
     { line1: '如果今天不疯狂', line2: '那人生还有什么意义？' },
     { line1: 'V me 50', line2: 'Manners Maketh Man' },
@@ -66,10 +65,10 @@ export default async function Page() {
         <div className="relative z-10 mx-auto max-w-4xl">
           <div className="mb-4 flex flex-wrap justify-center gap-3">
             <span className="bg-kfc-yellow shadow-neo-sm rotate-3 transform border-2 border-black px-3 py-1 text-sm font-black text-black uppercase md:text-base">
-              User Generated Content / 用户共创
+              User Generated Content / 网友自己写的
             </span>
             <span className="shadow-neo-sm -rotate-2 transform border-2 border-black bg-white px-3 py-1 text-sm font-black text-black uppercase md:text-base">
-              Since 2024 /始于疯狂
+              Since 2024 / 始于疯狂
             </span>
           </div>
 
@@ -80,7 +79,7 @@ export default async function Page() {
 
           <div className="shadow-neo-yellow mx-auto max-w-2xl transform border-3 border-black bg-white p-4 transition-transform hover:scale-[1.01] md:rotate-1">
             <p className="text-lg font-bold text-black md:text-xl">
-              全网爆文 / 纳趣段子 / 文案 / 梗图
+              全网爆款 / 沙雕好活 / 抽象文案 / 梗图
               <br />
               <span className="bg-kfc-red px-1 text-white">精神状态遥遥领先！</span>
             </p>
@@ -166,11 +165,11 @@ export default async function Page() {
         </div>
       </div>
 
-      {/* 3. 今日爆款段子 (Headline) */}
+      {/* 3. 今日爆款文案 (Headline) */}
       <div className="mb-16">
         <div className="border-kfc-red mb-2 flex items-center gap-2 border-b-4 pb-2">
           <span className="text-2xl">🚀</span>
-          <h2 className="text-kfc-red text-2xl font-black italic md:text-3xl">今日爆款段子</h2>
+          <h2 className="text-kfc-red text-2xl font-black italic md:text-3xl">今日爆款文案</h2>
         </div>
         <div className="bg-kfc-red/5 p-2 md:p-4">
           <div className="flex flex-col gap-6 md:h-96 md:flex-row">
@@ -276,7 +275,6 @@ export default async function Page() {
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {topTags.map((tagItem, index) => {
               const style = TAG_STYLES[index % TAG_STYLES.length]
-              const displayTag = getTagDisplay(tagItem.tag)
               return (
                 <Link
                   key={tagItem.tag}
@@ -286,10 +284,10 @@ export default async function Page() {
                   <div className="flex h-full items-center justify-between px-4">
                     <div className="z-10">
                       <h3 className={`text-xl font-black italic ${style.text}`}>
-                        {style.emoji} {displayTag.label}
+                        {style.emoji} {tagItem.tag}
                       </h3>
                       <p className={`text-xs font-bold ${style.text}/70`}>
-                        {displayTag.description}
+                        共 {tagItem.count} 篇文案
                       </p>
                     </div>
                     <div className="absolute -right-4 -bottom-4 text-6xl opacity-20 grayscale transition-all group-hover:scale-110 group-hover:grayscale-0">
@@ -316,7 +314,7 @@ export default async function Page() {
         <div className="relative container mx-auto px-4">
           <div className="mb-3 flex flex-wrap justify-center gap-3">
             <span className="bg-kfc-yellow shadow-neo-sm -rotate-1 border-2 border-black px-3 py-1 text-xs font-black text-black uppercase">
-              User Submissions / 全民共创
+              User Submissions / 全靠网友投喂
             </span>
             <span className="bg-white shadow-neo-sm rotate-1 border-2 border-black px-3 py-1 text-xs font-black text-black uppercase">
               Since 2024 / 始于疯狂

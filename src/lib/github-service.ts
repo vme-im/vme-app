@@ -289,7 +289,7 @@ export class GitHubService {
         id: response.data.node_id,
       }
     } catch (error: any) {
-      throw this.handleError(error, '创建段子 Issue 失败')
+      throw this.handleError(error, '创建文案 Issue 失败')
     }
   }
 

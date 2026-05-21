@@ -10,7 +10,7 @@ const FORM_STORAGE_KEY = 'submit_joke_form_draft'
 type SubmitMode = 'text' | 'meme'
 
 /**
- * 提交段子表单组件
+ * 提交文案表单组件
  */
 export default function SubmitForm() {
   const { data: session, status } = useSession()
@@ -41,7 +41,7 @@ export default function SubmitForm() {
               const validImages = parsed.images.filter((url: string) => !url.startsWith('blob:'))
               setUploadedImages(validImages)
             }
-            setMessage({ type: 'info', text: '已恢复您之前填写的内容' })
+            setMessage({ type: 'info', text: '已经帮你恢复上次写的内容' })
             localStorage.removeItem(FORM_STORAGE_KEY)
           }
         } catch (e) {
@@ -207,8 +207,8 @@ export default function SubmitForm() {
           showLoginDialog({
             title: isExpired ? '登录已过期' : '提交内容需要登录',
             message: isExpired
-              ? '您的登录已过期，请重新登录以继续提交'
-              : '登录后即可上交文案或梗图，分享快乐给更多人！',
+              ? '登录过期了，重新登录就能接着交'
+              : '登录 GitHub 就能上交文案和梗图，让更多人笑出腹肌。',
           })
         } else {
           setMessage({ type: 'error', text: data.message || '提交失败，请稍后重试' })
@@ -239,7 +239,7 @@ export default function SubmitForm() {
     // 显示登录确认弹窗
     showLoginDialog({
       title: '提交内容需要登录',
-      message: '登录后即可上交文案或梗图，分享快乐给更多人！',
+      message: '登录 GitHub 就能上交文案和梗图，让更多人笑出腹肌。',
     })
   }
 
@@ -260,9 +260,7 @@ export default function SubmitForm() {
             疯四文案
           </span>
         </h2>
-        <p className="mb-6 text-center font-bold text-gray-600">
-          请先登录 GitHub 账号以提交您的创意
-        </p>
+        <p className="mb-6 text-center font-bold text-gray-600">先登录 GitHub，才能上交你的好活</p>
         <div className="flex justify-center">
           <button
             onClick={handleLoginClick}

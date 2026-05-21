@@ -4,7 +4,7 @@ import { getItemById } from '@/lib/server-utils'
 export const revalidate = 60 // 60秒缓存
 
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+  const params = await props.params
   const headers = new Headers()
   headers.set('Access-Control-Allow-Origin', '*')
   headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS, HEAD')
@@ -15,19 +15,13 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     const item = await getItemById(id)
 
     if (!item) {
-      return NextResponse.json(
-        { error: 'Joke not found' },
-        { status: 404, headers }
-      )
+      return NextResponse.json({ error: 'Joke not found' }, { status: 404, headers })
     }
 
     return NextResponse.json(item, { headers })
   } catch (error) {
-    console.error('获取段子失败:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500, headers }
-    )
+    console.error('获取文案失败:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers })
   }
 }
 

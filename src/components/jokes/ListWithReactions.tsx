@@ -14,8 +14,8 @@ interface ListWithReactionsProps {
 }
 
 /**
- * 段子列表(带批量反应数据注入)
- * 职责：批量获取所有段子的互动数据，并注入到各个卡片
+ * 文案列表(带批量反应数据注入)
+ * 职责：批量获取所有文案的互动数据，并注入到各个卡片
  * 使用 memo 优化避免不必要的重渲染
  */
 const ListWithReactions = memo(function ListWithReactions({

@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation'
 const sortOptions = [
   { key: 'score', label: '综合评分', icon: '🏆' },
   { key: 'interactions', label: '互动数', icon: '👍' },
-  { key: 'posts', label: '段子数', icon: '📝' },
+  { key: 'posts', label: '文案数', icon: '📝' },
 ]
 
 interface SortTabsProps {

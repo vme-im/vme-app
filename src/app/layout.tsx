@@ -27,10 +27,10 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: '肯德基疯狂星期四段子收集站 | 今天你v50了吗？',
+  title: '肯德基疯狂星期四文案收集站 | 今天你v50了吗？',
   description:
-    '肯德基疯狂星期四的精髓，不止于炸鸡，更在于每一个让你笑出腹肌的段子。收录最搞笑的疯狂星期四段子。',
-  keywords: '肯德基,疯狂星期四,段子,v50,KFC,搞笑,文案',
+    '肯德基疯狂星期四的精髓，不止于炸鸡，更在于每一个让你笑出腹肌的文案。收录最搞笑的疯狂星期四文案。',
+  keywords: '肯德基,疯狂星期四,文案,v50,KFC,搞笑,梗图',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

@@ -10,7 +10,7 @@ interface JokesListProps {
 }
 
 /**
- * 段子列表容器（服务端组件）
+ * 文案列表容器（服务端组件）
  * 职责：获取分页数据，渲染列表结构
  */
 export default async function JokesList({ currentPage, type, tag, author }: JokesListProps) {
@@ -55,7 +55,7 @@ export default async function JokesList({ currentPage, type, tag, author }: Joke
         </div>
       </div>
 
-      {/* 段子列表（含批量反应数据注入） */}
+      {/* 文案列表（含批量反应数据注入） */}
       <ListWithReactions
         items={items}
         showTags={true}

@@ -37,7 +37,7 @@ export default function NotFound() {
             <span className="text-2xl">🍗</span>
           </div>
           <p className="text-base text-black font-bold italic">
-            “404错误就像疯狂星期四的优惠券，有时候就是找不到，但别担心，还有更多段子等着你！”
+            “页面走丢了，多半是揣着你的 50 块去蹲肯德基了。”
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default function NotFound() {
             icon="fa-pencil"
             external
           >
-            CONTRIBUTE / 写个新段子
+            CONTRIBUTE / 写篇新文案
           </NeoButton>
         </div>
 

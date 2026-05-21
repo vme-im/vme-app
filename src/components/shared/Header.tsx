@@ -108,7 +108,7 @@ const Header = memo(function Header({ contributorsCount }: HeaderProps) {
             <div className="hidden items-center gap-1.5 border-2 border-black bg-kfc-yellow px-3 py-1 shadow-neo-sm lg:flex">
               <span className="animate-neo-blink h-2 w-2 rounded-full bg-green-600"></span>
               <span className="text-xs font-black text-black uppercase">
-                <span className="text-kfc-red">{contributorsCount}</span> 段子手
+                <span className="text-kfc-red">{contributorsCount}</span> 文案鬼才
               </span>
             </div>
             <LoginButton />
@@ -142,7 +142,7 @@ const Header = memo(function Header({ contributorsCount }: HeaderProps) {
               )
             })}
             <div className="bg-kfc-red shadow-neo-sm mt-2 border-2 border-black px-4 py-2 text-xs font-bold text-white">
-              <span className="text-kfc-yellow">{contributorsCount}</span> 位 🍗 段子手在线
+              <span className="text-kfc-yellow">{contributorsCount}</span> 位 🍗 文案鬼才在线
             </div>
           </nav>
         </div>

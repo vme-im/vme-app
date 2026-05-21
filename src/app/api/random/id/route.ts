@@ -8,10 +8,7 @@ export async function GET() {
     const randomJoke = await getRandomKfcItem()
     return NextResponse.json({ id: randomJoke.id })
   } catch (error) {
-    console.error('获取随机段子 ID 失败:', error)
-    return NextResponse.json(
-      { error: 'Failed to get random joke' },
-      { status: 500 }
-    )
+    console.error('获取随机文案 ID 失败:', error)
+    return NextResponse.json({ error: 'Failed to get random joke' }, { status: 500 })
   }
 }

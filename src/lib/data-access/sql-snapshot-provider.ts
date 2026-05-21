@@ -344,7 +344,7 @@ export class SqlSnapshotProvider implements DataProvider {
 
   async getFeaturedItems(limit = 3, excludeId?: string): Promise<IKfcItem[]> {
     const { db } = await this.getModel()
-    // 每作者一条最佳 text 段子，全局按 reactions+createdAt 排序取 limit
+    // 每作者一条最佳 text 文案，全局按 reactions+createdAt 排序取 limit
     // 用窗口函数 ROW_NUMBER 找每作者最佳
     const sql = `
       WITH ranked AS (

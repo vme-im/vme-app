@@ -26,7 +26,7 @@ async function getLeaderboardData(sortBy: string = 'score') {
     // 动态导入服务端工具函数，避免客户端bundle包含fs模块
     const { getAllKfcItems } = await import('@/lib/server-utils')
 
-    // 获取所有段子数据
+    // 获取所有文案数据
     const allItems = await getAllKfcItems()
 
     // 按作者分组
@@ -70,10 +70,10 @@ async function getLeaderboardData(sortBy: string = 'score') {
 
       author.totalInteractions = totalInteractions
 
-      // 计算综合评分：互动数 * 1.5 + 段子数 * 5
+      // 计算综合评分：互动数 * 1.5 + 文案数 * 5
       author.score = totalInteractions * 1.5 + author.totalPosts * 5
 
-      // 按热度排序作者的段子
+      // 按热度排序作者的文案
       author.posts.sort((a, b) => {
         const scoreA = a.interactions
         const scoreB = b.interactions
