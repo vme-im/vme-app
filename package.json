@@ -62,7 +62,8 @@
     "preact": "10.28.2",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.2.3",
-    "postcss": "^8.5.10"
+    "postcss": "^8.5.10",
+    "uuid": "^11.1.1"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
