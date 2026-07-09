@@ -61,7 +61,7 @@ vme-app SqlSnapshotProvider (sql.js + 5min TTL)
 Web 展示 / 开放 API
 ```
 
-无 DB 应急回退：远端 fetch 失败时 provider 自身回退上次 good model 或空 db，不整站 500。`SNAPSHOT_BASE_URL` 可指向自有镜像。点赞实时拉 GitHub Reactions（详情页交互）。完整决策日志与扩张路线见架构规格。
+无 DB 应急回退：远端 fetch 失败时 provider 自身回退上次 good model 或空 db，不整站 500，且内置 429/5xx 退避重试。`SNAPSHOT_BASE_URL` 可指向自有镜像；生产建议走 jsDelivr CDN（`https://cdn.jsdelivr.net/gh/vme-im/vme-content@main`）避开 raw.githubusercontent 匿名限速，秒级生效由 vme-content 侧 push 后 `curl https://purge.jsdelivr.net/gh/vme-im/vme-content@main/data/snapshot.sql` 兜底。点赞实时拉 GitHub Reactions（详情页交互）。完整决策日志与扩张路线见架构规格。
 
 ---
 

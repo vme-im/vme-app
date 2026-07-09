@@ -59,7 +59,7 @@ npm run lint     # ESLint
 npm test         # 单元测试（Vitest）
 ```
 
-> 读模型从远端 `raw.githubusercontent` 拉 `vme-content/data/snapshot.sql`，本地开发零数据库配置即可启动。需要指向自有快照镜像时设 `SNAPSHOT_BASE_URL`。
+> 读模型从远端 `raw.githubusercontent` 拉 `vme-content/data/snapshot.sql`，本地开发零数据库配置即可启动。生产建议把 `SNAPSHOT_BASE_URL` 指到 jsDelivr CDN（`https://cdn.jsdelivr.net/gh/vme-im/vme-content@main`）避开 raw 匿名限速；也可指向自有镜像。
 
 > 完整的本地配置、技术架构、UI 风格规范与 **AI Agent 协作指令**，见
 > 👉 **[开发者与 Agent 协作指南](./docs/dev/README.md)**（含 [风格指南](./docs/dev/style-guide.md)、[组件说明](./docs/dev/components.md)）。
