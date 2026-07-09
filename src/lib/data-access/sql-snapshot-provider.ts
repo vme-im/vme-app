@@ -58,7 +58,12 @@ async function fetchText(url: string): Promise<string> {
   const controller = new AbortController()
   const t = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
-    const res = await fetch(url, { cache: 'no-store', signal: controller.signal })
+    // 用 revalidate 而非 no-store：本 provider 自带 5min 内存 TTL，Next 层再给一层可缓存的 fetch，
+    // 才能让 /jokes/[id] 这类 ISR 页面正常静态化（no-store 会把整页强制变为动态渲染）
+    const res = await fetch(url, {
+      next: { revalidate: MODEL_TTL_MS / 1000 },
+      signal: controller.signal,
+    })
     if (!res.ok) throw new Error(`fetch ${url} -> ${res.status}`)
     return await res.text()
   } finally {
