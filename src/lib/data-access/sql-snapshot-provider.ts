@@ -60,12 +60,28 @@ async function fetchText(url: string): Promise<string> {
   try {
     // 用 revalidate 而非 no-store：本 provider 自带 5min 内存 TTL，Next 层再给一层可缓存的 fetch，
     // 才能让 /jokes/[id] 这类 ISR 页面正常静态化（no-store 会把整页强制变为动态渲染）
-    const res = await fetch(url, {
-      next: { revalidate: MODEL_TTL_MS / 1000 },
-      signal: controller.signal,
-    })
-    if (!res.ok) throw new Error(`fetch ${url} -> ${res.status}`)
-    return await res.text()
+    //
+    // 429/5xx 上带退避重试：raw.githubusercontent.com 匿名限速，Vercel 多 Lambda 并发冷启动会撞。
+    // 稳态下 Next data cache + 5min 内存 TTL 已经足够避免频繁拉取，重试只覆盖冷启动突发窗口。
+    const attempts = 3
+    const backoffMs = [0, 300, 1200]
+    let lastErr: unknown = null
+    for (let i = 0; i < attempts; i++) {
+      if (backoffMs[i]) await new Promise((r) => setTimeout(r, backoffMs[i]))
+      try {
+        const res = await fetch(url, {
+          next: { revalidate: MODEL_TTL_MS / 1000 },
+          signal: controller.signal,
+        })
+        if (res.ok) return await res.text()
+        lastErr = new Error(`fetch ${url} -> ${res.status}`)
+        if (res.status !== 429 && res.status < 500) throw lastErr
+      } catch (e) {
+        lastErr = e
+        if (controller.signal.aborted) throw e
+      }
+    }
+    throw lastErr ?? new Error(`fetch ${url} failed`)
   } finally {
     clearTimeout(t)
   }
