@@ -3,11 +3,18 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { showLoginDialog } from '@/components/shared/LoginDialog'
+import NeoButton from '@/components/shared/NeoButton'
+import Icon from '@/components/shared/Icon'
 import UrlImageUploader from './url-image-uploader'
 
 const FORM_STORAGE_KEY = 'submit_joke_form_draft'
 
 type SubmitMode = 'text' | 'meme'
+
+const MODE_TABS: { mode: SubmitMode; label: string }[] = [
+  { mode: 'text', label: '文案' },
+  { mode: 'meme', label: '梗图' },
+]
 
 /**
  * 提交文案表单组件
@@ -246,7 +253,10 @@ export default function SubmitForm() {
   if (status === 'loading') {
     return (
       <div className="flex h-32 items-center justify-center border-4 border-black bg-white p-8 shadow-neo">
-        <span className="animate-neo-blink text-3xl font-black uppercase text-black">Loading…</span>
+        <div className="text-news-gray flex items-center gap-3">
+          <Icon name="spinner" className="animate-spin text-2xl" />
+          <span className="text-sm font-black">加载中...</span>
+        </div>
       </div>
     )
   }
@@ -254,27 +264,11 @@ export default function SubmitForm() {
   if (!session) {
     return (
       <div className="mx-auto max-w-2xl border-4 border-black bg-white p-6 shadow-neo-xl md:p-8">
-        <h2 className="mb-4 text-center text-3xl font-black italic uppercase text-black md:text-4xl">
-          上交我的
-          <span className="ml-2 text-kfc-red underline decoration-4 underline-offset-4">
-            疯四文案
-          </span>
-        </h2>
-        <p className="mb-6 text-center font-bold text-gray-600">先登录 GitHub，才能上交你的好活</p>
+        <p className="text-news-gray mb-6 text-center font-bold">先登录 GitHub，才能上交你的好活</p>
         <div className="flex justify-center">
-          <button
-            onClick={handleLoginClick}
-            className="flex min-h-[48px] items-center gap-2 border-3 border-black bg-kfc-yellow px-6 py-2 text-lg font-black uppercase text-black shadow-neo transition-all hover:-translate-y-1 hover:bg-black hover:text-white hover:shadow-neo-lg"
-          >
-            <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                fillRule="evenodd"
-                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                clipRule="evenodd"
-              />
-            </svg>
+          <NeoButton onClick={handleLoginClick} variant="black" size="lg" icon="github">
             GitHub 登录
-          </button>
+          </NeoButton>
         </div>
       </div>
     )
@@ -282,40 +276,31 @@ export default function SubmitForm() {
 
   return (
     <div className="mx-auto max-w-2xl border-4 border-black bg-white p-6 shadow-neo-xl md:p-8">
-      <h2 className="mb-6 text-center text-3xl font-black italic uppercase text-black md:mb-8 md:text-4xl">
-        上交我的<span className="text-kfc-red underline decoration-4">疯四文案</span>
-      </h2>
-
-      <div className="mb-6 flex gap-2 border-b-4 border-black pb-4">
-        <button
-          onClick={() => setActiveTab('text')}
-          className={`border-2 border-black px-4 py-2 text-sm font-black uppercase shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
-            activeTab === 'text'
-              ? 'bg-kfc-red text-white'
-              : 'bg-white text-black hover:bg-black hover:text-white'
-          }`}
-        >
-          📝 纯文本 / Text
-        </button>
-        <button
-          onClick={() => setActiveTab('meme')}
-          className={`border-2 border-black px-4 py-2 text-sm font-black uppercase shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
-            activeTab === 'meme'
-              ? 'bg-kfc-red text-white'
-              : 'bg-white text-black hover:bg-black hover:text-white'
-          }`}
-        >
-          🖼️ 梗图 / Meme
-        </button>
+      {/* 分类 tab：黑底，选中变黄（同栏目区分类切换语言） */}
+      <div className="bg-kfc-black mb-6 inline-flex flex-wrap gap-1 p-1">
+        {MODE_TABS.map((tab) => (
+          <button
+            key={tab.mode}
+            type="button"
+            onClick={() => setActiveTab(tab.mode)}
+            className={`px-4 py-2 text-sm font-black tracking-wide transition-colors ${
+              activeTab === tab.mode
+                ? 'bg-kfc-yellow text-black'
+                : 'text-white hover:text-kfc-yellow'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <label htmlFor="title" className="block text-sm font-black uppercase text-black">
-              标题 / Title *
+            <label htmlFor="title" className="block text-xs font-black text-black">
+              标题 *
             </label>
-            <p className="text-xs font-bold text-gray-500">{title.length}/100</p>
+            <p className="text-news-gray text-xs font-bold">{title.length}/100</p>
           </div>
           <input
             type="text"
@@ -323,7 +308,7 @@ export default function SubmitForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="给你的作品起个标题..."
-            className="w-full min-h-[44px] border-2 border-black bg-white px-4 py-3 font-bold text-black shadow-neo-sm transition-all placeholder:text-gray-400 focus:bg-kfc-cream focus:shadow-neo focus:outline-hidden"
+            className="focus:border-kfc-red focus:bg-kfc-cream shadow-neo-sm min-h-[44px] w-full border-2 border-black bg-white px-4 py-3 font-bold text-black transition-all placeholder:text-news-gray focus:shadow-neo focus:outline-hidden"
             disabled={isSubmitting}
             maxLength={100}
           />
@@ -332,9 +317,7 @@ export default function SubmitForm() {
         {/* 梗图上传区域 */}
         {activeTab === 'meme' && (
           <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-            <label className="mb-2 block text-sm font-black uppercase text-black">
-              上传梗图 / Images *
-            </label>
+            <label className="mb-2 block text-xs font-black text-black">上传梗图 *</label>
             <UrlImageUploader
               onFileSelect={handleFileSelected}
               onImageRemoved={handleImageRemoved}
@@ -347,10 +330,10 @@ export default function SubmitForm() {
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <label htmlFor="content" className="block text-sm font-black uppercase text-black">
-              {activeTab === 'meme' ? '补充说明 / Description (Optional)' : '文案内容 / Content *'}
+            <label htmlFor="content" className="block text-xs font-black text-black">
+              {activeTab === 'meme' ? '补充说明（选填）' : '文案内容 *'}
             </label>
-            <p className="text-xs font-bold text-gray-500">{content.length}/2000</p>
+            <p className="text-news-gray text-xs font-bold">{content.length}/2000</p>
           </div>
           <textarea
             id="content"
@@ -358,7 +341,7 @@ export default function SubmitForm() {
             onChange={(e) => setContent(e.target.value)}
             placeholder={activeTab === 'meme' ? '可以说说这张图的梗点...' : '开始你的表演...'}
             rows={6}
-            className="w-full resize-none border-2 border-black bg-white px-4 py-3 font-bold text-black shadow-neo-sm transition-all placeholder:text-gray-400 focus:bg-kfc-cream focus:shadow-neo focus:outline-hidden"
+            className="focus:border-kfc-red focus:bg-kfc-cream shadow-neo-sm w-full resize-none border-2 border-black bg-white px-4 py-3 font-bold text-black transition-all placeholder:text-news-gray focus:shadow-neo focus:outline-hidden"
             disabled={isSubmitting}
             maxLength={2000}
           />
@@ -366,7 +349,7 @@ export default function SubmitForm() {
 
         {message && (
           <div
-            className={`border-2 border-black p-4 font-black shadow-neo-sm uppercase ${
+            className={`shadow-neo-sm flex items-center gap-2 border-2 border-black p-4 font-black ${
               message.type === 'success'
                 ? 'bg-kfc-yellow text-black'
                 : message.type === 'info'
@@ -374,40 +357,52 @@ export default function SubmitForm() {
                   : 'bg-kfc-red text-white'
             }`}
           >
-            {message.type === 'success' ? '✓ ' : message.type === 'error' ? '✗ ' : '→ '}
+            <Icon
+              name={
+                message.type === 'success'
+                  ? 'check-circle'
+                  : message.type === 'error'
+                    ? 'x-circle'
+                    : 'info'
+              }
+              className="shrink-0 text-lg"
+            />
             {message.text}
           </div>
         )}
 
-        <button
+        <NeoButton
           type="submit"
           disabled={isSubmitting}
-          className="w-full border-3 border-black bg-kfc-yellow px-6 py-4 text-xl font-black uppercase text-black shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:bg-black hover:text-white hover:shadow-none disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none"
+          variant="primary"
+          size="lg"
+          className="w-full"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">
-              <i className="fa fa-spinner fa-spin"></i>
-              SUBMITTING...
+              <Icon name="spinner" className="animate-spin" />
+              提交中...
             </span>
           ) : (
-            '确认上交 / SUBMIT'
+            '确认上交'
           )}
-        </button>
+        </NeoButton>
       </form>
 
-      <div className="mt-8 border-2 border-black bg-kfc-cream p-4 shadow-neo-sm">
-        <h3 className="mb-2 text-sm font-black uppercase text-black">
-          <i className="fa fa-info-circle mr-2"></i>提交须知：
+      <div className="bg-kfc-cream shadow-neo-sm mt-8 border-2 border-black p-4">
+        <h3 className="mb-2 flex items-center text-sm font-black text-black">
+          <Icon name="info" className="mr-2" />
+          提交须知
         </h3>
-        <ul className="space-y-1 text-xs font-bold text-gray-700">
-          <li>• 请确保内容原创，避免重复提交</li>
-          <li>• 内容应当积极健康，符合社区规范</li>
-          <li>• 提交后将自动创建 GitHub Issue，经审核后显示</li>
+        <ul className="text-news-gray space-y-1 text-xs font-bold">
+          <li>· 请确保内容原创，避免重复提交</li>
+          <li>· 内容应当积极健康，符合社区规范</li>
+          <li>· 提交后将自动创建 GitHub Issue，经审核后显示</li>
           <li>
-            •{' '}
+            ·{' '}
             {activeTab === 'meme'
               ? '梗图将自动合成为 Markdown 格式提交'
-              : '文案支持 Markdown 格式 (但不推荐过度使用)'}
+              : '文案支持 Markdown 格式（但不推荐过度使用）'}
           </li>
         </ul>
       </div>

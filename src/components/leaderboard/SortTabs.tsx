@@ -3,11 +3,12 @@
 import { memo } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import Icon, { IconName } from '@/components/shared/Icon'
 
-const sortOptions = [
-  { key: 'score', label: '综合评分', icon: '🏆' },
-  { key: 'interactions', label: '互动数', icon: '👍' },
-  { key: 'posts', label: '文案数', icon: '📝' },
+const sortOptions: { key: string; label: string; icon: IconName }[] = [
+  { key: 'score', label: '综合评分', icon: 'trophy' },
+  { key: 'interactions', label: '互动数', icon: 'heart' },
+  { key: 'posts', label: '文案数', icon: 'pencil' },
 ]
 
 interface SortTabsProps {
@@ -15,7 +16,8 @@ interface SortTabsProps {
 }
 
 /**
- * 排行榜排序标签组件
+ * 英雄榜排序标签
+ * 新语言：黑底黄字（当前）/ 白底黑字 hover 黄底，按压感 hover 与站内按钮一致
  * 使用 memo 优化性能
  */
 const SortTabs = memo(function SortTabs({ currentSort }: SortTabsProps) {
@@ -23,7 +25,7 @@ const SortTabs = memo(function SortTabs({ currentSort }: SortTabsProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs font-black uppercase text-black">排序:</span>
+      <span className="text-news-gray text-xs font-bold">排序</span>
       {sortOptions.map(({ key, label, icon }) => {
         const isActive = currentSort === key
 
@@ -36,13 +38,11 @@ const SortTabs = memo(function SortTabs({ currentSort }: SortTabsProps) {
             key={key}
             scroll={false}
             href={hrefString}
-            className={`flex items-center gap-1.5 border-2 border-black px-3 py-1 text-sm font-black transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${
-              isActive
-                ? 'bg-kfc-red text-white shadow-neo-sm'
-                : 'bg-white text-black shadow-neo-sm hover:bg-black hover:text-white'
+            className={`shadow-neo-sm flex items-center gap-1.5 border-2 border-black px-3 py-1 text-sm font-black transition-all hover:translate-x-px hover:translate-y-px hover:shadow-none ${
+              isActive ? 'bg-kfc-black text-kfc-yellow' : 'hover:bg-kfc-yellow bg-white text-black'
             }`}
           >
-            <span>{icon}</span>
+            <Icon name={icon} />
             {label}
           </Link>
         )

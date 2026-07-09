@@ -10,6 +10,10 @@
   --color-kfc-yellow: #ffc72c;
   --color-kfc-cream: #f4f1ea;
   --color-kfc-black: #121212;
+  --color-news-rule: #c9c5b8;
+  /* 分栏线：细规则线 */
+  --color-news-gray: #6b6b62;
+  /* 报纸灰字：byline / 辅助信息 */
 
   --shadow-neo: 4px 4px 0px 0px #000000;
   --shadow-neo-sm: 2px 2px 0px 0px #000000;
@@ -22,8 +26,7 @@
 
   --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Heiti SC', var(--font-inter), sans-serif;
   --font-display: var(--font-mona-sans), 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --font-kfc: 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
-  --font-funny: 'Comic Sans MS', 'Bubblegum Sans', 'PingFang SC', 'Microsoft YaHei', cursive;
+  --font-serif-news: 'Songti SC', 'SimSun', serif;
 }
 
 /*
@@ -42,23 +45,6 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
-}
-
-@utility text-balance {
-  text-wrap: balance;
-}
-
-@utility bg-kfc-newsprint {
-  /* 模拟报纸/牛皮纸的噪点纹理 */
-  background-color: var(--page-bg);
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-}
-
-@utility bg-halftone {
-  /* 装饰性的半调网格圆点 (Halftone Dots) */
-  background-image: radial-gradient(#c41200 1px, transparent 1px);
-  background-size: 10px 10px;
 }
 
 @utility text-justify-cn {
@@ -169,10 +155,6 @@
   }
 }
 
-@utility animate-marquee {
-  animation: marquee 28s linear infinite;
-}
-
 @utility animate-marquee-slow {
   animation: marquee 45s linear infinite;
 }
@@ -190,4 +172,14 @@
 
 @utility animate-neo-blink {
   animation: neo-blink 1.5s ease-in-out infinite;
+}
+
+/* 降级：用户开启「减少动态效果」时，装饰性动画关闭或瞬时完成 */
+@media (prefers-reduced-motion: reduce) {
+  #mobile-menu:not(.hidden),
+  .animate-marquee-slow,
+  .animate-neo-blink {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

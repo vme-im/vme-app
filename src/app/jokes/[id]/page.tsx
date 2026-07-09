@@ -2,17 +2,18 @@ import { Suspense } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import {
   getAllKfcItems,
   getRandomKfcItem,
   getItemById,
   normalizeItemContent,
 } from '@/lib/server-utils'
-import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
 import CopyButton from '@/components/shared/CopyButton'
 import InteractiveReactions from '@/components/reactions/Interactive'
 import NeoButton from '@/components/shared/NeoButton'
+import Icon from '@/components/shared/Icon'
 import { IKfcItem } from '@/types'
 
 interface PageProps {
@@ -145,6 +146,16 @@ export async function generateMetadata(props: PageProps) {
 
 export const revalidate = 3600 // 1小时重新验证一次
 
+/** 报纸日期格式：YYYY 年 M 月 D 日 */
+function formatDate(iso?: string): string {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
 export default async function JokeDetailPage(props0: PageProps) {
   const params = await props0.params
   const joke = await getJokeForParams(params.id)
@@ -156,185 +167,197 @@ export default async function JokeDetailPage(props0: PageProps) {
   // 规范化内容，兼容 title 是正文的情况
   const normalizedJoke = normalizeItemContent(joke)
 
-  // 计算热门状态
+  // 计算热门状态（≥10 赞给头版级「热」贴纸）
   const totalReactions = normalizedJoke.reactions?.totalCount || 0
   const isHot = totalReactions >= 10
+
+  // 栏目眉：有 tags 走「专栏 · {首个tag}」，无则「本报讯」
+  const columnTag = normalizedJoke.tags?.[0]
+  const eyebrow = columnTag ? `专栏 · ${columnTag}` : '本报讯'
+
+  // 大标题只在 title 与正文实质不同时出现（避免重复），否则让正文当主角
+  const bodyText = normalizedJoke.body?.trim() || ''
+  const titleText = normalizedJoke.title?.trim() || ''
+  const showHeadline = !!titleText && titleText !== bodyText
+
+  const username = normalizedJoke.author.username
+  const authorHref = `/authors/${encodeURIComponent(username)}`
 
   // 获取随机文案用于"再来一条"
   const randomJoke = await getRandomKfcItem()
   const nextJokeUrl = randomJoke ? `/jokes/${randomJoke.id}` : '/jokes'
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* 返回按钮 */}
-      <div className="mb-6">
-        <a
+    <div className="container mx-auto px-4 py-8 md:py-10">
+      <div className="mx-auto max-w-3xl">
+        {/* 返回：纯文字栏目级链接 */}
+        <Link
           href="/jokes"
-          className="group inline-flex items-center text-sm font-black uppercase text-gray-500 transition-colors duration-300 hover:text-kfc-red"
+          className="group text-news-gray hover:text-kfc-red mb-6 inline-flex items-center gap-2 text-sm font-bold transition-colors"
         >
-          <i className="fa fa-arrow-left mr-2 transition-transform duration-300 group-hover:-translate-x-1"></i>
-          <span>返回文案库</span>
-        </a>
-      </div>
+          <Icon name="arrow-left" className="transition-transform group-hover:-translate-x-0.5" />
+          返回文案库
+        </Link>
 
-      {/* 文案详情卡片 */}
-      <div className="mx-auto max-w-4xl">
-        <article className="relative border-4 border-black bg-white shadow-neo-xl">
-          {/* 热门标签 */}
-          {isHot && (
-            <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 border-2 border-black bg-kfc-red px-3 py-1 text-xs font-black text-white shadow-neo-sm md:text-sm">
-              <i className="fa fa-fire"></i>
-              <span>热门</span>
-            </div>
+        <article>
+          {/* 栏目眉 + 头版级「热」贴纸 */}
+          <div className="border-news-rule flex items-center justify-between gap-3 border-b pb-2">
+            <div className="text-kfc-red text-xs font-black tracking-wide">{eyebrow}</div>
+            {isHot && (
+              <span className="bg-kfc-red shadow-neo-sm inline-flex rotate-2 items-center gap-1 border-2 border-black px-2.5 py-0.5 text-xs font-black text-white">
+                <Icon name="fire" />
+                本期热文
+              </span>
+            )}
+          </div>
+
+          {/* 大标题区（title 与正文不同才展示） */}
+          {showHeadline && (
+            <h1 className="mt-5 text-3xl leading-tight font-black tracking-tight text-black md:text-5xl">
+              {titleText}
+            </h1>
           )}
 
-          <div className="relative z-10 p-5 md:p-8 lg:p-12">
-            {/* 文案内容 */}
-            <div className="mb-8 md:mb-12">
-              <div className="mb-6 flex items-center gap-2 border-b-4 border-black pb-2">
-                <span className="text-2xl md:text-3xl">📝</span>
-                <h1 className="text-xl font-black italic text-black md:text-2xl">文案内容</h1>
-              </div>
+          {/* byline：文 / @作者 · 日期 · ♥数 */}
+          <div className={showHeadline ? 'mt-4' : 'mt-5'}>
+            <p className="text-news-gray text-xs">
+              文 /{' '}
+              <Link href={authorHref} className="text-kfc-black hover:text-kfc-red font-bold">
+                @{username}
+              </Link>
+              {' · '}
+              {formatDate(normalizedJoke.createdAt)}
+              {' · ♥ '}
+              {totalReactions}
+            </p>
+          </div>
 
-              <div className="group relative">
-                <div className="min-h-[120px] border-3 border-black bg-kfc-cream p-6 text-xl font-medium leading-relaxed text-black shadow-neo transition-all hover:-translate-y-1 hover:shadow-neo-lg md:p-8 md:text-2xl lg:text-3xl">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      p: ({ node, ...props }) => (
-                        <p
-                          className="mb-4 last:mb-0 wrap-break-word whitespace-pre-wrap"
-                          {...props}
-                        />
-                      ),
-                      img: ({ node, ...props }) => (
-                        <span className="my-6 flex justify-center w-full">
-                          <img
-                            {...props}
-                            className="max-h-[500px] w-auto max-w-full md:max-h-[600px]"
-                          />
-                        </span>
-                      ),
-                      a: ({ node, ...props }) => (
-                        <a
-                          {...props}
-                          className="text-kfc-red hover:underline decoration-2 underline-offset-2"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        />
-                      ),
-                      ul: ({ node, ...props }) => <ul className="mb-4 list-disc pl-5" {...props} />,
-                      ol: ({ node, ...props }) => (
-                        <ol className="mb-4 list-decimal pl-5" {...props} />
-                      ),
-                      blockquote: ({ node, ...props }) => (
-                        <blockquote
-                          className="my-4 border-l-4 border-black bg-white/50 p-4 italic"
-                          {...props}
-                        />
-                      ),
-                      code: ({ node, ...props }) => (
-                        <code
-                          className="rounded-sm bg-black/10 px-1 py-0.5 font-mono text-base"
-                          {...props}
-                        />
-                      ),
-                    }}
-                  >
-                    {normalizedJoke.body}
-                  </ReactMarkdown>
-                </div>
-                <div className="mt-4 flex justify-end">
-                  <CopyButton text={normalizedJoke.body} />
-                </div>
-              </div>
-
-              {/* 标签（来自快照，静态渲染） */}
-              {joke.tags && joke.tags.length > 0 && (
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2 border-2 border-black bg-white px-3 py-1 text-sm font-bold shadow-neo-sm">
-                    <i className="fa fa-tags text-kfc-red"></i>
-                    <span>标签</span>
-                  </div>
-                  {joke.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-block transform cursor-default border-2 border-black bg-kfc-yellow px-3 py-1 text-sm font-black text-black shadow-neo-sm transition-all odd:rotate-1 even:-rotate-1 hover:-translate-y-1 hover:shadow-neo"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 作者信息 */}
-            <div className="mb-8">
-              <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
-                <i className="fa fa-user text-xl text-kfc-red md:text-2xl"></i>
-                <h2 className="text-xl font-black italic text-black md:text-2xl">文案鬼才</h2>
-              </div>
-
-              <div className="flex items-center gap-4 border-3 border-black bg-white p-4 shadow-neo">
-                <a
-                  href={`/authors/${encodeURIComponent(normalizedJoke.author.username)}`}
-                  className="relative block border-2 border-black p-1 shadow-neo-sm transition-transform hover:-translate-y-0.5"
-                >
-                  <Image
-                    src={normalizedJoke.author.avatarUrl}
-                    alt={`${normalizedJoke.author.username}的头像`}
-                    width={64}
-                    height={64}
-                    className="h-12 w-12 object-cover md:h-16 md:w-16"
-                  />
-                </a>
-
-                <div className="flex-1">
+          {/* 正文：文案内容是主角，大字号宽行距 */}
+          <div className="border-news-rule mt-6 border-t pt-8 text-lg leading-relaxed text-black md:text-xl md:leading-loose">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ node, ...props }) => (
+                  <p className="mb-5 wrap-break-word whitespace-pre-wrap last:mb-0" {...props} />
+                ),
+                img: ({ node, ...props }) => (
+                  <span className="my-8 flex w-full justify-center">
+                    <img
+                      {...props}
+                      className="shadow-neo max-h-[500px] w-auto max-w-full border-3 border-black md:max-h-[600px]"
+                    />
+                  </span>
+                ),
+                a: ({ node, ...props }) => (
                   <a
-                    href={`/authors/${encodeURIComponent(normalizedJoke.author.username)}`}
-                    className="mb-1 inline-block text-lg font-black text-black hover:underline md:text-xl"
+                    {...props}
+                    className="text-kfc-red decoration-2 underline-offset-2 hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                ),
+                ul: ({ node, ...props }) => <ul className="mb-5 list-disc pl-6" {...props} />,
+                ol: ({ node, ...props }) => <ol className="mb-5 list-decimal pl-6" {...props} />,
+                // 引言走衬线点缀 + 红色分栏线，不用中文斜体
+                blockquote: ({ node, ...props }) => (
+                  <blockquote
+                    className="border-kfc-red text-news-gray font-serif-news my-6 border-l-4 pl-5"
+                    {...props}
+                  />
+                ),
+                code: ({ node, ...props }) => (
+                  <code
+                    className="rounded-sm bg-black/10 px-1.5 py-0.5 font-mono text-base"
+                    {...props}
+                  />
+                ),
+              }}
+            >
+              {normalizedJoke.body}
+            </ReactMarkdown>
+          </div>
+
+          {/* 关键词 + 复制：文末一条横排 */}
+          <div className="border-news-rule mt-8 flex flex-wrap items-center justify-between gap-4 border-t pt-5">
+            {normalizedJoke.tags && normalizedJoke.tags.length > 0 ? (
+              <div className="text-news-gray flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                <span className="font-bold">本期关键词</span>
+                {normalizedJoke.tags.map((tag) => (
+                  <Link
+                    key={tag}
+                    href={`/jokes?tag=${encodeURIComponent(tag)}`}
+                    className="hover:text-kfc-red font-bold text-black transition-colors"
                   >
-                    @{normalizedJoke.author.username}
-                  </a>
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-gray-500 md:text-sm">
-                    <i className="fa fa-calendar text-black"></i>
-                    <span>发布于</span>
-                    <FormattedDate date={normalizedJoke.createdAt} />
-                  </div>
-                </div>
+                    #{tag}
+                  </Link>
+                ))}
               </div>
-            </div>
+            ) : (
+              <span />
+            )}
+            <CopyButton text={normalizedJoke.body} />
+          </div>
 
-            {/* 互动区域 - 全员可见（未登录点击会弹出登录对话框） */}
-            <div className="mb-6">
-              <div className="mb-4 flex items-center gap-2 border-b-4 border-black pb-2">
-                <i className="fa fa-heart text-xl text-kfc-red md:text-2xl"></i>
-                <h2 className="text-xl font-black italic text-black md:text-2xl">互动反馈</h2>
-              </div>
-
-              <div className="border-3 border-black bg-gray-50 p-4 shadow-neo">
-                <Suspense
-                  fallback={
-                    <div className="flex items-center gap-2 font-bold text-black">
-                      <span className="animate-neo-blink">加载互动数据中...</span>
-                    </div>
-                  }
+          {/* 作者签名档：报纸「本文作者」式，头像 + 名字 + 主页链接 */}
+          <div className="bg-kfc-cream shadow-neo mt-10 border-3 border-black p-4 md:p-5">
+            <div className="text-kfc-red mb-3 text-xs font-black tracking-wide">本文作者</div>
+            <div className="flex items-center gap-4">
+              <Link
+                href={authorHref}
+                className="shadow-neo-sm block shrink-0 border-2 border-black bg-white p-1 transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-neo"
+              >
+                <Image
+                  src={normalizedJoke.author.avatarUrl}
+                  alt={`${username} 的头像`}
+                  width={64}
+                  height={64}
+                  className="h-12 w-12 object-cover md:h-14 md:w-14"
+                />
+              </Link>
+              <div className="min-w-0 flex-1">
+                <Link
+                  href={authorHref}
+                  className="hover:text-kfc-red block text-lg font-black text-black transition-colors"
                 >
-                  <InteractiveReactions issueId={normalizedJoke.id} className="flex-wrap gap-2" />
-                </Suspense>
+                  @{username}
+                </Link>
+                <a
+                  href={normalizedJoke.author.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-news-gray hover:text-kfc-red inline-flex items-center gap-1.5 text-xs font-bold transition-colors"
+                >
+                  <Icon name="github" />
+                  GitHub 主页
+                </a>
               </div>
             </div>
           </div>
+
+          {/* 互动反馈：文末一条横排，不再单独立标题条大区块 */}
+          <div className="border-news-rule mt-8 border-t pt-5">
+            <div className="text-kfc-red mb-3 text-xs font-black tracking-wide">
+              读者来信 · 表个态
+            </div>
+            <Suspense
+              fallback={
+                <div className="flex items-center gap-2 font-bold text-black">
+                  <span className="animate-neo-blink">加载互动数据中...</span>
+                </div>
+              }
+            >
+              <InteractiveReactions issueId={normalizedJoke.id} className="flex-wrap gap-2" />
+            </Suspense>
+          </div>
         </article>
 
-        {/* 底部操作按钮 */}
-        <div className="mt-8 flex flex-col gap-4 md:flex-row md:justify-center">
-          <NeoButton href={nextJokeUrl} variant="secondary" size="lg" icon="fa-arrow-right">
-            Next Joke / 再来一条
+        {/* 底部动作 */}
+        <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:justify-center">
+          <NeoButton href={nextJokeUrl} variant="secondary" size="lg" icon="arrow-right">
+            再来一条
           </NeoButton>
-
-          <NeoButton href="/" variant="black" size="lg" icon="fa-home">
-            Back Home / 返回首页
+          <NeoButton href="/jokes" variant="black" size="lg" icon="folder-open">
+            返回文案库
           </NeoButton>
         </div>
       </div>

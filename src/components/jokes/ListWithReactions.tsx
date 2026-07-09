@@ -38,32 +38,22 @@ const ListWithReactions = memo(function ListWithReactions({
   const waitForBatchData = useMemo(() => status === 'loading' || isLoading, [status, isLoading])
 
   return (
-    <div
-      className={clsx(
-        isMasonry && 'border-3 border-black bg-kfc-cream bg-halftone p-3 shadow-neo-lg md:p-4',
-      )}
-    >
-      <div
-        className={clsx(
-          isMasonry ? 'columns-1 gap-4 space-y-0 md:columns-2 lg:columns-3' : 'space-y-6',
-        )}
-      >
-        {items.map((item) => {
-          const reactionData = data[item.id]
-          return (
-            <JokeCard
-              key={item.id}
-              item={item}
-              // 将批量获取的数据注入到卡片
-              initialReactionDetails={reactionData?.details || []}
-              initialReactionNodes={reactionData?.nodes || []}
-              waitForBatchData={waitForBatchData}
-              showTags={showTags}
-              className={isMasonry ? 'mb-4 break-inside-avoid' : ''}
-            />
-          )
-        })}
-      </div>
+    <div className={clsx(isMasonry && 'columns-1 gap-x-8 md:columns-2 lg:columns-3')}>
+      {items.map((item) => {
+        const reactionData = data[item.id]
+        return (
+          <JokeCard
+            key={item.id}
+            item={item}
+            // 将批量获取的数据注入到卡片
+            initialReactionDetails={reactionData?.details || []}
+            initialReactionNodes={reactionData?.nodes || []}
+            waitForBatchData={waitForBatchData}
+            showTags={showTags}
+            className={isMasonry ? 'break-inside-avoid' : ''}
+          />
+        )
+      })}
     </div>
   )
 })

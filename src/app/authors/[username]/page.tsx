@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import JokesList from '@/components/jokes/List'
 import NeoButton from '@/components/shared/NeoButton'
+import Icon from '@/components/shared/Icon'
 import { getKfcItemsWithPagination } from '@/lib/server-utils'
 
 interface PageProps {
@@ -37,47 +38,43 @@ export default async function AuthorPage(props: PageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* 作者 Hero */}
-      <div className="mx-auto mb-12 max-w-3xl">
-        <div className="flex flex-col items-center gap-5 border-4 border-black bg-white p-6 text-center shadow-neo-xl md:flex-row md:text-left md:p-8">
-          <div className="shrink-0 border-3 border-black p-1 shadow-neo">
-            <Image
-              src={avatarUrl}
-              alt={`${username}的头像`}
-              width={96}
-              height={96}
-              className="h-20 w-20 object-cover md:h-24 md:w-24"
-            />
-          </div>
-          <div className="flex-1">
-            <div className="mb-2 inline-block -rotate-1 border-2 border-black bg-kfc-yellow px-3 py-1 text-xs font-black uppercase shadow-neo-sm">
-              文案鬼才 / Contributor
-            </div>
-            <h1 className="text-3xl font-black italic tracking-tighter text-black md:text-5xl">
-              @{username}
-            </h1>
-            <p className="mt-2 font-bold text-gray-700">
-              已收录 <span className="bg-kfc-red px-1 text-white">{total}</span> 篇疯四文案
-            </p>
-          </div>
-          <a
-            href={githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 border-2 border-black bg-white px-4 py-2 font-black uppercase text-black shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:bg-black hover:text-white hover:shadow-none"
-          >
-            <i className="fa fa-github"></i> GitHub
-          </a>
+      {/* 记者档案：紧凑一行 */}
+      <div className="mb-10 flex flex-wrap items-center gap-4 border-b-4 border-black pb-6">
+        <div className="border-3 border-black shrink-0">
+          <Image
+            src={avatarUrl}
+            alt={`${username}的头像`}
+            width={64}
+            height={64}
+            className="h-16 w-16 object-cover"
+          />
         </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-kfc-red text-xs font-black tracking-wide">记者档案</div>
+          <h1 className="truncate text-2xl font-black tracking-tight text-black md:text-3xl">
+            @{username}
+          </h1>
+          <p className="text-news-gray text-sm">
+            已投稿 <span className="text-kfc-black font-bold">{total}</span> 篇文案
+          </p>
+        </div>
+        <a
+          href={githubUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shadow-neo-sm hover:shadow-neo-lg flex shrink-0 items-center gap-2 border-2 border-black bg-white px-4 py-2 text-sm font-black text-black transition-all hover:-translate-x-0.5 hover:-translate-y-0.5"
+        >
+          <Icon name="github" /> GitHub
+        </a>
       </div>
 
       {/* 该作者的文案列表（复用站点统一列表/卡片/分页） */}
       <Suspense
         fallback={
-          <div className="flex h-64 items-center justify-center border-4 border-black bg-white p-8 shadow-neo">
-            <div className="flex flex-col items-center gap-4 text-black">
-              <i className="fa fa-spinner fa-spin text-4xl"></i>
-              <span className="text-xl font-black uppercase">加载中...</span>
+          <div className="border-news-rule flex h-64 items-center justify-center border-y">
+            <div className="text-news-gray flex flex-col items-center gap-3">
+              <Icon name="spinner" className="animate-spin text-2xl" />
+              <span className="text-sm font-bold">加载中...</span>
             </div>
           </div>
         }
@@ -86,8 +83,8 @@ export default async function AuthorPage(props: PageProps) {
       </Suspense>
 
       <div className="mt-16 text-center">
-        <NeoButton href="/leaderboard" variant="secondary" icon="fa-trophy">
-          英雄榜 / Leaderboard
+        <NeoButton href="/leaderboard" variant="secondary" icon="trophy">
+          英雄榜
         </NeoButton>
       </div>
     </div>

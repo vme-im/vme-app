@@ -2,7 +2,6 @@
 
 import { memo, useMemo, useRef, useState, useEffect } from 'react'
 import clsx from 'clsx'
-import { FormattedDate } from '@/components/shared/FormattedDate'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -22,9 +21,43 @@ interface JokeCardProps {
   className?: string // 允许外部注入样式
 }
 
+function formatDate(iso?: string): string {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
+/** byline：文 / @作者 · 日期 · ♥数（格式统一见风格指南） */
+function Byline({ item }: { item: IKfcItem }) {
+  const username = item.author?.username || '匿名疯四人'
+  return (
+    <p className="text-news-gray relative z-10 text-xs">
+      文 /{' '}
+      {item.author?.username ? (
+        <Link
+          href={`/authors/${encodeURIComponent(username)}`}
+          className="text-kfc-black hover:text-kfc-red font-bold"
+        >
+          @{username}
+        </Link>
+      ) : (
+        <span className="text-kfc-black font-bold">@{username}</span>
+      )}
+      {' · '}
+      {formatDate(item.createdAt)}
+      {' · ♥ '}
+      {item.reactions?.totalCount ?? 0}
+    </p>
+  )
+}
+
 /**
- * 文案卡片组件
- * 职责：展示单个文案的内容、作者信息和互动数据
+ * 文案条目组件（列表级）
+ * 职责：展示单条文案的正文、byline 与互动数据
+ * 纯排版：正文 + byline，分栏线分隔，无卡片边框/阴影/旋转/emoji 背景
  * 使用 memo 优化避免不必要的重渲染
  */
 const JokeCard = memo(function JokeCard({
@@ -53,168 +86,126 @@ const JokeCard = memo(function JokeCard({
     }
   }, [item.body, hasImage])
 
-  // 使用 useMemo 缓存热门状态计算
-  const { totalReactions, isHot } = useMemo(() => {
-    const totalReactions = item.reactions?.totalCount || 0
-    return {
-      totalReactions,
-      isHot: totalReactions >= 10,
-    }
-  }, [item.reactions?.totalCount])
-
   return (
-    <div
+    <article
       className={clsx(
-        'group relative border-3 border-black bg-white p-4 shadow-neo transition-all hover:-translate-y-1 hover:shadow-neo-xl md:p-6',
+        'group border-news-rule relative border-b py-5 transition-colors hover:bg-white',
         className,
       )}
     >
-      {/* 热门标签 - 暴躁风 */}
-      {isHot && (
-        <div className="absolute -right-2 -top-2 z-10 -rotate-3 border-2 border-black bg-kfc-yellow px-3 py-1 text-xs font-black uppercase italic text-black shadow-neo-sm">
-          HOT! 爆款
+      {/* 标签：小号文字标签，hover 变红可点击过滤 */}
+      {showTags && item.tags && item.tags.length > 0 && (
+        <div className="relative z-10 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+          {item.tags.map((tag) => {
+            const nextParams = new URLSearchParams()
+            nextParams.set('tag', tag)
+            if (currentType) {
+              nextParams.set('type', currentType)
+            }
+            return (
+              <Link
+                key={tag}
+                href={`/jokes?${nextParams.toString()}`}
+                className="text-news-gray hover:text-kfc-red text-xs font-bold"
+              >
+                #{tag}
+              </Link>
+            )
+          })}
         </div>
       )}
 
-      {/* 文案内容 */}
-      <div className="mb-4">
-        <div className="relative">
-          <div
-            ref={contentRef}
-            className={clsx(
-              'prose prose-p:my-1 prose-img:my-0 mb-4 text-black prose-p:leading-snug prose-headings:font-black prose-p:font-bold prose-a:text-blue-600 prose-blockquote:border-l-4 prose-blockquote:border-black prose-blockquote:bg-gray-100 prose-blockquote:py-1 prose-blockquote:pl-2',
-              !hasImage && 'max-h-48 overflow-hidden',
-            )}
-          >
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                img: ({ node, src, alt, ...props }: any) => {
-                  if (!src) return null
+      {/* 正文 */}
+      <div className="relative">
+        <div
+          ref={contentRef}
+          className={clsx(
+            'prose prose-p:my-1 prose-img:my-0 group-hover:text-kfc-red text-black transition-colors prose-p:leading-snug prose-headings:font-black prose-p:font-bold prose-a:text-kfc-red prose-blockquote:border-l-4 prose-blockquote:border-black prose-blockquote:bg-kfc-cream prose-blockquote:py-1 prose-blockquote:pl-2',
+            !hasImage && 'max-h-48 overflow-hidden',
+          )}
+        >
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              img: ({ node, src, alt, ...props }: any) => {
+                if (!src) return null
+                return (
+                  <div className="border-news-rule bg-kfc-cream relative my-2 h-64 w-full overflow-hidden border">
+                    <Image
+                      src={src}
+                      alt={alt || 'Meme'}
+                      fill
+                      className="object-contain p-2"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  </div>
+                )
+              },
+              p: ({ node, children, ...props }: any) => {
+                // 检查子元素是否包含块级元素（如 img 转换后的 div）
+                const hasBlockChild = node?.children?.some((child: any) => child.tagName === 'img')
+                // 如果包含块级元素，使用 div 代替 p 避免 hydration error
+                if (hasBlockChild) {
                   return (
-                    <div className="relative my-2 h-64 w-full overflow-hidden rounded-xs border-2 border-black bg-gray-100">
-                      <Image
-                        src={src}
-                        alt={alt || 'Meme'}
-                        fill
-                        className="object-contain p-2"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                    </div>
-                  )
-                },
-                p: ({ node, children, ...props }: any) => {
-                  // 检查子元素是否包含块级元素（如 img 转换后的 div）
-                  const hasBlockChild = node?.children?.some(
-                    (child: any) => child.tagName === 'img',
-                  )
-                  // 如果包含块级元素，使用 div 代替 p 避免 hydration error
-                  if (hasBlockChild) {
-                    return (
-                      <div
-                        className="whitespace-pre-wrap text-justify-cn text-base md:text-lg"
-                        {...props}
-                      >
-                        {children}
-                      </div>
-                    )
-                  }
-                  return (
-                    <p
-                      className={clsx(
-                        'whitespace-pre-wrap text-justify-cn text-base md:text-lg',
-                        !hasImage && 'line-clamp-6',
-                      )}
+                    <div
+                      className="whitespace-pre-wrap text-justify-cn text-base md:text-lg"
                       {...props}
                     >
                       {children}
-                    </p>
+                    </div>
                   )
-                },
-              }}
-            >
-              {item.body}
-            </ReactMarkdown>
-          </div>
-          {/* 渐变遮罩 - 仅当内容溢出时显示 */}
-          {!hasImage && isOverflowing && (
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
-          )}
-        </div>
-        <div className="mt-4 flex items-center justify-between gap-2">
-          <Link
-            href={`/jokes/${item.id}`}
-            className="border-2 border-black bg-white px-3 py-1 text-xs font-black uppercase tracking-tighter transition-all hover:bg-black hover:text-white"
+                }
+                return (
+                  <p
+                    className={clsx(
+                      'whitespace-pre-wrap text-justify-cn text-base md:text-lg',
+                      !hasImage && 'line-clamp-6',
+                    )}
+                    {...props}
+                  >
+                    {children}
+                  </p>
+                )
+              },
+            }}
           >
-            Read More / 详情
-          </Link>
+            {item.body}
+          </ReactMarkdown>
+        </div>
+        {/* 渐变遮罩 - 仅当内容溢出时显示 */}
+        {!hasImage && isOverflowing && (
+          <div className="from-kfc-cream group-hover:from-white pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t to-transparent transition-colors" />
+        )}
+      </div>
+
+      {/* 整条目可点击跳详情页：置于内容之后、byline 之前，byline/标签/复制按钮用 z-10 保持可点 */}
+      <Link
+        href={`/jokes/${item.id}`}
+        className="focus-visible:outline-kfc-red absolute inset-0 z-0 focus-visible:outline focus-visible:outline-2"
+        aria-label="查看详情"
+      />
+
+      {/* byline + 操作 */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <Byline item={item} />
+        <div className="relative z-10">
           <CopyButton text={item.body} />
         </div>
       </div>
 
-      {/* 作者信息和互动数据 */}
-      <div className="flex flex-col gap-3 border-t-2 border-black pt-4">
-        {/* 标签列表 */}
-        {showTags && item.tags && item.tags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            {item.tags.map((tag) => {
-              const nextParams = new URLSearchParams()
-              nextParams.set('tag', tag)
-              if (currentType) {
-                nextParams.set('type', currentType)
-              }
-              return (
-                <Link
-                  key={tag}
-                  href={`/jokes?${nextParams.toString()}`}
-                  className="inline-block border-2 border-black bg-kfc-yellow px-2 py-0.5 text-xs font-black text-black shadow-neo-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none even:-rotate-1 odd:rotate-1"
-                >
-                  #{tag}
-                </Link>
-              )
-            })}
-          </div>
+      {/* 互动数据展示 */}
+      <div className="relative z-10 mt-2 min-w-0 overflow-hidden">
+        {waitForBatchData ? (
+          <ReactionsLoading />
+        ) : (
+          <InteractiveReactions
+            issueId={item.id}
+            initialReactionDetails={initialReactionDetails}
+            initialReactionNodes={initialReactionNodes}
+          />
         )}
-
-        <div className="flex items-center justify-between">
-          <Link
-            href={`/authors/${encodeURIComponent(item.author.username)}`}
-            className="group/author flex items-center gap-2 transition-transform hover:-translate-y-0.5"
-          >
-            <div className="border-2 border-black shadow-neo-sm">
-              <Image
-                src={item.author.avatarUrl}
-                alt={`${item.author.username}的头像`}
-                width={40}
-                height={40}
-                className="h-8 w-8 object-cover md:h-10 md:w-10"
-              />
-            </div>
-            <div className="flex flex-col leading-none">
-              <span className="text-sm font-black text-black group-hover/author:underline">
-                @{item.author.username}
-              </span>
-              <div className="mt-1 text-[10px] font-bold uppercase text-gray-500">
-                <FormattedDate date={item.createdAt} />
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        {/* 互动数据展示 */}
-        <div className="min-w-0 overflow-hidden pt-1">
-          {waitForBatchData ? (
-            <ReactionsLoading />
-          ) : (
-            <InteractiveReactions
-              issueId={item.id}
-              initialReactionDetails={initialReactionDetails}
-              initialReactionNodes={initialReactionNodes}
-            />
-          )}
-        </div>
       </div>
-    </div>
+    </article>
   )
 })
 

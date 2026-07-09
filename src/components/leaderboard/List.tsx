@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import Icon from '@/components/shared/Icon'
 import SortTabs from './SortTabs'
 
 interface AuthorStats {
@@ -60,7 +61,7 @@ async function getLeaderboardData(sortBy: string = 'score') {
     }
 
     // 计算作者总互动数据
-    for (const [username, author] of authorMap) {
+    for (const [, author] of authorMap) {
       let totalInteractions = 0
 
       // 计算总互动数
@@ -114,192 +115,168 @@ async function getLeaderboardData(sortBy: string = 'score') {
 // 设置组件级别的缓存时间（30分钟）
 export const revalidate = 1800
 
+/** 前三名领奖台配色：金（头版级）/ 奶白 / 白，全部黑边硬阴影 */
+function getPodiumStyle(rank: number): { bg: string; shadow: string; label: string } {
+  switch (rank) {
+    case 1:
+      return { bg: 'bg-kfc-yellow', shadow: 'shadow-neo-lg', label: '冠军' }
+    case 2:
+      return { bg: 'bg-kfc-cream', shadow: 'shadow-neo', label: '亚军' }
+    case 3:
+      return { bg: 'bg-white', shadow: 'shadow-neo', label: '季军' }
+    default:
+      return { bg: 'bg-white', shadow: 'shadow-neo', label: '' }
+  }
+}
+
 export default async function LeaderboardServer({ sortBy = 'score' }: LeaderboardServerProps) {
   const data = await getLeaderboardData(sortBy)
 
   if (!data) {
     return (
-      <div className="border-4 border-black bg-white p-8 text-center shadow-neo">
-        <div className="text-6xl">😅</div>
-        <h2 className="mt-4 text-2xl font-black uppercase italic text-black">英雄榜暂时无法加载</h2>
-        <p className="mt-2 border-2 border-black bg-kfc-yellow px-4 py-1 font-bold text-black inline-block shadow-neo-sm">
-          请稍后再试
-        </p>
+      <div className="border-news-rule border-y py-16 text-center">
+        <div className="text-kfc-red text-xs font-black tracking-wide">本报讯</div>
+        <h2 className="mt-3 text-2xl font-black text-black">英雄榜暂时排不出来</h2>
+        <p className="text-news-gray mt-2 text-sm font-medium">印刷机卡壳了，稍后再翻一次。</p>
       </div>
     )
   }
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-2xl font-black uppercase italic text-black">
-          <i className="fa fa-book text-kfc-red"></i> V50 英雄榜
-        </h2>
-
-        {/* 排序选择 */}
+      {/* 栏目眉 + 排序 */}
+      <div className="border-news-rule mb-8 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-kfc-red text-xs font-black tracking-wide">
+          专栏 · 文案鬼才排行 · 共 {data.totalAuthors} 人上榜
+        </div>
         <SortTabs currentSort={data.sortBy} />
       </div>
 
-      <div className="border-4 border-black bg-white p-6 shadow-neo-xl md:p-8">
-        {/* Top 3 特殊展示 */}
-        {data.authors.length >= 3 ? (
-          <div className="mb-12">
-            <h2 className="mb-8 text-center text-3xl font-black uppercase italic text-black md:text-4xl">
-              <span className="bg-black px-4 py-1 text-white">Hall of Fame</span> 殿堂级鬼才
-            </h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              {data.authors.slice(0, 3).map((author, index) => {
-                const getRankStyle = (rank: number) => {
-                  switch (rank) {
-                    case 1:
-                      return {
-                        bg: 'bg-kfc-yellow',
-                        badge: '1ST',
-                        title: 'text-black',
-                      }
-                    case 2:
-                      return {
-                        bg: 'bg-gray-300',
-                        badge: '2ND',
-                        title: 'text-black',
-                      }
-                    case 3:
-                      return {
-                        bg: 'bg-orange-300',
-                        badge: '3RD',
-                        title: 'text-black',
-                      }
-                    default:
-                      return {
-                        bg: 'bg-white',
-                        badge: '?',
-                        title: 'text-black',
-                      }
-                  }
-                }
+      {/* 前三名：头版级领奖台 */}
+      {data.authors.length >= 3 ? (
+        <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+          {data.authors.slice(0, 3).map((author, index) => {
+            const rank = index + 1
+            const style = getPodiumStyle(rank)
 
-                const style = getRankStyle(index + 1)
-
-                return (
-                  <div
-                    key={author.username}
-                    className={`relative border-4 border-black ${style.bg} p-6 pt-10 text-center shadow-neo transition-transform hover:-translate-y-2 hover:shadow-neo-xl`}
-                  >
-                    {/* 排名徽章 */}
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 border-2 border-black bg-black px-3 py-1 text-xl font-black italic text-white shadow-neo-sm">
-                      {style.badge}
-                    </div>
-
-                    {/* 头像 + 用户名（→ 作者页） */}
-                    <Link
-                      href={`/authors/${encodeURIComponent(author.username)}`}
-                      className="block transition-transform hover:-translate-y-1"
-                    >
-                      <div className="mb-4 flex justify-center">
-                        <div className="border-3 border-black bg-white p-1">
-                          <Image
-                            src={author.avatarUrl}
-                            alt={`${author.username}的头像`}
-                            width={80}
-                            height={80}
-                            className="h-20 w-20 object-cover"
-                          />
-                        </div>
-                      </div>
-                      <h3 className={`mb-2 text-xl font-black ${style.title} hover:underline`}>
-                        @{author.username}
-                      </h3>
-                    </Link>
-
-                    <div className="mb-4 space-y-1 text-sm font-bold text-black/80">
-                      <div className="uppercase">Posts / 投稿: {author.totalPosts}</div>
-                      <div className="uppercase">
-                        Reactions / 互动: {author.totalInteractions.toLocaleString()}
-                      </div>
-                    </div>
-
-                    {/* 综合评分 */}
-                    <div className="inline-block border-2 border-black bg-white px-4 py-1 text-sm font-black uppercase text-black shadow-neo-sm">
-                      Power / 战力: {Math.round(author.score)}
-                    </div>
-
-                    {/* GitHub 链接 */}
-                    <Link
-                      href={author.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-4 block border-t-2 border-black pt-2 text-xs font-bold uppercase text-black hover:text-white hover:bg-black transition-colors"
-                    >
-                      View GitHub / 查看主页
-                    </Link>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        ) : null}
-
-        {/* 完整排行榜 */}
-        {data.authors.length > 3 ? (
-          <div>
-            <h2 className="mb-6 border-b-4 border-black pb-2 text-2xl font-black uppercase italic text-black md:text-3xl">
-              Leaderboard / 完整榜单
-            </h2>
-            <div className="space-y-4">
-              {data.authors.slice(3, 10).map((author, index) => (
-                <div
-                  key={author.username}
-                  className="flex flex-col gap-4 border-3 border-black bg-white p-4 shadow-neo transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none md:flex-row md:items-center md:justify-between"
-                >
-                  <div className="flex items-center gap-4">
-                    {/* 排名 */}
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-black bg-black text-lg font-black text-white">
-                      #{index + 4}
-                    </div>
-
-                    {/* 头像 + 用户信息（→ 作者页） */}
-                    <Link
-                      href={`/authors/${encodeURIComponent(author.username)}`}
-                      className="flex flex-1 items-center gap-4"
-                    >
-                      <div className="border-2 border-black p-0.5">
-                        <Image
-                          src={author.avatarUrl}
-                          alt={`${author.username}的头像`}
-                          width={48}
-                          height={48}
-                          className="h-10 w-10 object-cover"
-                        />
-                      </div>
-
-                      <div className="flex-1">
-                        <h3 className="text-lg font-black text-black hover:underline">
-                          @{author.username}
-                        </h3>
-                        <div className="text-xs font-bold uppercase text-gray-500">
-                          {author.totalPosts} 投稿 • Score / 分数: {Math.round(author.score)}
-                        </div>
-                      </div>
-                    </Link>
-                  </div>
-
-                  {/* 统计数据 */}
-                  <div className="flex items-center gap-2 border-l-2 border-black pl-4">
-                    <i className="fa fa-heart text-kfc-red"></i>
-                    <div className="text-lg font-black text-black">
-                      {author.totalInteractions.toLocaleString()}
-                    </div>
-                  </div>
+            return (
+              <div
+                key={author.username}
+                className={`group relative border-3 border-black ${style.bg} ${style.shadow} p-5 pt-9 text-center transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-neo-xl`}
+              >
+                {/* 名次贴纸（头版级，红底旋转） */}
+                <div className="bg-kfc-red font-display shadow-neo-sm absolute -top-4 -left-3 flex -rotate-3 items-center gap-1 border-2 border-black px-2.5 py-0.5 text-white italic">
+                  <span className="text-xs not-italic">No.</span>
+                  <span className="text-2xl leading-none font-black">{rank}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
+                {/* 名次中文标签 */}
+                <div className="text-news-gray absolute top-2 right-3 text-2xs font-black tracking-wide">
+                  {style.label}
+                </div>
 
-        {/* 更新时间 */}
-        <div className="mt-10 text-center text-sm text-gray-500">
-          最后更新: {new Date(data.updatedAt).toLocaleString('zh-CN')}
+                {/* 头像 + 用户名（→ 作者页） */}
+                <Link href={`/authors/${encodeURIComponent(author.username)}`} className="block">
+                  <div className="mb-3 flex justify-center">
+                    <div className="shadow-neo-sm border-2 border-black bg-white p-1 transition-transform group-hover:-translate-y-0.5">
+                      <Image
+                        src={author.avatarUrl}
+                        alt={`${author.username} 的头像`}
+                        width={80}
+                        height={80}
+                        className="h-16 w-16 object-cover md:h-20 md:w-20"
+                      />
+                    </div>
+                  </div>
+                  <h3 className="group-hover:text-kfc-red text-lg font-black text-black transition-colors md:text-xl">
+                    @{author.username}
+                  </h3>
+                </Link>
+
+                {/* 统计（纯中文，无双语） */}
+                <div className="text-news-gray mt-3 flex items-center justify-center gap-x-4 text-xs font-bold">
+                  <span>投稿 {author.totalPosts}</span>
+                  <span>互动 {author.totalInteractions.toLocaleString()}</span>
+                </div>
+
+                {/* V50 指数 */}
+                <div className="shadow-neo-sm mt-4 inline-block border-2 border-black bg-white px-4 py-1 text-sm font-black text-black">
+                  V50 指数 {Math.round(author.score)}
+                </div>
+
+                {/* GitHub 主页 */}
+                <a
+                  href={author.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-news-gray hover:text-kfc-red mt-4 flex items-center justify-center gap-1.5 border-t border-black/20 pt-3 text-xs font-bold transition-colors"
+                >
+                  <Icon name="github" />
+                  GitHub 主页
+                </a>
+              </div>
+            )
+          })}
         </div>
+      ) : null}
+
+      {/* 第 4 名起：列表级纯排版 + 分栏线 */}
+      {data.authors.length > 3 ? (
+        <div>
+          <div className="text-kfc-red mb-4 text-xs font-black tracking-wide">
+            榜单 · 其余上榜鬼才
+          </div>
+          <div className="border-news-rule divide-news-rule divide-y border-y">
+            {data.authors.slice(3, 10).map((author, index) => {
+              const rank = index + 4
+              return (
+                <Link
+                  key={author.username}
+                  href={`/authors/${encodeURIComponent(author.username)}`}
+                  className="group flex items-center gap-4 py-4"
+                >
+                  {/* 名次 */}
+                  <div className="font-display text-news-gray w-8 shrink-0 text-center text-xl font-black">
+                    {rank}
+                  </div>
+
+                  {/* 头像 */}
+                  <div className="shrink-0 border-2 border-black p-0.5">
+                    <Image
+                      src={author.avatarUrl}
+                      alt={`${author.username} 的头像`}
+                      width={48}
+                      height={48}
+                      className="h-10 w-10 object-cover"
+                    />
+                  </div>
+
+                  {/* 用户信息 */}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="group-hover:text-kfc-red truncate text-lg font-black text-black transition-colors">
+                      @{author.username}
+                    </h3>
+                    <div className="text-news-gray text-xs font-bold">
+                      投稿 {author.totalPosts} · V50 指数 {Math.round(author.score)}
+                    </div>
+                  </div>
+
+                  {/* 互动数 */}
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Icon name="heart" className="text-kfc-red" />
+                    <span className="text-lg font-black text-black">
+                      {author.totalInteractions.toLocaleString()}
+                    </span>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {/* 出刊说明 */}
+      <div className="text-news-gray font-serif-news mt-8 text-center text-xs">
+        本榜单每 30 分钟重排一次
       </div>
     </>
   )

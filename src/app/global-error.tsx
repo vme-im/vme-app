@@ -12,7 +12,7 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#FBF3E4',
+          background: '#f4f1ea',
           fontFamily:
             'system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
           padding: '16px',
@@ -31,27 +31,26 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
         >
           <p
             style={{
-              fontSize: '56px',
+              fontSize: '13px',
               fontWeight: 900,
-              fontStyle: 'italic',
-              color: '#C41200',
+              color: '#c41200',
+              letterSpacing: '0.05em',
               margin: 0,
-              textShadow: '4px 4px 0 #000',
             }}
           >
-            🍗 打烊中
+            停刊启事 · 印刷故障
           </p>
-          <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#000', marginTop: '16px' }}>
-            服务器正在小憩
+          <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#121212', marginTop: '16px' }}>
+            印刷机卡住了
           </h1>
-          <p style={{ fontSize: '18px', fontWeight: 700, color: '#333', marginTop: '12px' }}>
+          <p style={{ fontSize: '18px', fontWeight: 700, color: '#6b6b62', marginTop: '12px' }}>
             疯四的服务器吃太饱睡着了，文案稍后回来。
           </p>
 
           <div
             style={{
               marginTop: '28px',
-              background: '#FFC72C',
+              background: '#ffc72c',
               border: '3px solid #000',
               boxShadow: '4px 4px 0 0 #000',
               padding: '20px',
@@ -61,7 +60,6 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
               style={{
                 fontSize: '15px',
                 fontWeight: 700,
-                fontStyle: 'italic',
                 color: '#000',
                 margin: 0,
               }}
@@ -74,17 +72,16 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
             onClick={reset}
             style={{
               marginTop: '32px',
-              background: '#C41200',
+              background: '#c41200',
               color: '#fff',
               border: '3px solid #000',
               boxShadow: '4px 4px 0 0 #000',
               padding: '12px 24px',
               fontWeight: 900,
-              textTransform: 'uppercase',
               cursor: 'pointer',
             }}
           >
-            再试一次 / Retry
+            再试一次
           </button>
         </div>
       </body>

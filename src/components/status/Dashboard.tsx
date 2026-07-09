@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import useSWR from 'swr'
+import Icon, { IconName } from '@/components/shared/Icon'
 
 interface RateLimitInfo {
   remaining: number
@@ -29,6 +30,10 @@ const fetcher = async (url: string) => {
   return res.json()
 }
 
+/**
+ * 状态卡片：简洁卡片（白底 + 黑边 + neo 阴影）
+ * 健康状态只靠图标用色区分：正常/提示 = 黑，异常 = kfc-red
+ */
 function StatusCard({
   title,
   status,
@@ -38,42 +43,25 @@ function StatusCard({
   status: 'success' | 'warning' | 'error' | 'info'
   children: React.ReactNode
 }) {
-  const statusColors = {
-    success: 'bg-green-100',
-
-    warning: 'bg-yellow-100',
-
-    error: 'bg-red-100',
-
-    info: 'bg-blue-100',
-  }
-
   const iconColors = {
-    success: 'text-green-800',
-
-    warning: 'text-yellow-800',
-
-    error: 'text-red-800',
-
-    info: 'text-blue-800',
+    success: 'text-kfc-black',
+    warning: 'text-kfc-red',
+    error: 'text-kfc-red',
+    info: 'text-news-gray',
   }
 
-  const icons = {
-    success: 'fa-check-circle',
-
-    warning: 'fa-exclamation-triangle',
-
-    error: 'fa-times-circle',
-
-    info: 'fa-info-circle',
+  const icons: Record<typeof status, IconName> = {
+    success: 'check-circle',
+    warning: 'alert-triangle',
+    error: 'x-circle',
+    info: 'info',
   }
 
   return (
-    <div className={`border-4 border-black p-6 shadow-neo-xl ${statusColors[status]}`}>
-      <div className="mb-6 flex items-center gap-3 border-b-2 border-black pb-4">
-        <i className={`fa ${icons[status]} ${iconColors[status]} text-2xl`}></i>
-
-        <h3 className="text-xl font-black uppercase italic text-black">{title}</h3>
+    <div className="shadow-neo border-3 border-black bg-white p-6">
+      <div className="border-news-rule mb-5 flex items-center gap-3 border-b pb-3">
+        <Icon name={icons[status]} className={`${iconColors[status]} text-xl`} />
+        <h3 className="text-lg font-black text-black">{title}</h3>
       </div>
 
       {children}
@@ -82,35 +70,25 @@ function StatusCard({
 }
 
 function RateLimitBar({ rateLimit }: { rateLimit: RateLimitInfo }) {
-  const getStatusColor = () => {
-    if (rateLimit.percentage > 50) return 'bg-green-500'
-
-    if (rateLimit.percentage > 20) return 'bg-yellow-500'
-
-    return 'bg-red-500'
-  }
+  // 余量健康 = 黑，逼近限额 = kfc-red
+  const barColor = rateLimit.percentage > 20 ? 'bg-kfc-black' : 'bg-kfc-red'
 
   return (
     <div className="space-y-3 font-bold text-black">
-      <div className="flex justify-between text-sm uppercase">
-        <span>API Requests Remaining</span>
-
-        <span className="font-mono">
+      <div className="flex justify-between text-sm">
+        <span>API 剩余请求数</span>
+        <span className="font-display">
           {rateLimit.remaining} / {rateLimit.limit}
         </span>
       </div>
 
       <div className="h-4 w-full border-2 border-black bg-white p-0.5">
-        <div
-          className={`h-full ${getStatusColor()}`}
-          style={{ width: `${rateLimit.percentage}%` }}
-        ></div>
+        <div className={`h-full ${barColor}`} style={{ width: `${rateLimit.percentage}%` }}></div>
       </div>
 
-      <div className="flex justify-between text-xs uppercase text-gray-700">
-        <span>{rateLimit.percentage}% LEFT</span>
-
-        <span>RESET: {new Date(rateLimit.resetTime).toLocaleTimeString()}</span>
+      <div className="text-news-gray flex justify-between text-xs">
+        <span>余量 {rateLimit.percentage}%</span>
+        <span>重置时间 {new Date(rateLimit.resetTime).toLocaleTimeString()}</span>
       </div>
     </div>
   )
@@ -145,13 +123,13 @@ export default function StatusDashboard() {
   if (isLoading && !status) {
     return (
       <div className="grid gap-6">
-        <div className="animate-pulse border-4 border-black bg-gray-100 p-8 shadow-neo-xl">
-          <div className="mb-4 h-8 w-1/3 bg-gray-300"></div>
+        <div className="shadow-neo bg-kfc-cream animate-pulse border-3 border-black p-8">
+          <div className="bg-news-rule mb-4 h-8 w-1/3"></div>
 
           <div className="space-y-4">
-            <div className="h-4 w-full bg-gray-300"></div>
+            <div className="bg-news-rule h-4 w-full"></div>
 
-            <div className="h-4 w-2/3 bg-gray-300"></div>
+            <div className="bg-news-rule h-4 w-2/3"></div>
           </div>
         </div>
       </div>
@@ -160,16 +138,16 @@ export default function StatusDashboard() {
 
   if (error) {
     return (
-      <StatusCard title="System Check Failed" status="error">
-        <p className="font-bold text-red-900">无法获取系统状态信息</p>
+      <StatusCard title="状态检查失败" status="error">
+        <p className="text-kfc-red font-bold">无法获取系统状态信息</p>
 
-        <p className="mt-2 text-sm font-bold text-gray-700">{error.message}</p>
+        <p className="text-news-gray mt-2 text-sm font-bold">{error.message}</p>
 
         <button
           onClick={() => mutate()}
-          className="mt-4 border-2 border-black bg-red-600 px-6 py-2 font-black uppercase text-white shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+          className="bg-kfc-red shadow-neo hover:shadow-neo-lg mt-4 border-2 border-black px-6 py-2 font-black text-white transition-all hover:-translate-x-0.5 hover:-translate-y-0.5"
         >
-          RETRY
+          再试一次
         </button>
       </StatusCard>
     )
@@ -181,16 +159,16 @@ export default function StatusDashboard() {
     <div className="space-y-8">
       {/* 刷新控制 */}
 
-      <div className="flex items-center justify-between border-3 border-black bg-white p-4 shadow-neo">
-        <div className="text-xs font-bold uppercase text-gray-600">Last Updated: {lastUpdated}</div>
+      <div className="border-news-rule flex flex-wrap items-center justify-between gap-3 border-y py-3">
+        <div className="text-news-gray text-xs font-bold">最近更新：{lastUpdated}</div>
 
         <button
           onClick={() => mutate()}
           disabled={isLoading}
-          className="flex items-center gap-2 border-2 border-black bg-kfc-yellow px-4 py-2 font-black uppercase text-black shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:bg-gray-200 disabled:shadow-none"
+          className="shadow-neo-sm hover:shadow-neo disabled:bg-kfc-cream disabled:text-news-gray flex items-center gap-2 border-2 border-black bg-white px-4 py-2 text-sm font-black text-black transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 disabled:translate-x-0 disabled:translate-y-0 disabled:shadow-none"
         >
-          <i className={`fa fa-refresh ${isLoading ? 'animate-spin' : ''}`}></i>
-          Refresh Status
+          <Icon name="refresh" className={isLoading ? 'animate-spin' : ''} />
+          刷新状态
         </button>
       </div>
 
@@ -200,7 +178,7 @@ export default function StatusDashboard() {
         {/* 用户 Token */}
 
         <StatusCard
-          title="GitHub User Auth"
+          title="GitHub 用户凭证"
           status={
             status.github.userToken.available && status.github.userToken.status === 'working'
               ? 'success'
@@ -213,40 +191,38 @@ export default function StatusDashboard() {
           }
         >
           {status.github.userToken.available && status.github.userToken.status === 'working' ? (
-            <div className="text-green-900">
-              <p className="mb-6 font-bold uppercase">✅ User Logged In & API Active</p>
+            <div className="text-black">
+              <p className="mb-6 font-bold">已登录，API 正常工作</p>
 
               {status.github.userToken.rateLimit && (
                 <RateLimitBar rateLimit={status.github.userToken.rateLimit} />
               )}
             </div>
           ) : status.github.userToken.status === 'not_authenticated' ? (
-            <div className="text-blue-900">
-              <p className="mb-2 font-bold uppercase">ℹ️ User Not Logged In</p>
+            <div className="text-black">
+              <p className="mb-2 font-bold">当前未登录</p>
 
-              <p className="text-sm font-bold">Please login to access all features.</p>
+              <p className="text-news-gray text-sm font-bold">登录后可使用全部功能。</p>
             </div>
           ) : status.github.userToken.status === 'expired' ||
             status.github.userToken.status === 'invalid_token' ? (
-            <div className="text-red-900">
-              <p className="mb-2 font-bold uppercase">❌ Auth Token Error</p>
+            <div className="text-kfc-red">
+              <p className="mb-2 font-bold">登录凭证异常</p>
 
-              <div className="mt-4 border-2 border-red-800 bg-white p-4">
-                <p className="mb-1 text-sm font-black uppercase">Error Details:</p>
+              <div className="border-kfc-red mt-4 border-2 bg-white p-4">
+                <p className="mb-1 text-sm font-black text-black">错误详情</p>
 
-                <p className="text-sm font-bold">{status.github.userToken.error}</p>
+                <p className="text-news-gray text-sm font-bold">{status.github.userToken.error}</p>
 
-                <div className="mt-3 text-xs font-bold uppercase text-red-600">
-                  💡 Action Required: Please re-login to refresh token
-                </div>
+                <div className="text-kfc-red mt-3 text-xs font-bold">请重新登录以刷新凭证</div>
               </div>
             </div>
           ) : (
-            <div className="text-blue-900">
-              <p className="mb-2 font-bold uppercase">ℹ️ Auth Unavailable</p>
+            <div className="text-black">
+              <p className="mb-2 font-bold">凭证状态未知</p>
 
               {status.github.userToken.error && (
-                <p className="text-sm font-bold">{status.github.userToken.error}</p>
+                <p className="text-news-gray text-sm font-bold">{status.github.userToken.error}</p>
               )}
             </div>
           )}

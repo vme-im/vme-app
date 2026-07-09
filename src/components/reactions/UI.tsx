@@ -3,6 +3,7 @@
 import { memo } from 'react'
 import LikeButton from './LikeButton'
 import ReactionsContainer from './Container'
+import Icon from '@/components/shared/Icon'
 
 // 可用的反应类型
 const availableReactions = [
@@ -41,8 +42,9 @@ const ReactionsUI = memo(function ReactionsUI({
   return (
     <>
       {warning && (
-        <span className="mb-2 inline-block border-2 border-black bg-kfc-yellow px-2 py-0.5 text-xs font-black text-black shadow-neo-sm">
-          ⚠ {warning}
+        <span className="mb-2 inline-flex items-center gap-1 border-2 border-black bg-kfc-yellow px-2 py-0.5 text-xs font-black text-black shadow-neo-sm">
+          <Icon name="alert-triangle" className="h-[1em] w-[1em] shrink-0" />
+          {warning}
         </span>
       )}
       <ReactionsContainer className={className}>

@@ -28,10 +28,10 @@ export default function ReactionsLogin({ className = '' }: ReactionsLoginProps) 
         {availableReactions.map(({ key, emoji }) => (
           <div
             key={key}
-            className="relative flex shrink-0 items-center gap-1 rounded-full bg-gray-100 px-2 py-1 transition-all duration-200"
+            className="border-news-rule bg-kfc-cream relative flex shrink-0 items-center gap-1 border-2 px-2 py-1 transition-all duration-200"
           >
             <span className="text-base">{emoji}</span>
-            <span className="select-none text-xs font-medium text-gray-400 blur-xs">88</span>
+            <span className="text-news-gray select-none text-xs font-medium blur-xs">88</span>
           </div>
         ))}
       </ReactionsContainer>

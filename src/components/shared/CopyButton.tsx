@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Icon from './Icon'
 
 interface CopyButtonProps {
   text: string
@@ -31,16 +32,15 @@ export default function CopyButton({ text, className = '' }: CopyButtonProps) {
     >
       {copied ? (
         <>
-          <i className="fa fa-check text-kfc-red"></i>
+          <Icon name="check" className="text-kfc-red" />
           <span className="text-xs uppercase">COPIED!</span>
         </>
       ) : (
         <>
-          <i className="fa fa-copy text-xs"></i>
+          <Icon name="copy" className="text-xs" />
           <span className="text-xs uppercase">COPY</span>
         </>
       )}
     </button>
   )
 }
-

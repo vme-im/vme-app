@@ -6,6 +6,7 @@ import { VercelAnalytics } from '@/components/vercel-analytics'
 import { Header, Footer } from '@/components/shared'
 import TickerBanner from '@/components/shared/TickerBanner'
 import { getUniqueContributorsCount } from '@/lib/server-utils'
+import { getIssueInfo } from '@/lib/issue-number'
 import { PWARegistration } from '@/components/pwa-registration'
 
 import '@/app/globals.css'
@@ -21,8 +22,6 @@ export const viewport: Viewport = {
   themeColor: '#c41200',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
 }
 
@@ -49,6 +48,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const contributorsCount = await getUniqueContributorsCount()
+  const issue = getIssueInfo()
 
   return (
     <html
@@ -57,18 +57,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <head>
-        <link
-          href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
-          rel="stylesheet"
-        />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="text-gray-900">
+      <body className="text-kfc-black">
         <PWARegistration />
         <Providers>
           <div className="relative z-10 flex min-h-screen flex-col">
-            <Header contributorsCount={contributorsCount} />
+            <Header contributorsCount={contributorsCount} issue={issue} />
             <TickerBanner />
 
             {/* 主内容 */}

@@ -1,62 +1,61 @@
 import SubmitForm from '@/components/submit/Form'
+import Icon from '@/components/shared/Icon'
+import type { IconName } from '@/components/shared/Icon'
+
+// 投稿须知（列表级，纯排版，无卡片边框）
+const NOTES: { icon: IconName; title: string; desc: string }[] = [
+  {
+    icon: 'pencil',
+    title: '原创',
+    desc: '鼓励原创，让每一条文案都有自己的味道，拒绝烂大街。',
+  },
+  {
+    icon: 'check-circle',
+    title: '审核',
+    desc: '投稿后由 AI 自动审核、查重、打标，通过就立刻上架。',
+  },
+  {
+    icon: 'trophy',
+    title: '认可',
+    desc: '优质文案将荣登首页推荐，还能冲击英雄榜，成为文案之王。',
+  },
+]
 
 export default function SubmitPage() {
   return (
-    <div className="container mx-auto px-4 py-12 md:py-16">
-      <div className="mb-12 text-center md:mb-16">
-        <h1 className="mb-6 text-5xl font-black italic tracking-tighter text-black md:text-7xl lg:text-8xl">
-          上交我的
-          <br className="md:hidden" />
-          <span className="text-kfc-red underline decoration-black decoration-8 underline-offset-8">
-            疯四文案
-          </span>
+    <div className="container mx-auto px-4 py-8 md:py-10">
+      {/* 栏目眉：投稿信箱 */}
+      <div className="mb-8 border-b-4 border-black pb-4 md:mb-10">
+        <div className="text-kfc-red text-xs font-black tracking-wide">栏目 · 投稿信箱</div>
+        <h1 className="mt-1 text-3xl font-black tracking-tight text-black md:text-5xl">
+          上交我的<span className="text-kfc-red">疯四文案</span>
         </h1>
-        <div className="inline-block -rotate-1 border-2 border-black bg-kfc-yellow px-6 py-2 shadow-neo-sm">
-          <p className="font-black uppercase text-black md:text-lg">
-            SHOW ME YOUR MEMES! 别藏着掖着了，交出你的好活！
-          </p>
-        </div>
+        <p className="text-news-gray mt-2 text-sm font-bold md:text-base">
+          别藏着掖着了，交出你的好活。
+        </p>
       </div>
 
       <SubmitForm />
 
-      <div className="mt-16 text-center">
-        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
-          <div className="border-3 border-black bg-white p-6 shadow-neo transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none">
-            <div className="mb-3 text-4xl">✨</div>
-            <h3 className="mb-2 text-xl font-black uppercase italic text-black">
-              原创内容 / ORIGINAL
-            </h3>
-            <p className="font-bold text-gray-700">
-              鼓励原创，让每一个文案都充满个人色彩和创意。拒绝烂大街！
-            </p>
-          </div>
-
-          <div className="border-3 border-black bg-white p-6 shadow-neo transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none">
-            <div className="mb-3 text-4xl">🚀</div>
-            <h3 className="mb-2 text-xl font-black uppercase italic text-black">
-              快速审核 / FAST REVIEW
-            </h3>
-            <p className="font-bold text-gray-700">
-              投稿后由 AI 自动审核、查重、打标，通过就立刻上架。
-            </p>
-          </div>
-
-          <div className="border-3 border-black bg-white p-6 shadow-neo transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none">
-            <div className="mb-3 text-4xl">🏆</div>
-            <h3 className="mb-2 text-xl font-black uppercase italic text-black">获得认可 / FAME</h3>
-            <p className="font-bold text-gray-700">
-              优质文案将荣登首页推荐，还能冲击英雄榜，成为文案之王！
-            </p>
-          </div>
+      {/* 投稿须知：列表级，正文 + 分栏线 */}
+      <div className="mx-auto mt-16 max-w-3xl">
+        <div className="text-kfc-red text-xs font-black tracking-wide">栏目 · 投稿须知</div>
+        <div className="divide-news-rule border-news-rule mt-3 divide-y border-t">
+          {NOTES.map((note) => (
+            <div key={note.title} className="flex items-start gap-4 py-5">
+              <Icon name={note.icon} className="text-kfc-red mt-0.5 shrink-0 text-2xl" />
+              <div>
+                <h3 className="text-base font-black text-black">{note.title}</h3>
+                <p className="text-news-gray mt-1 text-sm">{note.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="mt-12 text-center">
-        <p className="font-bold uppercase text-gray-500 text-sm">
-          * ALL SUBMISSIONS ARE MANAGED VIA GITHUB ISSUES FOR TRANSPARENCY
-        </p>
-      </div>
+      <p className="text-news-gray mt-10 text-center text-xs font-bold">
+        投稿全部走 GitHub Issue，公开留痕，过程透明。
+      </p>
     </div>
   )
 }

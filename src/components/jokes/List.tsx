@@ -11,7 +11,8 @@ interface JokesListProps {
 
 /**
  * 文案列表容器（服务端组件）
- * 职责：获取分页数据，渲染列表结构
+ * 职责：获取分页数据，渲染列表结构（纯排版列表 + 分页）
+ * 栏目眉/过滤状态说明由上层页面（jokes/authors 页）负责，本组件只管列表级内容
  */
 export default async function JokesList({ currentPage, type, tag, author }: JokesListProps) {
   const { items, totalPages, total } = await getKfcItemsWithPagination(
@@ -22,39 +23,18 @@ export default async function JokesList({ currentPage, type, tag, author }: Joke
     author,
   )
 
-  const title = author
-    ? `@${author} 的文案`
-    : tag
-      ? `Tag: ${tag}`
-      : type === 'meme'
-        ? 'Memes / 梗图库'
-        : type === 'text'
-          ? 'Texts / 文案库'
-          : 'All Entries / 全部收录'
-  const icon = author
-    ? 'fa-user'
-    : tag
-      ? 'fa-tags'
-      : type === 'meme'
-        ? 'fa-image'
-        : type === 'text'
-          ? 'fa-quote-left'
-          : 'fa-folder-open'
+  if (items.length === 0) {
+    return (
+      <section id="jokes-list" className="mb-12">
+        <p className="text-news-gray border-news-rule border-y py-12 text-center text-sm">
+          暂无收录，去上交一条文案吧。
+        </p>
+      </section>
+    )
+  }
 
   return (
     <section id="jokes-list" className="mb-12">
-      {/* 列表标题 */}
-      <div className="mb-8 flex items-center justify-between border-b-4 border-black pb-4">
-        <h2 className="flex items-center gap-2 text-2xl font-black uppercase italic text-black md:text-3xl">
-          <i className={`fa ${icon} text-kfc-red`}></i> {title}
-        </h2>
-        <div className="flex items-center gap-2 border-2 border-black bg-kfc-yellow px-4 py-1 shadow-neo-sm">
-          <span className="text-sm font-bold uppercase text-black">
-            Total / 共计: <span className="font-black">{total}</span>
-          </span>
-        </div>
-      </div>
-
       {/* 文案列表（含批量反应数据注入） */}
       <ListWithReactions
         items={items}
