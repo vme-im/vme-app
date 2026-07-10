@@ -89,13 +89,13 @@ const JokeCard = memo(function JokeCard({
   return (
     <article
       className={clsx(
-        'group border-news-rule relative border-b py-5 transition-colors hover:bg-white',
+        'group border-news-rule relative border-b py-7 transition-colors hover:bg-white',
         className,
       )}
     >
       {/* 标签：小号文字标签，hover 变红可点击过滤 */}
       {showTags && item.tags && item.tags.length > 0 && (
-        <div className="relative z-10 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="relative z-10 mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
           {item.tags.map((tag) => {
             const nextParams = new URLSearchParams()
             nextParams.set('tag', tag)
@@ -186,7 +186,7 @@ const JokeCard = memo(function JokeCard({
       />
 
       {/* byline + 操作 */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <Byline item={item} />
         <div className="relative z-10">
           <CopyButton text={item.body} />
@@ -194,7 +194,7 @@ const JokeCard = memo(function JokeCard({
       </div>
 
       {/* 互动数据展示 */}
-      <div className="relative z-10 mt-2 min-w-0 overflow-hidden">
+      <div className="relative z-10 mt-3 min-w-0 overflow-hidden">
         {waitForBatchData ? (
           <ReactionsLoading />
         ) : (
