@@ -89,7 +89,12 @@ const JokeCard = memo(function JokeCard({
   return (
     <article
       className={clsx(
-        'group border-news-rule relative border-b py-7 transition-colors hover:bg-white',
+        // 报纸剪报手感：hover 时条目左外侧用伪元素长出一条 kfc-red 竖线（不占位、不推移内容），
+        // 条目左边缘保持与栏目眉/分页对齐；配合正文 group-hover:text-kfc-red。
+        // 列表级不做卡片化——不给背景色变化。
+        'group border-news-rule relative border-b py-7 transition-colors',
+        "before:bg-kfc-red before:absolute before:-left-2 before:top-6 before:bottom-6 before:w-1 before:opacity-0 before:transition-opacity before:content-['']",
+        'hover:before:opacity-100',
         className,
       )}
     >
