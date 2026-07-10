@@ -1,5 +1,5 @@
 // 服务端专用工具函数 - 包含 Node.js 模块，仅在服务端使用
-import { IKfcItem } from '@/types'
+import { Contributor, IKfcItem } from '@/types'
 import { unstable_cache } from 'next/cache'
 import { getDataProvider } from '@/lib/data-access'
 
@@ -151,4 +151,46 @@ export async function getRandomKfcItem(type?: 'text' | 'meme'): Promise<IKfcItem
 export async function getItemById(id: string): Promise<IKfcItem | null> {
   const item = await provider.getItemById(id)
   return item ? normalizeItemContent(item) : null
+}
+
+// 最新收录缓存：首页「简讯栏」用，按创建时间倒序取前 N 条
+const getLatestKfcItemsCached = unstable_cache(
+  async (limit: number) => {
+    const { items } = await provider.getItems({ limit, sortBy: 'createdAt', order: 'desc' })
+    return items.map(normalizeItemContent)
+  },
+  ['latest-kfc-items'],
+  { revalidate: 600 },
+)
+
+// 获取最新收录的文案（简讯栏）
+export async function getLatestKfcItems(limit = 8): Promise<IKfcItem[]> {
+  return await getLatestKfcItemsCached(limit)
+}
+
+// 读者票选缓存：首页「排行栏」用，按 reactions 倒序取前 N 条
+const getTopReactedKfcItemsCached = unstable_cache(
+  async (limit: number) => {
+    const { items } = await provider.getItems({ limit, sortBy: 'reactions', order: 'desc' })
+    return items.map(normalizeItemContent)
+  },
+  ['top-reacted-kfc-items'],
+  { revalidate: 600 },
+)
+
+// 获取历史 reactions 最高的文案（读者票选）
+export async function getTopReactedKfcItems(limit = 5): Promise<IKfcItem[]> {
+  return await getTopReactedKfcItemsCached(limit)
+}
+
+// 记者团缓存：首页「本报记者团」条用，投稿数最高的前 N 位文案鬼才
+const getTopContributorsCached = unstable_cache(
+  async (limit: number) => provider.getTopContributors(limit),
+  ['top-contributors'],
+  { revalidate: 3600 },
+)
+
+// 获取投稿数最高的文案鬼才（记者团条）
+export async function getTopContributors(limit = 8): Promise<Contributor[]> {
+  return await getTopContributorsCached(limit)
 }

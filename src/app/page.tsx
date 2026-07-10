@@ -3,7 +3,15 @@ import Link from 'next/link'
 import NeoButton from '@/components/shared/NeoButton'
 import Icon from '@/components/shared/Icon'
 
-import { getFeaturedJokes, getRandomKfcItem, extractImageUrl, getTopTags } from '@/lib/server-utils'
+import {
+  getFeaturedJokes,
+  getRandomKfcItem,
+  extractImageUrl,
+  getTopTags,
+  getLatestKfcItems,
+  getTopReactedKfcItems,
+  getTopContributors,
+} from '@/lib/server-utils'
 import type { IKfcItem } from '@/types'
 
 // 本期宣言：轮换的自嘲金句，作为今日头条的引题（kicker）
@@ -30,6 +38,12 @@ function formatDate(iso?: string): string {
     month: 'long',
     day: 'numeric',
   })
+}
+
+/** 简讯用短日期：M月D日 */
+function formatShortDate(iso?: string): string {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
 }
 
 /** byline：文 / @作者 · 日期 · ♥数 */
@@ -60,15 +74,32 @@ export default async function Page() {
   // 并行获取所有首页数据（沿用既有数据链路）。
   // 头条/热图取随机项，池子为空时 getRandomKfcItem 会抛错——在页面层兜底为 null，
   // 让版面自然降级（头条给占位文案、热图给占位卡），不整页 500。
-  const [selectedJokes, headlineJoke, randomMeme, topTags] = await Promise.all([
+  // 新增版块同样兜底：拿不到数据（返回空数组 / null）时整个版块不渲染，不做假数据。
+  const [
+    selectedJokes,
+    headlineJoke,
+    randomMeme,
+    topTags,
+    latestItems,
+    topReactedItems,
+    gutterJoke,
+    topContributors,
+  ] = await Promise.all([
     getFeaturedJokes(),
     getRandomKfcItem('text').catch(() => null),
     getRandomKfcItem('meme').catch(() => null),
     getTopTags(),
+    getLatestKfcItems(7).catch(() => []),
+    getTopReactedKfcItems(5).catch(() => []),
+    getRandomKfcItem('text').catch(() => null),
+    getTopContributors(6).catch(() => []),
   ])
 
   const memeImageUrl = randomMeme ? extractImageUrl(randomMeme.body) : null
   const heroCopy = HERO_COPIES[pickIndex(headlineJoke?.id ?? '', HERO_COPIES.length)]
+
+  // 中缝金句：与头条撞车时放弃本期中缝（避免同一条文案在头版出现两次）
+  const gutterQuote = gutterJoke && gutterJoke.id !== headlineJoke?.id ? gutterJoke : null
 
   // 头条：大标题取 title，正文摘录取 body（两者不同才展示摘录，避免重复）
   const headlineTitle = headlineJoke?.title?.trim() || headlineJoke?.body?.trim() || ''
@@ -175,7 +206,99 @@ export default async function Page() {
         </section>
       )}
 
-      {/* 3. 版面条：热门标签 */}
+      {/* 3. 双栏带：左 2/3 简讯栏「最新收录」 + 右 1/3 排行栏「读者票选」，中间竖分栏线，窄屏堆叠 */}
+      {(latestItems.length > 0 || topReactedItems.length > 0) && (
+        <section className="border-news-rule my-12 border-t pt-8">
+          <div className="divide-news-rule grid gap-y-10 md:grid-cols-3 md:gap-y-0 md:divide-x">
+            {/* 简讯栏：最新收录 */}
+            {latestItems.length > 0 && (
+              <div className="min-w-0 md:col-span-2 md:pr-8">
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="text-kfc-red text-xs font-black tracking-wide">
+                    简讯 · 最新收录
+                  </div>
+                  <Link
+                    href="/jokes"
+                    className="text-news-gray hover:text-kfc-red inline-flex min-h-[44px] shrink-0 items-center text-xs font-bold md:min-h-0"
+                  >
+                    查看全部 →
+                  </Link>
+                </div>
+                <ul className="border-news-rule divide-news-rule mt-3 divide-y border-t">
+                  {latestItems.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        href={`/jokes/${item.id}`}
+                        className="group flex min-h-[44px] items-baseline gap-2.5 py-2.5 md:min-h-0"
+                      >
+                        <span className="text-kfc-red shrink-0 text-xs leading-relaxed">▪</span>
+                        <span className="min-w-0">
+                          <span className="group-hover:text-kfc-red line-clamp-2 text-sm leading-relaxed font-medium wrap-anywhere text-black transition-colors">
+                            {item.body}
+                          </span>
+                          <span className="text-news-gray mt-0.5 block text-xs">
+                            @{item.author?.username || '匿名疯四人'} ·{' '}
+                            {formatShortDate(item.createdAt)}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 排行栏：读者票选（历史 reactions 前 5，第一名加大） */}
+            {topReactedItems.length > 0 && (
+              <div className={`min-w-0 ${latestItems.length > 0 ? 'md:pl-8' : 'md:col-span-3'}`}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="text-kfc-red text-xs font-black tracking-wide">
+                    排行 · 读者票选
+                  </div>
+                  <Link
+                    href="/leaderboard"
+                    className="text-news-gray hover:text-kfc-red inline-flex min-h-[44px] shrink-0 items-center text-xs font-bold md:min-h-0"
+                  >
+                    英雄榜 →
+                  </Link>
+                </div>
+                <ol className="border-news-rule divide-news-rule mt-3 divide-y border-t">
+                  {topReactedItems.map((item, index) => (
+                    <li key={item.id}>
+                      <Link href={`/jokes/${item.id}`} className="group flex gap-3 py-3">
+                        <span
+                          className={`font-display w-6 shrink-0 text-center leading-none font-black ${
+                            index === 0 ? 'text-kfc-red text-3xl' : 'text-news-gray pt-0.5 text-xl'
+                          }`}
+                        >
+                          {index + 1}
+                        </span>
+                        <span className="min-w-0">
+                          <span
+                            className={`group-hover:text-kfc-red wrap-anywhere text-black transition-colors ${
+                              index === 0
+                                ? 'line-clamp-3 leading-relaxed font-black'
+                                : 'line-clamp-2 text-sm leading-relaxed font-bold'
+                            }`}
+                          >
+                            {item.body}
+                          </span>
+                          <span className="text-news-gray mt-0.5 block text-xs">
+                            ♥ {item.reactions?.totalCount ?? 0} · @
+                            {item.author?.username || '匿名疯四人'}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 4. 版面条：热门标签 */}
       <section className="bg-kfc-black my-12 flex flex-wrap items-center gap-x-5 gap-y-1 border-y-4 border-black px-5 py-3">
         <span className="text-kfc-yellow shrink-0 py-1 text-sm font-black tracking-wide">
           版面 · 热门标签
@@ -196,7 +319,62 @@ export default async function Page() {
         )}
       </section>
 
-      {/* 4. 页尾 CTA */}
+      {/* 5. 中缝金句：头条之外唯一放大的元素，只靠字号 + 衬线 + 引号撑，不加贴纸不堆阴影 */}
+      {gutterQuote && (
+        <section className="my-12 border-y-4 border-double border-black px-4 py-10 text-center">
+          <div className="text-kfc-red text-xs font-black tracking-wide">中缝 · 本期金句</div>
+          <Link href={`/jokes/${gutterQuote.id}`} className="group mt-5 block">
+            <p className="font-serif-news group-hover:text-kfc-red mx-auto line-clamp-4 max-w-3xl text-2xl leading-relaxed wrap-anywhere text-black transition-colors md:text-3xl">
+              「{gutterQuote.body.trim()}」
+            </p>
+          </Link>
+          <div className="mt-5">
+            <Byline item={gutterQuote} />
+          </div>
+        </section>
+      )}
+
+      {/* 6. 本报记者团：投稿数最高的文案鬼才，横排一条 */}
+      {topContributors.length > 0 && (
+        <section className="border-news-rule my-12 border-y py-5">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="flex shrink-0 items-baseline gap-3">
+              <span className="text-kfc-red text-xs font-black tracking-wide">本报 · 记者团</span>
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-3">
+              {topContributors.map((c) => (
+                <Link
+                  key={c.username}
+                  href={`/authors/${encodeURIComponent(c.username)}`}
+                  className="group flex min-h-[44px] min-w-0 max-w-full items-center gap-2 md:min-h-0"
+                >
+                  <span className="shrink-0 border-2 border-black bg-white p-0.5">
+                    <Image
+                      src={c.avatarUrl}
+                      alt={`${c.username} 的头像`}
+                      width={28}
+                      height={28}
+                      className="h-7 w-7 object-cover"
+                    />
+                  </span>
+                  <span className="group-hover:text-kfc-red min-w-0 text-sm font-bold wrap-anywhere text-black transition-colors">
+                    @{c.username}
+                  </span>
+                  <span className="text-news-gray font-display shrink-0 text-xs">{c.count}</span>
+                </Link>
+              ))}
+            </div>
+            <Link
+              href="/leaderboard"
+              className="text-news-gray hover:text-kfc-red ml-auto inline-flex min-h-[44px] shrink-0 items-center text-xs font-bold md:min-h-0"
+            >
+              V50 英雄榜 →
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* 7. 页尾 CTA */}
       <section className="bg-kfc-red mt-12 border-y-4 border-black px-4 py-14 text-center text-white">
         <h2 className="text-3xl font-black tracking-tight md:text-4xl">
           你的文案，
