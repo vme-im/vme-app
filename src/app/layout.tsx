@@ -6,7 +6,7 @@ import { VercelAnalytics } from '@/components/vercel-analytics'
 import { Header, Footer } from '@/components/shared'
 import TickerBanner from '@/components/shared/TickerBanner'
 import { getUniqueContributorsCount } from '@/lib/server-utils'
-import { getIssueInfo } from '@/lib/issue-number'
+import { getThursdayInfo } from '@/lib/crazy-thursday'
 import { PWARegistration } from '@/components/pwa-registration'
 
 import '@/app/globals.css'
@@ -19,7 +19,7 @@ const monaSans = localFont({
 })
 
 export const viewport: Viewport = {
-  themeColor: '#c41200',
+  themeColor: '#f4f1ea',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const contributorsCount = await getUniqueContributorsCount()
-  const issue = getIssueInfo()
+  const thursday = getThursdayInfo()
 
   return (
     <html
@@ -64,7 +64,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <PWARegistration />
         <Providers>
           <div className="relative z-10 flex min-h-screen flex-col">
-            <Header contributorsCount={contributorsCount} issue={issue} />
+            <Header contributorsCount={contributorsCount} thursday={thursday} />
             <TickerBanner />
 
             {/* 主内容 */}

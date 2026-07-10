@@ -13,8 +13,8 @@ interface PaginationProps {
 }
 
 /**
- * 分页组件（报纸页码风格）
- * 「上一版 / 第 X 版 · 共 Y 版 / 下一版」，黑边按钮 + neo-sm 阴影
+ * 分页组件
+ * 「上一页 / 第 X 页 · 共 Y 页 / 下一页」，黑边按钮 + neo-sm 阴影
  */
 export default function Pagination({
   currentPage,
@@ -50,31 +50,31 @@ export default function Pagination({
         {currentPage > 1 ? (
           <Link scroll={false} href={buildUrl(currentPage - 1)} className={navButtonClass}>
             <Icon name="chevron-left" className="text-sm" />
-            上一版
+            上一页
           </Link>
         ) : (
           <span className={navButtonDisabledClass}>
             <Icon name="chevron-left" className="text-sm" />
-            上一版
+            上一页
           </span>
         )}
 
         <div className="text-news-gray text-center text-xs font-bold sm:text-sm">
-          第 <span className="text-kfc-black font-black">{currentPage}</span> 版 · 共{' '}
-          <span className="text-kfc-black font-black">{totalPages}</span> 版
+          第 <span className="text-kfc-black font-black">{currentPage}</span> 页 · 共{' '}
+          <span className="text-kfc-black font-black">{totalPages}</span> 页
           <span className="sr-only">
-            （共 {totalItems} 篇，每版 {pageSize} 篇）
+            （共 {totalItems} 条，每页 {pageSize} 条）
           </span>
         </div>
 
         {currentPage < totalPages ? (
           <Link scroll={false} href={buildUrl(currentPage + 1)} className={navButtonClass}>
-            下一版
+            下一页
             <Icon name="chevron-right" className="text-sm" />
           </Link>
         ) : (
           <span className={navButtonDisabledClass}>
-            下一版
+            下一页
             <Icon name="chevron-right" className="text-sm" />
           </span>
         )}

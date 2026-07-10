@@ -12,7 +12,7 @@ interface JokesListProps {
 /**
  * 文案列表容器（服务端组件）
  * 职责：获取分页数据，渲染列表结构（纯排版列表 + 分页）
- * 栏目眉/过滤状态说明由上层页面（jokes/authors 页）负责，本组件只管列表级内容
+ * 标题贴纸/过滤状态说明由上层页面（jokes/authors 页）负责，本组件只管列表级内容
  */
 export default async function JokesList({ currentPage, type, tag, author }: JokesListProps) {
   const { items, totalPages, total } = await getKfcItemsWithPagination(

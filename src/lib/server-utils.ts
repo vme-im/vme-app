@@ -153,7 +153,7 @@ export async function getItemById(id: string): Promise<IKfcItem | null> {
   return item ? normalizeItemContent(item) : null
 }
 
-// 最新收录缓存：首页「简讯栏」用，按创建时间倒序取前 N 条
+// 最新收录缓存：首页「新鲜出炉」用，按创建时间倒序取前 N 条
 const getLatestKfcItemsCached = unstable_cache(
   async (limit: number) => {
     const { items } = await provider.getItems({ limit, sortBy: 'createdAt', order: 'desc' })
@@ -163,12 +163,12 @@ const getLatestKfcItemsCached = unstable_cache(
   { revalidate: 600 },
 )
 
-// 获取最新收录的文案（简讯栏）
+// 获取最新收录的文案（新鲜出炉）
 export async function getLatestKfcItems(limit = 8): Promise<IKfcItem[]> {
   return await getLatestKfcItemsCached(limit)
 }
 
-// 读者票选缓存：首页「排行栏」用，按 reactions 倒序取前 N 条
+// 高赞缓存：首页「被 V 爆的」用，按 reactions 倒序取前 N 条
 const getTopReactedKfcItemsCached = unstable_cache(
   async (limit: number) => {
     const { items } = await provider.getItems({ limit, sortBy: 'reactions', order: 'desc' })
@@ -178,19 +178,19 @@ const getTopReactedKfcItemsCached = unstable_cache(
   { revalidate: 600 },
 )
 
-// 获取历史 reactions 最高的文案（读者票选）
+// 获取历史 reactions 最高的文案（被 V 爆的）
 export async function getTopReactedKfcItems(limit = 5): Promise<IKfcItem[]> {
   return await getTopReactedKfcItemsCached(limit)
 }
 
-// 记者团缓存：首页「本报记者团」条用，投稿数最高的前 N 位文案鬼才
+// 文案鬼才缓存：首页「文案鬼才」条用，投稿数最高的前 N 位
 const getTopContributorsCached = unstable_cache(
   async (limit: number) => provider.getTopContributors(limit),
   ['top-contributors'],
   { revalidate: 3600 },
 )
 
-// 获取投稿数最高的文案鬼才（记者团条）
+// 获取投稿数最高的文案鬼才（首页鬼才条）
 export async function getTopContributors(limit = 8): Promise<Contributor[]> {
   return await getTopContributorsCached(limit)
 }

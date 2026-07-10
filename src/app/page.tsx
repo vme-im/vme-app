@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import NeoButton from '@/components/shared/NeoButton'
 import Icon from '@/components/shared/Icon'
+import SectionTitle from '@/components/shared/SectionTitle'
 
 import {
   getFeaturedJokes,
@@ -40,18 +41,17 @@ function formatDate(iso?: string): string {
   })
 }
 
-/** 简讯用短日期：M月D日 */
+/** 列表用短日期：M月D日 */
 function formatShortDate(iso?: string): string {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
 }
 
-/** byline：文 / @作者 · 日期 · ♥数 */
+/** byline：@作者 · 日期 · ♥数 */
 function Byline({ item }: { item: IKfcItem }) {
   const username = item.author?.username || '匿名疯四人'
   return (
     <p className="text-news-gray text-xs">
-      文 /{' '}
       {item.author?.username ? (
         <Link
           href={`/authors/${encodeURIComponent(username)}`}
@@ -73,8 +73,8 @@ function Byline({ item }: { item: IKfcItem }) {
 export default async function Page() {
   // 并行获取所有首页数据（沿用既有数据链路）。
   // 头条/热图取随机项，池子为空时 getRandomKfcItem 会抛错——在页面层兜底为 null，
-  // 让版面自然降级（头条给占位文案、热图给占位卡），不整页 500。
-  // 新增版块同样兜底：拿不到数据（返回空数组 / null）时整个版块不渲染，不做假数据。
+  // 让版式自然降级（头条给占位文案、热图给占位卡），不整页 500。
+  // 新增区块同样兜底：拿不到数据（返回空数组 / null）时整个区块不渲染，不做假数据。
   const [
     selectedJokes,
     headlineJoke,
@@ -98,7 +98,7 @@ export default async function Page() {
   const memeImageUrl = randomMeme ? extractImageUrl(randomMeme.body) : null
   const heroCopy = HERO_COPIES[pickIndex(headlineJoke?.id ?? '', HERO_COPIES.length)]
 
-  // 中缝金句：与头条撞车时放弃本期中缝（避免同一条文案在头版出现两次）
+  // 本周金句：与头条撞车时放弃本次金句（避免同一条文案在首页出现两次）
   const gutterQuote = gutterJoke && gutterJoke.id !== headlineJoke?.id ? gutterJoke : null
 
   // 头条：大标题取 title，正文摘录取 body（两者不同才展示摘录，避免重复）
@@ -108,13 +108,13 @@ export default async function Page() {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-10">
-      {/* 1. 今日头条 */}
+      {/* 1. 今日最疯（全页唯一的最响元素：大字号 + 大贴纸 + 阴影都在这） */}
       <section className="border-b-4 border-black pb-10">
         <div className="grid gap-6 md:grid-cols-3 md:gap-8">
           {/* 头条正文 */}
           <div className="min-w-0 md:col-span-2">
-            <span className="bg-kfc-yellow shadow-neo-sm inline-block rotate-2 border-2 border-black px-3 py-1 text-sm font-black text-black">
-              今日头条
+            <span className="bg-kfc-yellow shadow-neo inline-block rotate-2 border-2 border-black px-3 py-1 text-sm font-black text-black">
+              今日最疯
             </span>
 
             {/* 本期宣言（hero 精神并入头条引题） */}
@@ -134,7 +134,7 @@ export default async function Page() {
                 )}
               </Link>
             ) : (
-              <p className="text-news-gray mt-4">今日暂无头条，去上交一条文案吧。</p>
+              <p className="text-news-gray mt-4">今天还没人整活，去上交一条文案吧。</p>
             )}
 
             {headlineJoke && (
@@ -144,7 +144,7 @@ export default async function Page() {
             )}
           </div>
 
-          {/* 本期热图 */}
+          {/* 今日热图 */}
           <div className="md:col-span-1">
             <Link
               href={randomMeme ? `/jokes/${randomMeme.id}` : '#'}
@@ -152,26 +152,27 @@ export default async function Page() {
             >
               <div className="bg-kfc-cream relative aspect-[4/3] w-full overflow-hidden">
                 {memeImageUrl ? (
-                  <Image src={memeImageUrl} alt="本期热图" fill className="object-contain p-2" />
+                  <Image src={memeImageUrl} alt="今日热图" fill className="object-contain p-2" />
                 ) : (
                   <div className="text-news-gray flex h-full flex-col items-center justify-center gap-2">
                     <Icon name="image" className="text-3xl" />
-                    <span className="text-xs font-bold">本期暂无热图</span>
+                    <span className="text-xs font-bold">今日暂无热图</span>
                   </div>
                 )}
               </div>
               <div className="bg-kfc-yellow border-t-2 border-black px-3 py-1.5 text-center text-xs font-black tracking-wide text-black">
-                本期热图
+                今日热图
               </div>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* 2. 专栏（三栏纯排版） */}
+      {/* 2. 精选好活（三栏纯排版，列表级安静：栏内只有 #tag、正文与 byline） */}
       {selectedJokes.length > 0 && (
         <section className="my-12">
-          <div className="divide-news-rule grid divide-y md:grid-cols-3 md:divide-x md:divide-y-0">
+          <SectionTitle label="精选好活" action={{ label: '看全部文案', href: '/jokes' }} />
+          <div className="divide-news-rule mt-5 grid divide-y md:grid-cols-3 md:divide-x md:divide-y-0">
             {selectedJokes.map((item) => {
               const columnTag = item.tags?.[0] || '精选'
               return (
@@ -179,9 +180,7 @@ export default async function Page() {
                   key={item.id}
                   className="min-w-0 py-6 md:px-6 md:py-2 md:first:pl-0 md:last:pr-0"
                 >
-                  <div className="text-kfc-red text-xs font-black tracking-wide">
-                    专栏 · {columnTag}
-                  </div>
+                  <div className="text-news-gray text-xs font-bold">#{columnTag}</div>
                   <Link href={`/jokes/${item.id}`} className="group mt-3 block">
                     {/* wrap-anywhere：超长无断点串（v5v5…）参与 min-content 计算，防 grid 撑爆 */}
                     <p className="group-hover:text-kfc-red line-clamp-5 leading-relaxed font-medium wrap-anywhere text-black transition-colors">
@@ -195,36 +194,18 @@ export default async function Page() {
               )
             })}
           </div>
-          <div className="mt-6 text-center">
-            <Link
-              href="/jokes"
-              className="text-news-gray hover:text-kfc-red inline-flex min-h-[44px] items-center text-sm font-bold"
-            >
-              翻阅全部文案 →
-            </Link>
-          </div>
         </section>
       )}
 
-      {/* 3. 双栏带：左 2/3 简讯栏「最新收录」 + 右 1/3 排行栏「读者票选」，中间竖分栏线，窄屏堆叠 */}
+      {/* 3. 双栏带：左 2/3「新鲜出炉」最新收录 + 右 1/3「被 V 爆的」高赞榜，中间竖分栏线，窄屏堆叠 */}
       {(latestItems.length > 0 || topReactedItems.length > 0) && (
         <section className="border-news-rule my-12 border-t pt-8">
           <div className="divide-news-rule grid gap-y-10 md:grid-cols-3 md:gap-y-0 md:divide-x">
-            {/* 简讯栏：最新收录 */}
+            {/* 新鲜出炉：最新收录 */}
             {latestItems.length > 0 && (
               <div className="min-w-0 md:col-span-2 md:pr-8">
-                <div className="flex items-baseline justify-between gap-3">
-                  <div className="text-kfc-red text-xs font-black tracking-wide">
-                    简讯 · 最新收录
-                  </div>
-                  <Link
-                    href="/jokes"
-                    className="text-news-gray hover:text-kfc-red inline-flex min-h-[44px] shrink-0 items-center text-xs font-bold md:min-h-0"
-                  >
-                    查看全部 →
-                  </Link>
-                </div>
-                <ul className="border-news-rule divide-news-rule mt-3 divide-y border-t">
+                <SectionTitle label="新鲜出炉" action={{ label: '查看全部', href: '/jokes' }} />
+                <ul className="border-news-rule divide-news-rule mt-4 divide-y border-t">
                   {latestItems.map((item) => (
                     <li key={item.id}>
                       <Link
@@ -248,21 +229,14 @@ export default async function Page() {
               </div>
             )}
 
-            {/* 排行栏：读者票选（历史 reactions 前 5，第一名加大） */}
+            {/* 被 V 爆的：历史 reactions 前 5，第一名加大 */}
             {topReactedItems.length > 0 && (
               <div className={`min-w-0 ${latestItems.length > 0 ? 'md:pl-8' : 'md:col-span-3'}`}>
-                <div className="flex items-baseline justify-between gap-3">
-                  <div className="text-kfc-red text-xs font-black tracking-wide">
-                    排行 · 读者票选
-                  </div>
-                  <Link
-                    href="/leaderboard"
-                    className="text-news-gray hover:text-kfc-red inline-flex min-h-[44px] shrink-0 items-center text-xs font-bold md:min-h-0"
-                  >
-                    英雄榜 →
-                  </Link>
-                </div>
-                <ol className="border-news-rule divide-news-rule mt-3 divide-y border-t">
+                <SectionTitle
+                  label="被 V 爆的"
+                  action={{ label: '英雄榜', href: '/leaderboard' }}
+                />
+                <ol className="border-news-rule divide-news-rule mt-4 divide-y border-t">
                   {topReactedItems.map((item, index) => (
                     <li key={item.id}>
                       <Link href={`/jokes/${item.id}`} className="group flex gap-3 py-3">
@@ -298,10 +272,10 @@ export default async function Page() {
         </section>
       )}
 
-      {/* 4. 版面条：热门标签 */}
+      {/* 4. 黑底标签条：热门标签 */}
       <section className="bg-kfc-black my-12 flex flex-wrap items-center gap-x-5 gap-y-1 border-y-4 border-black px-5 py-3">
         <span className="text-kfc-yellow shrink-0 py-1 text-sm font-black tracking-wide">
-          版面 · 热门标签
+          热门标签
         </span>
         {topTags.length > 0 ? (
           topTags.map((t) => (
@@ -319,12 +293,14 @@ export default async function Page() {
         )}
       </section>
 
-      {/* 5. 中缝金句：头条之外唯一放大的元素，只靠字号 + 衬线 + 引号撑，不加贴纸不堆阴影 */}
+      {/* 5. 本周金句：头条之外唯一放大的元素，只靠大黑体字号 + 引号撑，不再堆阴影 */}
       {gutterQuote && (
-        <section className="my-12 border-y-4 border-double border-black px-4 py-10 text-center">
-          <div className="text-kfc-red text-xs font-black tracking-wide">中缝 · 本期金句</div>
-          <Link href={`/jokes/${gutterQuote.id}`} className="group mt-5 block">
-            <p className="font-serif-news group-hover:text-kfc-red mx-auto line-clamp-4 max-w-3xl text-2xl leading-relaxed wrap-anywhere text-black transition-colors md:text-3xl">
+        <section className="my-12 border-y-4 border-black px-4 py-10 text-center">
+          <div className="flex justify-center">
+            <SectionTitle label="本周金句" />
+          </div>
+          <Link href={`/jokes/${gutterQuote.id}`} className="group mt-6 block">
+            <p className="group-hover:text-kfc-red mx-auto line-clamp-4 max-w-3xl text-2xl leading-relaxed font-black tracking-tight wrap-anywhere text-black transition-colors md:text-3xl">
               「{gutterQuote.body.trim()}」
             </p>
           </Link>
@@ -334,13 +310,13 @@ export default async function Page() {
         </section>
       )}
 
-      {/* 6. 本报记者团：投稿数最高的文案鬼才，横排一条 */}
+      {/* 6. 文案鬼才：投稿数最高的鬼才，横排一条 */}
       {topContributors.length > 0 && (
         <section className="border-news-rule my-12 border-y py-5">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <div className="flex shrink-0 items-baseline gap-3">
-              <span className="text-kfc-red text-xs font-black tracking-wide">本报 · 记者团</span>
-            </div>
+            <span className="bg-kfc-yellow shadow-neo-sm inline-block shrink-0 -rotate-1 border-2 border-black px-2.5 py-1 text-xs font-black tracking-wide text-black">
+              文案鬼才
+            </span>
             <div className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-3">
               {topContributors.map((c) => (
                 <Link

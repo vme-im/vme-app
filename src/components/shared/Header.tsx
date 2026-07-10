@@ -4,12 +4,12 @@ import { useState, useCallback, memo } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import LoginButton from '@/components/shared/LoginButton'
-import type { IssueInfo } from '@/lib/issue-number'
+import type { ThursdayInfo } from '@/lib/crazy-thursday'
 
 interface HeaderProps {
   contributorsCount: number
-  /** 由服务端（layout）计算好的期数信息，避免客户端算日期造成水合不一致 */
-  issue: IssueInfo
+  /** 由服务端（layout）计算好的倒计时信息，避免客户端算日期造成水合不一致 */
+  thursday: ThursdayInfo
 }
 
 const NAV_LINKS = [
@@ -25,11 +25,12 @@ function isActivePath(pathname: string | null, href: string): boolean {
 }
 
 /**
- * Header —《疯狂星期四日报》报头
- * 结构：顶部日期栏（随滚动隐去）+ 报头刊名，随后是黑底导航横条（sticky）。
- * nav 作为 header 的兄弟节点，其 sticky 容器块为整个页面列，故可全程吸顶。
+ * Header — 「疯狂星期四 VME50」站头（本页最响元素之一，仅次于首页头条）
+ * 结构：站名（大黑体 + VME50 黄贴纸）+ slogan + 倒计时贴纸（疯四梗，常驻显眼位），
+ * 随后是黑底导航横条（sticky）。nav 作为 header 的兄弟节点，其 sticky 容器块为整个页面列，
+ * 故可全程吸顶。
  */
-const Header = memo(function Header({ contributorsCount, issue }: HeaderProps) {
+const Header = memo(function Header({ contributorsCount, thursday }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
@@ -39,34 +40,33 @@ const Header = memo(function Header({ contributorsCount, issue }: HeaderProps) {
   return (
     <>
       <header className="safe-area-top safe-area-x bg-kfc-cream text-kfc-black">
-        {/* 日期栏：报纸 dateline，滚动即隐去。窄屏期数/日期与倒计时分两行，避免挤成一行被截断 */}
-        <div className="border-b border-news-rule">
-          <div className="text-news-gray container mx-auto flex flex-col gap-0.5 px-4 py-1.5 font-serif-news text-2xs sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:text-xs">
-            <span className="truncate">{issue.dateLine}</span>
-            <div className="flex shrink-0 items-center gap-4">
-              <span className={issue.isThursday ? 'text-kfc-red font-bold' : ''}>
-                {issue.countdownLabel}
+        {/* 站头：站名 + slogan + 倒计时贴纸 */}
+        <div className="border-b-4 border-black">
+          <div className="container mx-auto px-4 py-5 text-center md:py-6">
+            <Link href="/" className="inline-block">
+              <h1 className="flex items-start justify-center gap-2 text-[2.5rem] leading-none font-black tracking-tight text-black sm:text-5xl md:text-6xl">
+                疯狂星期四
+                <span className="bg-kfc-yellow shadow-neo-sm font-display mt-1 inline-block rotate-3 border-2 border-black px-1.5 py-0.5 text-sm font-black tracking-normal sm:text-base md:text-lg">
+                  VME50
+                </span>
+              </h1>
+            </Link>
+            <p className="text-news-gray mt-2 text-xs font-bold sm:text-sm">不疯狂不星期四</p>
+
+            {/* 倒计时：疯四梗常驻。周四红底炸开，平日白底候场 */}
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+              <span
+                className={`shadow-neo-sm inline-block border-2 border-black px-3 py-1 text-xs font-black sm:text-sm ${
+                  thursday.isThursday ? 'bg-kfc-red -rotate-1 text-white' : 'bg-white text-black'
+                }`}
+              >
+                {thursday.countdownLabel}
               </span>
-              <span className="hidden items-center gap-1.5 sm:inline-flex">
-                <span className="animate-neo-blink inline-block h-1.5 w-1.5 rounded-full bg-kfc-red" />
+              <span className="text-news-gray hidden items-center gap-1.5 text-xs sm:inline-flex">
+                <span className="animate-neo-blink bg-kfc-red inline-block h-1.5 w-1.5 rounded-full" />
                 <span className="text-kfc-black font-bold">{contributorsCount}</span> 位文案鬼才在线
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* 报头刊名 */}
-        <div className="border-b-4 border-double border-black">
-          <div className="container mx-auto px-4 py-5 text-center md:py-6">
-            <p className="font-display text-news-gray text-2xs tracking-[0.4em] uppercase sm:text-xs sm:tracking-[0.5em]">
-              Crazy Thursday News Portal
-            </p>
-            <Link href="/" className="mt-1.5 inline-block">
-              <h1 className="text-[2.5rem] leading-none font-black tracking-tight text-black sm:text-5xl md:text-6xl">
-                疯狂星期四<span className="text-kfc-red">日报</span>
-              </h1>
-            </Link>
-            <p className="text-news-gray mt-2 text-xs font-medium sm:text-sm">一周只疯一天的日报</p>
           </div>
         </div>
       </header>
@@ -74,7 +74,7 @@ const Header = memo(function Header({ contributorsCount, issue }: HeaderProps) {
       {/* 导航横条：黑底白字，sticky */}
       <nav className="bg-kfc-black safe-area-x sticky top-0 z-50 border-b-4 border-black text-white">
         <div className="container mx-auto flex min-h-[52px] items-center justify-between px-4 lg:min-h-0">
-          {/* 左：移动端汉堡 + 精简刊名 */}
+          {/* 左：移动端汉堡 + 精简站名 */}
           <div className="flex flex-1 items-center gap-1 lg:flex-none">
             <button
               type="button"
@@ -95,7 +95,7 @@ const Header = memo(function Header({ contributorsCount, issue }: HeaderProps) {
               />
             </button>
             <Link href="/" className="font-black tracking-tight lg:hidden">
-              疯狂星期四<span className="text-kfc-yellow">日报</span>
+              疯狂星期四 <span className="font-display text-kfc-yellow">VME50</span>
             </Link>
           </div>
 
@@ -144,9 +144,9 @@ const Header = memo(function Header({ contributorsCount, issue }: HeaderProps) {
                 </Link>
               )
             })}
-            <div className="text-news-gray px-2 py-3 font-serif-news text-xs">
-              {issue.dateLine} · <span className="text-kfc-yellow">{contributorsCount}</span>{' '}
-              位文案鬼才在线
+            <div className="text-news-gray px-2 py-3 text-xs font-bold">
+              {thursday.countdownLabel} ·{' '}
+              <span className="text-kfc-yellow">{contributorsCount}</span> 位文案鬼才在线
             </div>
           </nav>
         </div>

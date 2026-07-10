@@ -11,9 +11,9 @@
   --color-kfc-cream: #f4f1ea;
   --color-kfc-black: #121212;
   --color-news-rule: #c9c5b8;
-  /* 分栏线：细规则线 */
+  /* 细分隔线（代币名沿用 news-rule，不改） */
   --color-news-gray: #6b6b62;
-  /* 报纸灰字：byline / 辅助信息 */
+  /* 辅助灰字：byline / 次要信息（代币名沿用 news-gray，不改） */
 
   --shadow-neo: 4px 4px 0px 0px #000000;
   --shadow-neo-sm: 2px 2px 0px 0px #000000;
@@ -26,7 +26,6 @@
 
   --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Heiti SC', var(--font-inter), sans-serif;
   --font-display: var(--font-mona-sans), 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --font-serif-news: 'Songti SC', 'SimSun', serif;
 }
 
 /*
@@ -85,8 +84,8 @@
     --foreground: #171717;
     --page-bg: #f4f1ea;
     /* 牛皮纸底色 */
-    --safe-area-top-bg: #c41200;
-    --safe-area-bottom-bg: #c41200;
+    --safe-area-top-bg: #f4f1ea;
+    --safe-area-bottom-bg: #f4f1ea;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -96,14 +95,15 @@
     }
   }
 
+  /* 页面画布 = 奶白，避免加载/回弹时闪红底；红色只做强调不做底色 */
   html {
-    background: var(--color-kfc-red);
+    background: var(--color-kfc-cream);
     min-height: 100%;
   }
 
   body {
     color: #121212;
-    background: var(--color-kfc-red);
+    background: var(--color-kfc-cream);
     font-family:
       -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', Roboto,
       'Helvetica Neue', Arial, sans-serif;

@@ -38,10 +38,10 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
               margin: 0,
             }}
           >
-            停刊启事 · 印刷故障
+            事故现场
           </p>
           <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#121212', marginTop: '16px' }}>
-            印刷机卡住了
+            服务器先疯为敬
           </h1>
           <p style={{ fontSize: '18px', fontWeight: 700, color: '#6b6b62', marginTop: '12px' }}>
             疯四的服务器吃太饱睡着了，文案稍后回来。

@@ -1,5 +1,6 @@
 import SubmitForm from '@/components/submit/Form'
 import Icon from '@/components/shared/Icon'
+import SectionTitle from '@/components/shared/SectionTitle'
 import type { IconName } from '@/components/shared/Icon'
 
 // 投稿须知（列表级，纯排版，无卡片边框）
@@ -24,10 +25,10 @@ const NOTES: { icon: IconName; title: string; desc: string }[] = [
 export default function SubmitPage() {
   return (
     <div className="container mx-auto px-4 py-8 md:py-10">
-      {/* 栏目眉：投稿信箱 */}
+      {/* 页头：统一贴纸标题 + 大黑体 h1 + 粗黑底线 */}
       <div className="mb-8 border-b-4 border-black pb-4 md:mb-10">
-        <div className="text-kfc-red text-xs font-black tracking-wide">栏目 · 投稿信箱</div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight text-black md:text-5xl">
+        <SectionTitle label="交作业" />
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-black md:text-5xl">
           上交我的<span className="text-kfc-red">疯四文案</span>
         </h1>
         <p className="text-news-gray mt-2 text-sm font-bold md:text-base">
@@ -37,10 +38,10 @@ export default function SubmitPage() {
 
       <SubmitForm />
 
-      {/* 投稿须知：列表级，正文 + 分栏线 */}
+      {/* 投稿须知：列表级，正文 + 分隔线 */}
       <div className="mx-auto mt-16 max-w-3xl">
-        <div className="text-kfc-red text-xs font-black tracking-wide">栏目 · 投稿须知</div>
-        <div className="divide-news-rule border-news-rule mt-3 divide-y border-t">
+        <SectionTitle label="投稿须知" />
+        <div className="divide-news-rule border-news-rule mt-4 divide-y border-t">
           {NOTES.map((note) => (
             <div key={note.title} className="flex items-start gap-4 py-5">
               <Icon name={note.icon} className="text-kfc-red mt-0.5 shrink-0 text-2xl" />

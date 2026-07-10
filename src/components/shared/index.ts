@@ -9,4 +9,4 @@ export { default as Header } from './Header'
 export { default as LoginButton } from './LoginButton'
 export { showLoginDialog } from './LoginDialog'
 export { default as Pagination } from './Pagination'
-
+export { default as SectionTitle } from './SectionTitle'

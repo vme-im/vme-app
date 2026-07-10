@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import Icon from '@/components/shared/Icon'
+import SectionTitle from '@/components/shared/SectionTitle'
 import SortTabs from './SortTabs'
 
 interface AuthorStats {
@@ -115,7 +116,7 @@ async function getLeaderboardData(sortBy: string = 'score') {
 // 设置组件级别的缓存时间（30分钟）
 export const revalidate = 1800
 
-/** 前三名领奖台配色：金（头版级）/ 奶白 / 白，全部黑边硬阴影 */
+/** 前三名领奖台配色：金（最响）/ 奶白 / 白，全部黑边硬阴影 */
 function getPodiumStyle(rank: number): { bg: string; shadow: string; label: string } {
   switch (rank) {
     case 1:
@@ -135,24 +136,22 @@ export default async function LeaderboardServer({ sortBy = 'score' }: Leaderboar
   if (!data) {
     return (
       <div className="border-news-rule border-y py-16 text-center">
-        <div className="text-kfc-red text-xs font-black tracking-wide">本报讯</div>
-        <h2 className="mt-3 text-2xl font-black text-black">英雄榜暂时排不出来</h2>
-        <p className="text-news-gray mt-2 text-sm font-medium">印刷机卡壳了，稍后再翻一次。</p>
+        <h2 className="text-2xl font-black text-black">英雄榜暂时排不出来</h2>
+        <p className="text-news-gray mt-2 text-sm font-medium">服务器开小差了，稍后再来一次。</p>
       </div>
     )
   }
 
   return (
     <>
-      {/* 栏目眉 + 排序 */}
-      <div className="border-news-rule mb-8 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-kfc-red text-xs font-black tracking-wide">
-          专栏 · 文案鬼才排行 · 共 {data.totalAuthors} 人上榜
-        </div>
-        <SortTabs currentSort={data.sortBy} />
+      {/* 统一贴纸标题 + 排序 */}
+      <div className="border-news-rule mb-8 border-b pb-3">
+        <SectionTitle label={`共 ${data.totalAuthors} 人上榜`}>
+          <SortTabs currentSort={data.sortBy} />
+        </SectionTitle>
       </div>
 
-      {/* 前三名：头版级领奖台 */}
+      {/* 前三名：领奖台（本页最响元素） */}
       {data.authors.length >= 3 ? (
         <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-3">
           {data.authors.slice(0, 3).map((author, index) => {
@@ -164,7 +163,7 @@ export default async function LeaderboardServer({ sortBy = 'score' }: Leaderboar
                 key={author.username}
                 className={`group relative border-3 border-black ${style.bg} ${style.shadow} p-5 pt-9 text-center transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-neo-xl`}
               >
-                {/* 名次贴纸（头版级，红底旋转） */}
+                {/* 名次贴纸（红底旋转） */}
                 <div className="bg-kfc-red font-display shadow-neo-sm absolute -top-4 -left-3 flex -rotate-3 items-center gap-1 border-2 border-black px-2.5 py-0.5 text-white italic">
                   <span className="text-xs not-italic">No.</span>
                   <span className="text-2xl leading-none font-black">{rank}</span>
@@ -219,12 +218,10 @@ export default async function LeaderboardServer({ sortBy = 'score' }: Leaderboar
         </div>
       ) : null}
 
-      {/* 第 4 名起：列表级纯排版 + 分栏线 */}
+      {/* 第 4 名起：列表级纯排版 + 分隔线 */}
       {data.authors.length > 3 ? (
         <div>
-          <div className="text-kfc-red mb-4 text-xs font-black tracking-wide">
-            榜单 · 其余上榜鬼才
-          </div>
+          <SectionTitle label="第 4 名开外" className="mb-5" />
           <div className="border-news-rule divide-news-rule divide-y border-y">
             {data.authors.slice(3, 10).map((author, index) => {
               const rank = index + 4
@@ -274,8 +271,8 @@ export default async function LeaderboardServer({ sortBy = 'score' }: Leaderboar
         </div>
       ) : null}
 
-      {/* 出刊说明 */}
-      <div className="text-news-gray font-serif-news mt-8 text-center text-xs">
+      {/* 更新说明 */}
+      <div className="text-news-gray mt-8 text-center text-xs font-bold">
         本榜单每 30 分钟重排一次
       </div>
     </>

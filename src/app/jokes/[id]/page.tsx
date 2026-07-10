@@ -14,6 +14,7 @@ import CopyButton from '@/components/shared/CopyButton'
 import InteractiveReactions from '@/components/reactions/Interactive'
 import NeoButton from '@/components/shared/NeoButton'
 import Icon from '@/components/shared/Icon'
+import SectionTitle from '@/components/shared/SectionTitle'
 import { IKfcItem } from '@/types'
 
 interface PageProps {
@@ -146,7 +147,7 @@ export async function generateMetadata(props: PageProps) {
 
 export const revalidate = 3600 // 1小时重新验证一次
 
-/** 报纸日期格式：YYYY 年 M 月 D 日 */
+/** 日期格式：YYYY 年 M 月 D 日 */
 function formatDate(iso?: string): string {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('zh-CN', {
@@ -167,13 +168,13 @@ export default async function JokeDetailPage(props0: PageProps) {
   // 规范化内容，兼容 title 是正文的情况
   const normalizedJoke = normalizeItemContent(joke)
 
-  // 计算热门状态（≥10 赞给头版级「热」贴纸）
+  // 计算热门状态（≥10 赞给「被 V 爆了」红贴纸）
   const totalReactions = normalizedJoke.reactions?.totalCount || 0
   const isHot = totalReactions >= 10
 
-  // 栏目眉：有 tags 走「专栏 · {首个tag}」，无则「本报讯」
+  // 标题贴纸：有 tags 走「#{首个tag}」，无则「疯四文案」
   const columnTag = normalizedJoke.tags?.[0]
-  const eyebrow = columnTag ? `专栏 · ${columnTag}` : '本报讯'
+  const eyebrow = columnTag ? `#${columnTag}` : '疯四文案'
 
   // 大标题只在 title 与正文实质不同时出现（避免重复），否则让正文当主角
   const bodyText = normalizedJoke.body?.trim() || ''
@@ -190,7 +191,7 @@ export default async function JokeDetailPage(props0: PageProps) {
   return (
     <div className="container mx-auto px-4 py-8 md:py-10">
       <div className="mx-auto max-w-3xl">
-        {/* 返回：纯文字栏目级链接 */}
+        {/* 返回：安静的纯文字链接 */}
         <Link
           href="/jokes"
           className="group text-news-gray hover:text-kfc-red mb-4 inline-flex min-h-[44px] items-center gap-2 text-sm font-bold transition-colors md:mb-6"
@@ -200,15 +201,15 @@ export default async function JokeDetailPage(props0: PageProps) {
         </Link>
 
         <article>
-          {/* 栏目眉 + 头版级「热」贴纸 */}
-          <div className="border-news-rule flex items-center justify-between gap-3 border-b pb-2">
-            <div className="text-kfc-red text-xs font-black tracking-wide">{eyebrow}</div>
-            {isHot && (
-              <span className="bg-kfc-red shadow-neo-sm inline-flex rotate-2 items-center gap-1 border-2 border-black px-2.5 py-0.5 text-xs font-black text-white">
-                <Icon name="fire" />
-                本期热文
-              </span>
-            )}
+          {/* 统一贴纸标题 + 高赞「被 V 爆了」红贴纸 */}
+          <div className="border-news-rule border-b pb-3">
+            <SectionTitle label={eyebrow}>
+              {isHot && (
+                <span className="bg-kfc-red shadow-neo-sm inline-flex rotate-2 items-center gap-1 border-2 border-black px-2.5 py-0.5 text-xs font-black text-white">
+                  <Icon name="fire" />被 V 爆了
+                </span>
+              )}
+            </SectionTitle>
           </div>
 
           {/* 大标题区（title 与正文不同才展示） */}
@@ -218,10 +219,9 @@ export default async function JokeDetailPage(props0: PageProps) {
             </h1>
           )}
 
-          {/* byline：文 / @作者 · 日期 · ♥数 */}
+          {/* byline：@作者 · 日期 · ♥数 */}
           <div className={showHeadline ? 'mt-4' : 'mt-5'}>
             <p className="text-news-gray text-xs">
-              文 /{' '}
               <Link href={authorHref} className="text-kfc-black hover:text-kfc-red font-bold">
                 @{username}
               </Link>
@@ -258,10 +258,10 @@ export default async function JokeDetailPage(props0: PageProps) {
                 ),
                 ul: ({ node, ...props }) => <ul className="mb-5 list-disc pl-6" {...props} />,
                 ol: ({ node, ...props }) => <ol className="mb-5 list-decimal pl-6" {...props} />,
-                // 引言走衬线点缀 + 红色分栏线，不用中文斜体
+                // 引言：红色竖线 + 灰字，不用中文斜体、不用衬线
                 blockquote: ({ node, ...props }) => (
                   <blockquote
-                    className="border-kfc-red text-news-gray font-serif-news my-6 border-l-4 pl-5"
+                    className="border-kfc-red text-news-gray my-6 border-l-4 pl-5"
                     {...props}
                   />
                 ),
@@ -281,7 +281,7 @@ export default async function JokeDetailPage(props0: PageProps) {
           <div className="border-news-rule mt-8 flex flex-wrap items-center justify-between gap-4 border-t pt-5">
             {normalizedJoke.tags && normalizedJoke.tags.length > 0 ? (
               <div className="text-news-gray flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                <span className="font-bold">本期关键词</span>
+                <span className="font-bold">关键词</span>
                 {normalizedJoke.tags.map((tag) => (
                   <Link
                     key={tag}
@@ -298,9 +298,9 @@ export default async function JokeDetailPage(props0: PageProps) {
             <CopyButton text={normalizedJoke.body} />
           </div>
 
-          {/* 作者签名档：报纸「本文作者」式，头像 + 名字 + 主页链接 */}
+          {/* 作者签名档：头像 + 名字 + 主页链接 */}
           <div className="bg-kfc-cream shadow-neo mt-10 border-3 border-black p-4 md:p-5">
-            <div className="text-kfc-red mb-3 text-xs font-black tracking-wide">本文作者</div>
+            <SectionTitle label="谁写的" className="mb-4" />
             <div className="flex items-center gap-4">
               <Link
                 href={authorHref}
@@ -336,9 +336,7 @@ export default async function JokeDetailPage(props0: PageProps) {
 
           {/* 互动反馈：文末一条横排，不再单独立标题条大区块 */}
           <div className="border-news-rule mt-8 border-t pt-5">
-            <div className="text-kfc-red mb-3 text-xs font-black tracking-wide">
-              读者来信 · 表个态
-            </div>
+            <SectionTitle label="表个态" className="mb-4" />
             <Suspense
               fallback={
                 <div className="flex items-center gap-2 font-bold text-black">
@@ -346,7 +344,7 @@ export default async function JokeDetailPage(props0: PageProps) {
                 </div>
               }
             >
-              <InteractiveReactions issueId={normalizedJoke.id} className="flex-wrap gap-2" />
+              <InteractiveReactions issueId={normalizedJoke.id} variant="full" className="gap-2" />
             </Suspense>
           </div>
         </article>

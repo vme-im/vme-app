@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { headers } from 'next/headers'
 import LeaderboardList from '@/components/leaderboard/List'
 import NeoButton from '@/components/shared/NeoButton'
+import SectionTitle from '@/components/shared/SectionTitle'
 
 // 获取URL参数的类型定义
 interface PageProps {
@@ -27,20 +28,14 @@ export default async function LeaderboardPage(props: PageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-10">
-      {/* 页眉：报纸栏目眉 + 大标题 */}
-      <div className="mb-10 border-b-4 border-double border-black pb-5">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="font-display text-news-gray text-2xs tracking-[0.3em] uppercase sm:text-xs">
-              Hall of Fame
-            </p>
-            <h1 className="mt-1 text-4xl leading-none font-black tracking-tight text-black sm:text-6xl">
-              V50 <span className="text-kfc-red">英雄榜</span>
-            </h1>
-          </div>
-          <p className="text-news-gray font-serif-news mt-2 text-sm sm:mt-0">
-            看谁的文案最能打 · 文案鬼才战力排行
-          </p>
+      {/* 页头：统一贴纸标题 + 大黑体 h1 + 粗黑底线 */}
+      <div className="mb-10 border-b-4 border-black pb-5">
+        <SectionTitle label="文案鬼才排行" />
+        <div className="mt-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <h1 className="text-4xl leading-none font-black tracking-tight text-black sm:text-6xl">
+            V50 <span className="text-kfc-red">英雄榜</span>
+          </h1>
+          <p className="text-news-gray mt-2 text-sm sm:mt-0">看谁的文案最能打</p>
         </div>
       </div>
 
@@ -50,9 +45,9 @@ export default async function LeaderboardPage(props: PageProps) {
           <div className="border-news-rule flex h-64 items-center justify-center border-y">
             <div className="flex flex-col items-center gap-3 text-black">
               <span className="animate-neo-blink text-kfc-red text-xs font-black tracking-wide">
-                本报讯
+                稍等
               </span>
-              <span className="text-xl font-black">英雄榜排版中…</span>
+              <span className="text-xl font-black">正在清点 V50…</span>
             </div>
           </div>
         }

@@ -5,6 +5,7 @@ import JokesList from '@/components/jokes/List'
 import JokesSidebar from '@/components/jokes/Sidebar'
 import NeoButton from '@/components/shared/NeoButton'
 import Icon from '@/components/shared/Icon'
+import SectionTitle from '@/components/shared/SectionTitle'
 import { getKfcItemsWithPagination, getTopTags } from '@/lib/server-utils'
 
 interface PageProps {
@@ -42,9 +43,9 @@ export default async function AuthorPage(props: PageProps) {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-8">
-      {/* 记者档案：紧凑一行，横贯版面 */}
+      {/* 鬼才档案：紧凑一行，横贯页面 */}
       <header className="mb-10 flex flex-wrap items-center gap-4 border-b-4 border-black pb-6">
-        <div className="border-3 border-black shrink-0">
+        <div className="border-3 shrink-0 border-black">
           <Image
             src={avatarUrl}
             alt={`${username}的头像`}
@@ -54,7 +55,7 @@ export default async function AuthorPage(props: PageProps) {
           />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-kfc-red text-xs font-black tracking-wide">记者档案</div>
+          <SectionTitle label="鬼才档案" className="mb-1.5" />
           <h1 className="truncate text-2xl font-black tracking-tight text-black md:text-3xl">
             @{username}
           </h1>
@@ -72,7 +73,7 @@ export default async function AuthorPage(props: PageProps) {
         </a>
       </header>
 
-      {/* 文章流（限阅读宽）+ 报纸侧栏（lg+ 出现），与 /jokes 版式一致 */}
+      {/* 文章流（限阅读宽）+ 侧栏（lg+ 出现），与 /jokes 版式一致 */}
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-12">
         <div className="min-w-0">
           {/* 该作者的文案列表（复用站点统一列表/卡片/分页） */}

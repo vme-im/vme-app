@@ -2,14 +2,15 @@ import { Suspense } from 'react'
 import StatusDashboard from '@/components/status/Dashboard'
 import NeoButton from '@/components/shared/NeoButton'
 import Icon from '@/components/shared/Icon'
+import SectionTitle from '@/components/shared/SectionTitle'
 
 export default function StatusPage() {
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* 栏目眉：印刷车间 */}
+      {/* 页头：统一贴纸标题 + 大黑体 h1 + 粗黑底线 */}
       <div className="mb-8 border-b-4 border-black pb-4">
-        <div className="text-kfc-red text-xs font-black tracking-wide">栏目 · 印刷车间</div>
-        <h1 className="mt-1 text-2xl font-black tracking-tight text-black md:text-3xl">系统状态</h1>
+        <SectionTitle label="后厨监控" />
+        <h1 className="mt-3 text-2xl font-black tracking-tight text-black md:text-3xl">系统状态</h1>
         <p className="text-news-gray mt-1 text-sm">GitHub API 限流状态、环境配置和系统健康度检查</p>
       </div>
 

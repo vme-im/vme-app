@@ -4,6 +4,7 @@ import JokesList from '@/components/jokes/List'
 import JokesSidebar from '@/components/jokes/Sidebar'
 import NeoButton from '@/components/shared/NeoButton'
 import Icon from '@/components/shared/Icon'
+import SectionTitle from '@/components/shared/SectionTitle'
 import { getTopTags } from '@/lib/server-utils'
 
 // 获取URL参数的类型定义
@@ -29,12 +30,12 @@ export default async function JokesPage(props: PageProps) {
   const tag = searchParams.tag
   const tagParam = tag ? `&tag=${encodeURIComponent(tag)}` : ''
 
-  // 梗图为瀑布流满版，其余（文案/标签）为文章流 + 报纸侧栏
+  // 梗图为瀑布流满版，其余（文案/标签）为文章流 + 侧栏
   const isMeme = type === 'meme'
   // 侧栏数据（热门标签）；瀑布流不带侧栏，可跳过
   const topTags = isMeme ? [] : await getTopTags()
 
-  // 栏目眉下的过滤状态一行说明：当前分类 + tag（如有）
+  // 标题下的过滤状态一行说明：当前分类 + tag（如有）
   const typeLabel = type === 'meme' ? '梗图' : type === 'text' ? '文案' : '全部收录'
 
   // 分类 tab：黑底，选中变黄
@@ -78,18 +79,13 @@ export default async function JokesPage(props: PageProps) {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-8">
-      {/* 栏目眉 + 当前过滤状态（横贯版面的栏目 header） */}
+      {/* 页头：统一贴纸标题 + 大黑体 h1 + 粗黑底线 */}
       <header className="mb-6 border-b-4 border-black pb-4">
-        <div className="text-kfc-red text-xs font-black tracking-wide">栏目 · 文案仓库</div>
-        <div className="mt-1 flex flex-wrap items-center gap-3">
+        <SectionTitle label="文案仓库" />
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-black tracking-tight text-black md:text-3xl">
             {tag ? `#${tag}` : typeLabel}
           </h1>
-          {tag && (
-            <span className="bg-kfc-yellow shadow-neo-sm inline-block -rotate-1 border-2 border-black px-2 py-0.5 text-xs font-black text-black">
-              标签专题
-            </span>
-          )}
         </div>
         <p className="text-news-gray mt-1 text-sm">
           当前显示：{typeLabel}
@@ -104,7 +100,7 @@ export default async function JokesPage(props: PageProps) {
           {listBlock}
         </div>
       ) : (
-        // 文案/标签：文章流（限阅读宽）+ 报纸侧栏（lg+ 出现）
+        // 文案/标签：文章流（限阅读宽）+ 侧栏（lg+ 出现）
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-12">
           <div className="min-w-0">
             {tabRow}

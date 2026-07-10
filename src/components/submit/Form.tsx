@@ -276,7 +276,7 @@ export default function SubmitForm() {
 
   return (
     <div className="mx-auto max-w-2xl border-4 border-black bg-white p-6 shadow-neo-xl md:p-8">
-      {/* 分类 tab：黑底，选中变黄（同栏目区分类切换语言） */}
+      {/* 分类 tab：黑底，选中变黄（同文案仓库分类切换语言） */}
       <div className="bg-kfc-black mb-6 inline-flex flex-wrap gap-1 p-1">
         {MODE_TABS.map((tab) => (
           <button
