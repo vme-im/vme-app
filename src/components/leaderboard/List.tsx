@@ -72,7 +72,7 @@ async function getLeaderboardData(sortBy: string = 'score') {
 
       author.totalInteractions = totalInteractions
 
-      // 计算综合评分：互动数 * 1.5 + 文案数 * 5
+      // 计算 V50 指数：互动数 * 1.5 + 文案数 * 5
       author.score = totalInteractions * 1.5 + author.totalPosts * 5
 
       // 按热度排序作者的文案
@@ -137,7 +137,7 @@ export default async function LeaderboardServer({ sortBy = 'score' }: Leaderboar
     return (
       <div className="border-news-rule border-y py-16 text-center">
         <h2 className="text-2xl font-black text-black">英雄榜暂时排不出来</h2>
-        <p className="text-news-gray mt-2 text-sm font-medium">服务器开小差了，稍后再来一次。</p>
+        <p className="text-news-gray mt-2 text-sm font-medium">服务器也疯了，稍后再来。</p>
       </div>
     )
   }

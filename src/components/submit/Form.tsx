@@ -48,7 +48,7 @@ export default function SubmitForm() {
               const validImages = parsed.images.filter((url: string) => !url.startsWith('blob:'))
               setUploadedImages(validImages)
             }
-            setMessage({ type: 'info', text: '已经帮你恢复上次写的内容' })
+            setMessage({ type: 'info', text: '上次写一半的草稿捡回来了' })
             localStorage.removeItem(FORM_STORAGE_KEY)
           }
         } catch (e) {
@@ -81,19 +81,19 @@ export default function SubmitForm() {
 
     // 验证逻辑
     if (!title.trim()) {
-      setMessage({ type: 'error', text: '请填写标题' })
+      setMessage({ type: 'error', text: '标题还空着' })
       return
     }
 
     if (activeTab === 'text') {
       if (!content.trim()) {
-        setMessage({ type: 'error', text: '请填写文案内容' })
+        setMessage({ type: 'error', text: '文案还空着' })
         return
       }
     } else {
       // 梗图模式下，允许内容为空，但必须有图片
       if (uploadedImages.length === 0) {
-        setMessage({ type: 'error', text: '请至少上传一张梗图' })
+        setMessage({ type: 'error', text: '至少传一张梗图' })
         return
       }
     }
@@ -137,7 +137,7 @@ export default function SubmitForm() {
           // 按原顺序重建数组
           finalImages = results.sort((a, b) => a.index - b.index).map((r) => r.url)
         } catch (error: any) {
-          setMessage({ type: 'error', text: error.message || '图片上传失败，请重试' })
+          setMessage({ type: 'error', text: error.message || '图没传上去，再试一次' })
           setIsSubmitting(false)
           return
         }
@@ -171,7 +171,7 @@ export default function SubmitForm() {
       if (data.success) {
         setMessage({
           type: 'success',
-          text: activeTab === 'meme' ? '梗图上交成功！' : '文案上交成功！正在跳转到详情页...',
+          text: activeTab === 'meme' ? '梗图上交成功' : '文案上交成功，跳详情页了',
         })
         setTitle('')
         setContent('')
@@ -207,7 +207,7 @@ export default function SubmitForm() {
 
           setMessage({
             type: 'error',
-            text: isExpired ? '登录已过期，请重新登录' : '请先登录以继续提交',
+            text: isExpired ? '登录过期了，重新登录再交' : '先登录再交',
           })
 
           // 显示登录确认弹窗
@@ -218,12 +218,12 @@ export default function SubmitForm() {
               : '登录 GitHub 就能上交文案和梗图，让更多人笑出腹肌。',
           })
         } else {
-          setMessage({ type: 'error', text: data.message || '提交失败，请稍后重试' })
+          setMessage({ type: 'error', text: data.message || '没交上去，稍后再试' })
         }
       }
     } catch (error) {
       console.error('提交失败:', error)
-      setMessage({ type: 'error', text: '网络错误，请稍后重试' })
+      setMessage({ type: 'error', text: '网络不给力，稍后再试' })
     } finally {
       setIsSubmitting(false)
     }
@@ -307,7 +307,7 @@ export default function SubmitForm() {
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="给你的作品起个标题..."
+            placeholder="一句话标题，越怪越好"
             className="focus:border-kfc-red focus:bg-kfc-cream shadow-neo-sm min-h-[44px] w-full border-2 border-black bg-white px-4 py-3 text-base font-bold text-black transition-all placeholder:text-news-gray focus:shadow-neo focus:outline-hidden"
             disabled={isSubmitting}
             maxLength={100}
@@ -339,7 +339,7 @@ export default function SubmitForm() {
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={activeTab === 'meme' ? '可以说说这张图的梗点...' : '开始你的表演...'}
+            placeholder={activeTab === 'meme' ? '这图的梗在哪？' : '开始你的表演...'}
             rows={6}
             className="focus:border-kfc-red focus:bg-kfc-cream shadow-neo-sm w-full resize-none border-2 border-black bg-white px-4 py-3 text-base font-bold text-black transition-all placeholder:text-news-gray focus:shadow-neo focus:outline-hidden"
             disabled={isSubmitting}
@@ -395,14 +395,14 @@ export default function SubmitForm() {
           提交须知
         </h3>
         <ul className="text-news-gray space-y-1 text-xs font-bold">
-          <li>· 请确保内容原创，避免重复提交</li>
-          <li>· 内容应当积极健康，符合社区规范</li>
+          <li>· 原创，查重过不了的别交</li>
+          <li>· 别发违规的，审核会毙</li>
           <li>· 提交后将自动创建 GitHub Issue，经审核后显示</li>
           <li>
             ·{' '}
             {activeTab === 'meme'
               ? '梗图将自动合成为 Markdown 格式提交'
-              : '文案支持 Markdown 格式（但不推荐过度使用）'}
+              : '文案支持 Markdown，别整太花'}
           </li>
         </ul>
       </div>

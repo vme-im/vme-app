@@ -47,7 +47,7 @@ export default function Error({ reset }: { error: Error; reset: () => void }) {
           </Link>
         </div>
 
-        <p className="text-news-gray mt-8 text-xs font-bold">服务很快恢复，文案鬼才们别走开。</p>
+        <p className="text-news-gray mt-8 text-xs font-bold">等它疯完就好，稍后再刷新。</p>
       </div>
     </div>
   )

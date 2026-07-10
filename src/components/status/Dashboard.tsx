@@ -202,7 +202,7 @@ export default function StatusDashboard() {
             <div className="text-black">
               <p className="mb-2 font-bold">当前未登录</p>
 
-              <p className="text-news-gray text-sm font-bold">登录后可使用全部功能。</p>
+              <p className="text-news-gray text-sm font-bold">登录后，点表情和交文案都解锁。</p>
             </div>
           ) : status.github.userToken.status === 'expired' ||
             status.github.userToken.status === 'invalid_token' ? (
@@ -214,7 +214,7 @@ export default function StatusDashboard() {
 
                 <p className="text-news-gray text-sm font-bold">{status.github.userToken.error}</p>
 
-                <div className="text-kfc-red mt-3 text-xs font-bold">请重新登录以刷新凭证</div>
+                <div className="text-kfc-red mt-3 text-xs font-bold">重新登录刷新一下凭证</div>
               </div>
             </div>
           ) : (

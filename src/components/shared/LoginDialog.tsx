@@ -17,7 +17,7 @@ interface LoginConfirmDialogProps {
 function LoginConfirmDialogContent({
   onClose,
   title = '需要登录',
-  message = '此操作需要登录 GitHub 账号，是否现在登录？',
+  message = '要登录 GitHub 才能继续，现在登一个？',
 }: LoginConfirmDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
 

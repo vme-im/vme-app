@@ -59,7 +59,7 @@ export default function UrlImageUploader({
 
     // Basic validation
     if (!file.type.startsWith('image/')) {
-      setUploadError('请上传图片文件')
+      setUploadError('这不是图片文件')
       return
     }
 

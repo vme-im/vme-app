@@ -39,7 +39,7 @@ export default function JokesSidebar({ topTags }: JokesSidebarProps) {
       {/* 投稿小卡：唯一的号召性色块 */}
       <div className="border-3 bg-kfc-cream mt-8 border-black p-5">
         <SectionTitle label="好活征集" />
-        <p className="text-kfc-black mt-3 text-sm font-bold">有好活？上交一条，冲本周英雄榜。</p>
+        <p className="text-kfc-black mt-3 text-sm font-bold">有好活？上交一条，冲英雄榜。</p>
         <div className="mt-4">
           <NeoButton href="/submit" variant="primary" size="sm" icon="pencil">
             我要投稿

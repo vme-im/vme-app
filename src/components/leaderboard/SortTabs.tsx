@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import Icon, { IconName } from '@/components/shared/Icon'
 
 const sortOptions: { key: string; label: string; icon: IconName }[] = [
-  { key: 'score', label: '综合评分', icon: 'trophy' },
+  { key: 'score', label: 'V50 指数', icon: 'trophy' },
   { key: 'interactions', label: '互动数', icon: 'heart' },
   { key: 'posts', label: '文案数', icon: 'pencil' },
 ]

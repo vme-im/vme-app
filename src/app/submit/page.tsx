@@ -8,7 +8,7 @@ const NOTES: { icon: IconName; title: string; desc: string }[] = [
   {
     icon: 'pencil',
     title: '原创',
-    desc: '鼓励原创，让每一条文案都有自己的味道，拒绝烂大街。',
+    desc: '自己写的才叫好活，搬运和烂大街的过不了查重。',
   },
   {
     icon: 'check-circle',
@@ -18,7 +18,7 @@ const NOTES: { icon: IconName; title: string; desc: string }[] = [
   {
     icon: 'trophy',
     title: '认可',
-    desc: '优质文案将荣登首页推荐，还能冲击英雄榜，成为文案之王。',
+    desc: '写得好就上首页，赞得多就进英雄榜。',
   },
 ]
 

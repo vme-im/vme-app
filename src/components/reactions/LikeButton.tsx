@@ -95,7 +95,7 @@ const LikeButton = memo(function LikeButton({
     } catch (error) {
       console.error('Reaction操作失败:', error)
       setOptimistic(null)
-      onError?.('网络开小差了，没点上，再试一次')
+      onError?.('没点上，再试一次')
     } finally {
       setIsLoading(false)
     }
@@ -103,7 +103,7 @@ const LikeButton = memo(function LikeButton({
 
   const getTitle = useCallback(() => {
     if (users.length === 0) {
-      return '还没人点，来当第一个'
+      return '还没人点'
     } else if (users.length <= 3) {
       return `${users.map((u) => `@${u}`).join('、')} 点了`
     }
