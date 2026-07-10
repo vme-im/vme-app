@@ -36,6 +36,7 @@ export type IconName =
   | 'chevron-right'
   | 'x'
   | 'upload'
+  | 'plus'
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
   name: IconName
@@ -48,6 +49,12 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <line x1="5" y1="12" x2="19" y2="12" />
       <polyline points="12 5 19 12 12 19" />
+    </>
+  ),
+  plus: (
+    <>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
     </>
   ),
   'arrow-left': (

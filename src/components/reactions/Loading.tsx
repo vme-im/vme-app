@@ -7,16 +7,13 @@ interface ReactionsLoadingProps {
 }
 
 /**
- * 互动反应 - 加载状态UI
+ * 互动反应 - 加载状态UI（与 compact 形态等高的两枚小骨架，不占一整行）
  */
 export default function ReactionsLoading({ className = '' }: ReactionsLoadingProps) {
   return (
     <ReactionsContainer className={className}>
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div
-          key={i}
-          className="border-news-rule bg-kfc-cream h-7 w-12 shrink-0 animate-pulse border-2"
-        />
+      {[1, 2].map((i) => (
+        <div key={i} className="bg-kfc-black/5 h-[30px] w-14 shrink-0 animate-pulse" />
       ))}
     </ReactionsContainer>
   )

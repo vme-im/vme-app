@@ -1,8 +1,7 @@
 'use client'
 
-import { memo, useState, useCallback } from 'react'
+import { memo, useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { signIn } from 'next-auth/react'
 import { LikeRequest } from '@/types'
 import { showLoginDialog } from '@/components/shared/LoginDialog'
 
@@ -14,13 +13,15 @@ interface LikeButtonProps {
   isUserReacted?: boolean
   className?: string
   onDataRefresh?: () => void
+  /** 操作失败时上报给父级的内联提示（替代 alert） */
+  onError?: (message: string) => void
   users?: string[]
 }
 
 /**
- * 点赞按钮组件
- * 职责：处理单个反应的点击、显示和状态管理
- * 使用 memo 和 useCallback 优化性能
+ * 表情反应按钮
+ * 两态视觉：未点 = 安静灰底（hover 才出黑边），已点 = 黄底黑边贴纸感。
+ * 点击立即乐观更新（本地 ±1 + 状态翻转），服务器数据回来后以 props 为准复位；失败回滚并内联报错。
  */
 const LikeButton = memo(function LikeButton({
   issueId,
@@ -30,15 +31,23 @@ const LikeButton = memo(function LikeButton({
   isUserReacted = false,
   className = '',
   onDataRefresh,
+  onError,
   users = [],
 }: LikeButtonProps) {
   const { data: session } = useSession()
   const [isLoading, setIsLoading] = useState(false)
+  // 乐观覆盖：非 null 时以它为准展示；props（服务器数据）更新后自动复位
+  const [optimistic, setOptimistic] = useState<{ delta: number; reacted: boolean } | null>(null)
 
-  // 使用 useCallback 缓存点击处理函数
+  useEffect(() => {
+    setOptimistic(null)
+  }, [count, isUserReacted])
+
+  const shownReacted = optimistic ? optimistic.reacted : isUserReacted
+  const shownCount = Math.max(0, optimistic ? count + optimistic.delta : count)
+
   const handleReactionToggle = useCallback(async () => {
     if (!session?.user?.username) {
-      // 显示登录确认弹窗
       showLoginDialog({
         title: '互动需要登录',
         message: '登录后才能点表情，也能上交自己的文案。',
@@ -48,6 +57,8 @@ const LikeButton = memo(function LikeButton({
 
     if (isLoading) return
 
+    // 先乐观翻转，让点击立刻有反馈
+    setOptimistic({ delta: isUserReacted ? -1 : 1, reacted: !isUserReacted })
     setIsLoading(true)
     try {
       const method = isUserReacted ? 'DELETE' : 'POST'
@@ -66,12 +77,9 @@ const LikeButton = memo(function LikeButton({
       const data = await response.json()
 
       if (data.success) {
-        // 通过回调函数刷新数据
-        if (onDataRefresh) {
-          onDataRefresh()
-        }
+        onDataRefresh?.()
       } else {
-        // 如果是认证错误，重新登录
+        setOptimistic(null)
         if (response.status === 401) {
           const errorMsg = data.message || ''
           const isExpired = errorMsg.includes('无效') || errorMsg.includes('过期')
@@ -81,42 +89,44 @@ const LikeButton = memo(function LikeButton({
             message: isExpired ? '登录过期了，重新登录就能接着点' : '登录一下才能继续点表情',
           })
         } else {
-          alert(data.message)
+          onError?.(data.message || '没点上，再试一次')
         }
       }
     } catch (error) {
       console.error('Reaction操作失败:', error)
-      alert('操作失败，请稍后重试')
+      setOptimistic(null)
+      onError?.('网络开小差了，没点上，再试一次')
     } finally {
       setIsLoading(false)
     }
-  }, [session, isUserReacted, isLoading, issueId, reaction, onDataRefresh])
+  }, [session, isUserReacted, isLoading, issueId, reaction, onDataRefresh, onError])
 
-  // 使用 useCallback 缓存标题生成函数
   const getTitle = useCallback(() => {
     if (users.length === 0) {
-      return '暂无操作人'
-    } else if (users.length === 1) {
-      return `操作人: ${users[0]}`
-    } else {
-      return `操作人: ${users.slice(0, 3).join(', ')}${users.length > 3 ? ` 等${users.length}人` : ''}`
+      return '还没人点，来当第一个'
+    } else if (users.length <= 3) {
+      return `${users.map((u) => `@${u}`).join('、')} 点了`
     }
+    return `${users
+      .slice(0, 3)
+      .map((u) => `@${u}`)
+      .join('、')} 等 ${users.length} 人点了`
   }, [users])
 
   return (
     <button
       onClick={handleReactionToggle}
       disabled={isLoading}
-      className={`flex min-h-[44px] items-center gap-1 border-2 border-black px-3 py-0.5 text-sm font-bold transition-all md:min-h-0 md:px-2 ${
-        isUserReacted
-          ? 'bg-kfc-red text-white shadow-neo-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none'
-          : 'bg-white text-black shadow-neo-sm hover:bg-black hover:text-white hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none'
-      } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
+      className={`flex min-h-[44px] items-center gap-1 border-2 px-2.5 text-sm transition-colors md:min-h-[30px] ${
+        shownReacted
+          ? 'bg-kfc-yellow shadow-neo-sm border-black font-black text-black'
+          : 'text-news-gray hover:text-kfc-black border-transparent bg-black/5 font-bold hover:border-black hover:bg-white'
+      } ${isLoading ? 'cursor-wait opacity-60' : 'cursor-pointer'} ${className}`}
       title={getTitle()}
+      aria-pressed={shownReacted}
     >
       <span className="text-base leading-none">{emoji}</span>
-      <span className={isUserReacted ? 'font-black' : ''}>{count}</span>
-      {isLoading && <span className="text-xs opacity-60">…</span>}
+      {shownCount > 0 && <span className="tabular-nums">{shownCount}</span>}
     </button>
   )
 })

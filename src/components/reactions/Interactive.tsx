@@ -12,6 +12,8 @@ interface InteractiveReactionsProps {
   initialReactionDetails?: ReactionGroup[]
   initialReactionNodes?: ReactionNode[]
   className?: string
+  /** compact（列表页默认）：只显示有数据的表情 + "+" 展开；full（详情页）：全量展示 */
+  variant?: 'compact' | 'full'
 }
 
 // 获取 reactions 数据的 fetcher
@@ -56,6 +58,7 @@ export default function InteractiveReactions({
   initialReactionDetails = [],
   initialReactionNodes = [],
   className = '',
+  variant = 'compact',
 }: InteractiveReactionsProps) {
   const { data: session, status } = useSession()
 
@@ -93,7 +96,8 @@ export default function InteractiveReactions({
     },
   )
 
-  // 数据处理逻辑
+  // 数据处理逻辑（依赖用提取出的 username 标量，与 React Compiler 的推断一致）
+  const username = session?.user?.username
   const { reactionCounts, userReactionMap, reactionUsers, warning } = useMemo(() => {
     const reactionDetails = liveData?.details || []
     const reactionNodes = liveData?.nodes || []
@@ -107,26 +111,17 @@ export default function InteractiveReactions({
       counts.set(reaction.content, reaction.users.totalCount)
     })
 
-    // 从reactionNodes获取用户状态
-    if (session?.user?.username) {
-      reactionNodes.forEach((reaction: any) => {
-        if (reaction.user.login === session.user.username) {
-          userReactionMap.set(reaction.content, reaction.id)
-        }
+    // 从reactionNodes获取用户状态与操作人列表
+    reactionNodes.forEach((reaction: any) => {
+      if (username && reaction.user.login === username) {
+        userReactionMap.set(reaction.content, reaction.id)
+      }
 
-        if (!users.has(reaction.content)) {
-          users.set(reaction.content, [])
-        }
-        users.get(reaction.content)!.push(reaction.user.login)
-      })
-    } else {
-      reactionNodes.forEach((reaction: any) => {
-        if (!users.has(reaction.content)) {
-          users.set(reaction.content, [])
-        }
-        users.get(reaction.content)!.push(reaction.user.login)
-      })
-    }
+      if (!users.has(reaction.content)) {
+        users.set(reaction.content, [])
+      }
+      users.get(reaction.content)!.push(reaction.user.login)
+    })
 
     return {
       reactionCounts: counts,
@@ -134,7 +129,7 @@ export default function InteractiveReactions({
       reactionUsers: users,
       warning: liveData?.warning || null,
     }
-  }, [liveData, session?.user?.username])
+  }, [liveData, username])
 
   // 处理用户交互后的数据刷新
   const handleDataRefresh = () => {
@@ -156,6 +151,7 @@ export default function InteractiveReactions({
       onDataRefresh={handleDataRefresh}
       className={className}
       warning={warning}
+      variant={variant}
     />
   )
 }
