@@ -187,7 +187,7 @@ export default async function LeaderboardServer({ sortBy = 'score' }: Leaderboar
                       />
                     </div>
                   </div>
-                  <h3 className="group-hover:text-kfc-red text-lg font-black text-black transition-colors md:text-xl">
+                  <h3 className="group-hover:text-kfc-red wrap-anywhere text-lg font-black text-black transition-colors md:text-xl">
                     @{author.username}
                   </h3>
                 </Link>

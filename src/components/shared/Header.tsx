@@ -39,9 +39,9 @@ const Header = memo(function Header({ contributorsCount, issue }: HeaderProps) {
   return (
     <>
       <header className="safe-area-top safe-area-x bg-kfc-cream text-kfc-black">
-        {/* 日期栏：报纸 dateline，滚动即隐去 */}
+        {/* 日期栏：报纸 dateline，滚动即隐去。窄屏期数/日期与倒计时分两行，避免挤成一行被截断 */}
         <div className="border-b border-news-rule">
-          <div className="text-news-gray container mx-auto flex items-center justify-between gap-3 px-4 py-1.5 font-serif-news text-2xs sm:text-xs">
+          <div className="text-news-gray container mx-auto flex flex-col gap-0.5 px-4 py-1.5 font-serif-news text-2xs sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:text-xs">
             <span className="truncate">{issue.dateLine}</span>
             <div className="flex shrink-0 items-center gap-4">
               <span className={issue.isThursday ? 'text-kfc-red font-bold' : ''}>
@@ -62,7 +62,7 @@ const Header = memo(function Header({ contributorsCount, issue }: HeaderProps) {
               Crazy Thursday News Portal
             </p>
             <Link href="/" className="mt-1.5 inline-block">
-              <h1 className="text-3xl leading-none font-black tracking-tight text-black sm:text-5xl md:text-6xl">
+              <h1 className="text-[2.5rem] leading-none font-black tracking-tight text-black sm:text-5xl md:text-6xl">
                 疯狂星期四<span className="text-kfc-red">日报</span>
               </h1>
             </Link>
@@ -73,12 +73,12 @@ const Header = memo(function Header({ contributorsCount, issue }: HeaderProps) {
 
       {/* 导航横条：黑底白字，sticky */}
       <nav className="bg-kfc-black safe-area-x sticky top-0 z-50 border-b-4 border-black text-white">
-        <div className="container mx-auto flex items-center justify-between px-4">
+        <div className="container mx-auto flex min-h-[52px] items-center justify-between px-4 lg:min-h-0">
           {/* 左：移动端汉堡 + 精简刊名 */}
-          <div className="flex flex-1 items-center gap-2 lg:flex-none">
+          <div className="flex flex-1 items-center gap-1 lg:flex-none">
             <button
               type="button"
-              className="flex h-9 w-9 flex-col items-center justify-center gap-1 lg:hidden"
+              className="-ml-2.5 flex h-11 w-11 flex-col items-center justify-center gap-1 lg:hidden"
               onClick={toggleMobileMenu}
               aria-label="切换菜单"
               aria-expanded={isMobileMenuOpen}

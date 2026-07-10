@@ -81,7 +81,7 @@ export default async function Page() {
       <section className="border-b-4 border-black pb-10">
         <div className="grid gap-6 md:grid-cols-3 md:gap-8">
           {/* 头条正文 */}
-          <div className="md:col-span-2">
+          <div className="min-w-0 md:col-span-2">
             <span className="bg-kfc-yellow shadow-neo-sm inline-block rotate-2 border-2 border-black px-3 py-1 text-sm font-black text-black">
               今日头条
             </span>
@@ -93,11 +93,13 @@ export default async function Page() {
 
             {headlineJoke ? (
               <Link href={`/jokes/${headlineJoke.id}`} className="group block">
-                <h2 className="group-hover:text-kfc-red mt-2 line-clamp-4 text-3xl leading-tight font-black tracking-tight text-black transition-colors md:text-5xl">
+                <h2 className="group-hover:text-kfc-red mt-2 line-clamp-4 text-3xl leading-tight font-black tracking-tight wrap-anywhere text-black transition-colors md:text-5xl">
                   {headlineTitle}
                 </h2>
                 {showExcerpt && (
-                  <p className="text-news-gray mt-4 line-clamp-3 leading-relaxed">{headlineBody}</p>
+                  <p className="text-news-gray mt-4 line-clamp-3 leading-relaxed wrap-anywhere">
+                    {headlineBody}
+                  </p>
                 )}
               </Link>
             ) : (
@@ -142,12 +144,16 @@ export default async function Page() {
             {selectedJokes.map((item) => {
               const columnTag = item.tags?.[0] || '精选'
               return (
-                <div key={item.id} className="py-6 md:px-6 md:py-2 md:first:pl-0 md:last:pr-0">
+                <div
+                  key={item.id}
+                  className="min-w-0 py-6 md:px-6 md:py-2 md:first:pl-0 md:last:pr-0"
+                >
                   <div className="text-kfc-red text-xs font-black tracking-wide">
                     专栏 · {columnTag}
                   </div>
                   <Link href={`/jokes/${item.id}`} className="group mt-3 block">
-                    <p className="group-hover:text-kfc-red line-clamp-5 leading-relaxed font-medium text-black transition-colors">
+                    {/* wrap-anywhere：超长无断点串（v5v5…）参与 min-content 计算，防 grid 撑爆 */}
+                    <p className="group-hover:text-kfc-red line-clamp-5 leading-relaxed font-medium wrap-anywhere text-black transition-colors">
                       {item.body}
                     </p>
                   </Link>
@@ -159,7 +165,10 @@ export default async function Page() {
             })}
           </div>
           <div className="mt-6 text-center">
-            <Link href="/jokes" className="text-news-gray hover:text-kfc-red text-sm font-bold">
+            <Link
+              href="/jokes"
+              className="text-news-gray hover:text-kfc-red inline-flex min-h-[44px] items-center text-sm font-bold"
+            >
               翻阅全部文案 →
             </Link>
           </div>
@@ -167,8 +176,8 @@ export default async function Page() {
       )}
 
       {/* 3. 版面条：热门标签 */}
-      <section className="bg-kfc-black my-12 flex flex-wrap items-center gap-x-6 gap-y-2 border-y-4 border-black px-5 py-4">
-        <span className="text-kfc-yellow shrink-0 text-sm font-black tracking-wide">
+      <section className="bg-kfc-black my-12 flex flex-wrap items-center gap-x-5 gap-y-1 border-y-4 border-black px-5 py-3">
+        <span className="text-kfc-yellow shrink-0 py-1 text-sm font-black tracking-wide">
           版面 · 热门标签
         </span>
         {topTags.length > 0 ? (
@@ -176,14 +185,14 @@ export default async function Page() {
             <Link
               key={t.tag}
               href={`/jokes?tag=${encodeURIComponent(t.tag)}`}
-              className="hover:text-kfc-yellow text-sm font-bold text-white transition-colors"
+              className="hover:text-kfc-yellow inline-flex items-center py-1.5 text-sm font-bold text-white transition-colors"
             >
               {t.tag}
               <span className="text-kfc-yellow ml-1">{t.count}</span>
             </Link>
           ))
         ) : (
-          <span className="text-sm font-bold text-white/70">暂无高频标签，去上交文案吧</span>
+          <span className="py-1 text-sm font-bold text-white/70">暂无高频标签，去上交文案吧</span>
         )}
       </section>
 

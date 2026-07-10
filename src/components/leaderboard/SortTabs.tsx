@@ -38,7 +38,7 @@ const SortTabs = memo(function SortTabs({ currentSort }: SortTabsProps) {
             key={key}
             scroll={false}
             href={hrefString}
-            className={`shadow-neo-sm flex items-center gap-1.5 border-2 border-black px-3 py-1 text-sm font-black transition-all hover:translate-x-px hover:translate-y-px hover:shadow-none ${
+            className={`shadow-neo-sm flex min-h-[44px] items-center gap-1.5 border-2 border-black px-3 py-1 text-sm font-black transition-all hover:translate-x-px hover:translate-y-px hover:shadow-none md:min-h-0 ${
               isActive ? 'bg-kfc-black text-kfc-yellow' : 'hover:bg-kfc-yellow bg-white text-black'
             }`}
           >

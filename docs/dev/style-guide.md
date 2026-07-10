@@ -164,6 +164,15 @@
 - `prefers-reduced-motion: reduce` 下，上述动画统一降为瞬时（`0.01ms` / 单次），
   规则集中在 `globals.css` 底部，新增装饰动画需同步登记进去。
 
+### 移动端触控基线
+
+- 可点目标在移动端 **≥44px**（`min-h-[44px]` 配 `md:min-h-0` / `lg:min-h-0` 还原桌面尺寸）。
+- 表单输入控件字号 **≥16px**（`text-base`），防 iOS 聚焦自动放大。
+- **grid/flex 里装用户生成内容（文案正文、GitHub 用户名）必须 `min-w-0` + `wrap-anywhere`**：
+  `break-words`（`overflow-wrap: break-word`）不参与 min-content 内在尺寸计算，
+  超长无断点串（"v5v5v5…"、39 字符用户名）会把容器撑爆；`wrap-anywhere` 才参与。
+- 日期栏等信息密集条在窄屏优先换行（`flex-col sm:flex-row`），不靠 truncate 硬裁。
+
 ---
 
 ## 8. 期数机制

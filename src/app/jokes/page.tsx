@@ -62,7 +62,7 @@ export default async function JokesPage(props: PageProps) {
             <Link
               key={tab.label}
               href={href}
-              className={`px-4 py-2 text-sm font-black tracking-wide transition-colors ${
+              className={`inline-flex min-h-[44px] items-center px-4 py-2 text-sm font-black tracking-wide transition-colors md:min-h-0 ${
                 active ? 'bg-kfc-yellow text-black' : 'text-white hover:text-kfc-yellow'
               }`}
             >

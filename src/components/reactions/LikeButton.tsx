@@ -107,7 +107,7 @@ const LikeButton = memo(function LikeButton({
     <button
       onClick={handleReactionToggle}
       disabled={isLoading}
-      className={`flex items-center gap-1 border-2 border-black px-2 py-0.5 text-sm font-bold transition-all ${
+      className={`flex min-h-[44px] items-center gap-1 border-2 border-black px-3 py-0.5 text-sm font-bold transition-all md:min-h-0 md:px-2 ${
         isUserReacted
           ? 'bg-kfc-red text-white shadow-neo-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none'
           : 'bg-white text-black shadow-neo-sm hover:bg-black hover:text-white hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none'

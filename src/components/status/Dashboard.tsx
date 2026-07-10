@@ -145,7 +145,7 @@ export default function StatusDashboard() {
 
         <button
           onClick={() => mutate()}
-          className="bg-kfc-red shadow-neo hover:shadow-neo-lg mt-4 border-2 border-black px-6 py-2 font-black text-white transition-all hover:-translate-x-0.5 hover:-translate-y-0.5"
+          className="bg-kfc-red shadow-neo hover:shadow-neo-lg mt-4 inline-flex min-h-[44px] items-center border-2 border-black px-6 py-2 font-black text-white transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 md:min-h-0"
         >
           再试一次
         </button>
@@ -165,7 +165,7 @@ export default function StatusDashboard() {
         <button
           onClick={() => mutate()}
           disabled={isLoading}
-          className="shadow-neo-sm hover:shadow-neo disabled:bg-kfc-cream disabled:text-news-gray flex items-center gap-2 border-2 border-black bg-white px-4 py-2 text-sm font-black text-black transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 disabled:translate-x-0 disabled:translate-y-0 disabled:shadow-none"
+          className="shadow-neo-sm hover:shadow-neo disabled:bg-kfc-cream disabled:text-news-gray flex min-h-[44px] items-center gap-2 border-2 border-black bg-white px-4 py-2 text-sm font-black text-black transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 disabled:translate-x-0 disabled:translate-y-0 disabled:shadow-none md:min-h-0"
         >
           <Icon name="refresh" className={isLoading ? 'animate-spin' : ''} />
           刷新状态

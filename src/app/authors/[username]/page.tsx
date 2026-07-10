@@ -62,7 +62,7 @@ export default async function AuthorPage(props: PageProps) {
           href={githubUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="shadow-neo-sm hover:shadow-neo-lg flex shrink-0 items-center gap-2 border-2 border-black bg-white px-4 py-2 text-sm font-black text-black transition-all hover:-translate-x-0.5 hover:-translate-y-0.5"
+          className="shadow-neo-sm hover:shadow-neo-lg flex min-h-[44px] shrink-0 items-center gap-2 border-2 border-black bg-white px-4 py-2 text-sm font-black text-black transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 md:min-h-0"
         >
           <Icon name="github" /> GitHub
         </a>

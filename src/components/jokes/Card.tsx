@@ -106,7 +106,7 @@ const JokeCard = memo(function JokeCard({
               <Link
                 key={tag}
                 href={`/jokes?${nextParams.toString()}`}
-                className="text-news-gray hover:text-kfc-red text-xs font-bold"
+                className="text-news-gray hover:text-kfc-red relative z-10 inline-flex items-center py-1 text-xs font-bold"
               >
                 #{tag}
               </Link>
@@ -120,7 +120,7 @@ const JokeCard = memo(function JokeCard({
         <div
           ref={contentRef}
           className={clsx(
-            'prose prose-p:my-1 prose-img:my-0 group-hover:text-kfc-red text-black transition-colors prose-p:leading-snug prose-headings:font-black prose-p:font-bold prose-a:text-kfc-red prose-blockquote:border-l-4 prose-blockquote:border-black prose-blockquote:bg-kfc-cream prose-blockquote:py-1 prose-blockquote:pl-2',
+            'prose prose-p:my-1 prose-img:my-0 group-hover:text-kfc-red wrap-anywhere text-black transition-colors prose-p:leading-snug prose-headings:font-black prose-p:font-bold prose-a:text-kfc-red prose-blockquote:border-l-4 prose-blockquote:border-black prose-blockquote:bg-kfc-cream prose-blockquote:py-1 prose-blockquote:pl-2',
             !hasImage && 'max-h-48 overflow-hidden',
           )}
         >

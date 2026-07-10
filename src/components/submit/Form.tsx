@@ -283,7 +283,7 @@ export default function SubmitForm() {
             key={tab.mode}
             type="button"
             onClick={() => setActiveTab(tab.mode)}
-            className={`px-4 py-2 text-sm font-black tracking-wide transition-colors ${
+            className={`inline-flex min-h-[44px] items-center px-4 py-2 text-sm font-black tracking-wide transition-colors md:min-h-0 ${
               activeTab === tab.mode
                 ? 'bg-kfc-yellow text-black'
                 : 'text-white hover:text-kfc-yellow'
@@ -308,7 +308,7 @@ export default function SubmitForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="给你的作品起个标题..."
-            className="focus:border-kfc-red focus:bg-kfc-cream shadow-neo-sm min-h-[44px] w-full border-2 border-black bg-white px-4 py-3 font-bold text-black transition-all placeholder:text-news-gray focus:shadow-neo focus:outline-hidden"
+            className="focus:border-kfc-red focus:bg-kfc-cream shadow-neo-sm min-h-[44px] w-full border-2 border-black bg-white px-4 py-3 text-base font-bold text-black transition-all placeholder:text-news-gray focus:shadow-neo focus:outline-hidden"
             disabled={isSubmitting}
             maxLength={100}
           />
@@ -341,7 +341,7 @@ export default function SubmitForm() {
             onChange={(e) => setContent(e.target.value)}
             placeholder={activeTab === 'meme' ? '可以说说这张图的梗点...' : '开始你的表演...'}
             rows={6}
-            className="focus:border-kfc-red focus:bg-kfc-cream shadow-neo-sm w-full resize-none border-2 border-black bg-white px-4 py-3 font-bold text-black transition-all placeholder:text-news-gray focus:shadow-neo focus:outline-hidden"
+            className="focus:border-kfc-red focus:bg-kfc-cream shadow-neo-sm w-full resize-none border-2 border-black bg-white px-4 py-3 text-base font-bold text-black transition-all placeholder:text-news-gray focus:shadow-neo focus:outline-hidden"
             disabled={isSubmitting}
             maxLength={2000}
           />

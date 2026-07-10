@@ -193,7 +193,7 @@ export default async function JokeDetailPage(props0: PageProps) {
         {/* 返回：纯文字栏目级链接 */}
         <Link
           href="/jokes"
-          className="group text-news-gray hover:text-kfc-red mb-6 inline-flex items-center gap-2 text-sm font-bold transition-colors"
+          className="group text-news-gray hover:text-kfc-red mb-4 inline-flex min-h-[44px] items-center gap-2 text-sm font-bold transition-colors md:mb-6"
         >
           <Icon name="arrow-left" className="transition-transform group-hover:-translate-x-0.5" />
           返回文案库
@@ -286,7 +286,7 @@ export default async function JokeDetailPage(props0: PageProps) {
                   <Link
                     key={tag}
                     href={`/jokes?tag=${encodeURIComponent(tag)}`}
-                    className="hover:text-kfc-red font-bold text-black transition-colors"
+                    className="hover:text-kfc-red inline-flex items-center py-1.5 font-bold text-black transition-colors"
                   >
                     #{tag}
                   </Link>
@@ -317,7 +317,7 @@ export default async function JokeDetailPage(props0: PageProps) {
               <div className="min-w-0 flex-1">
                 <Link
                   href={authorHref}
-                  className="hover:text-kfc-red block text-lg font-black text-black transition-colors"
+                  className="hover:text-kfc-red block wrap-anywhere text-lg font-black text-black transition-colors"
                 >
                   @{username}
                 </Link>

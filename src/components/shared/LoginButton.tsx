@@ -35,7 +35,7 @@ export default function LoginButton() {
         </div>
         <button
           onClick={() => signOut()}
-          className="border-2 border-black bg-black px-3 py-1.5 text-sm font-bold text-white shadow-neo-sm transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-neo"
+          className="flex min-h-[40px] items-center border-2 border-black bg-black px-3 py-1.5 text-sm font-bold text-white shadow-neo-sm transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-neo lg:min-h-0"
         >
           LOG OUT
         </button>
@@ -46,7 +46,7 @@ export default function LoginButton() {
   return (
     <button
       onClick={() => signIn('github')}
-      className="flex items-center gap-2 border-2 border-black bg-kfc-yellow px-4 py-1.5 text-sm font-black text-black shadow-neo-sm transition-all hover:-translate-y-1 hover:shadow-neo hover:bg-white"
+      className="flex min-h-[40px] items-center gap-2 border-2 border-black bg-kfc-yellow px-4 py-1.5 text-sm font-black text-black shadow-neo-sm transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-white hover:shadow-neo lg:min-h-0"
     >
       <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path
