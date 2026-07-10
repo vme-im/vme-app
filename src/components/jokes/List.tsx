@@ -23,12 +23,11 @@ export default async function JokesList({ currentPage, type, tag, author }: Joke
     author,
   )
 
-  // 文字列表限阅读列宽（报纸单栏），梗图瀑布流保持全宽多列
-  const sectionWidth = type === 'meme' ? '' : 'max-w-3xl'
-
+  // 列宽由上层版式决定：文案流在文章列内（限阅读宽），梗图瀑布流在满版列内。
+  // 本组件填满所在列，不再自持宽度约束。
   if (items.length === 0) {
     return (
-      <section id="jokes-list" className={`mb-12 ${sectionWidth}`}>
+      <section id="jokes-list" className="mb-12">
         <p className="text-news-gray border-news-rule border-y py-12 text-center text-sm">
           暂无收录，去上交一条文案吧。
         </p>
@@ -37,7 +36,7 @@ export default async function JokesList({ currentPage, type, tag, author }: Joke
   }
 
   return (
-    <section id="jokes-list" className={`mb-12 ${sectionWidth}`}>
+    <section id="jokes-list" className="mb-12">
       {/* 文案列表（含批量反应数据注入） */}
       <ListWithReactions
         items={items}

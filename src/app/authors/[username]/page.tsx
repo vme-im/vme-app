@@ -2,9 +2,10 @@ import { Suspense } from 'react'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import JokesList from '@/components/jokes/List'
+import JokesSidebar from '@/components/jokes/Sidebar'
 import NeoButton from '@/components/shared/NeoButton'
 import Icon from '@/components/shared/Icon'
-import { getKfcItemsWithPagination } from '@/lib/server-utils'
+import { getKfcItemsWithPagination, getTopTags } from '@/lib/server-utils'
 
 interface PageProps {
   params: Promise<{ username: string }>
@@ -28,8 +29,11 @@ export default async function AuthorPage(props: PageProps) {
   const username = decodeURIComponent(raw)
   const page = parseInt(sp.page || '1')
 
-  // 该作者无收录则 404（快照里查不到此作者）
-  const { items, total } = await getKfcItemsWithPagination(1, 10, undefined, undefined, username)
+  // 该作者无收录则 404（快照里查不到此作者）；侧栏热门标签与作者数据并行获取
+  const [{ items, total }, topTags] = await Promise.all([
+    getKfcItemsWithPagination(1, 10, undefined, undefined, username),
+    getTopTags(),
+  ])
   if (total === 0) notFound()
 
   // 复用快照里已有的头像直链，避免依赖 github.com/{user}.png 的 302 redirect
@@ -37,9 +41,9 @@ export default async function AuthorPage(props: PageProps) {
   const githubUrl = items[0].author.url
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* 记者档案：紧凑一行 */}
-      <div className="mb-10 flex flex-wrap items-center gap-4 border-b-4 border-black pb-6">
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      {/* 记者档案：紧凑一行，横贯版面 */}
+      <header className="mb-10 flex flex-wrap items-center gap-4 border-b-4 border-black pb-6">
         <div className="border-3 border-black shrink-0">
           <Image
             src={avatarUrl}
@@ -66,21 +70,27 @@ export default async function AuthorPage(props: PageProps) {
         >
           <Icon name="github" /> GitHub
         </a>
-      </div>
+      </header>
 
-      {/* 该作者的文案列表（复用站点统一列表/卡片/分页） */}
-      <Suspense
-        fallback={
-          <div className="border-news-rule flex h-64 items-center justify-center border-y">
-            <div className="text-news-gray flex flex-col items-center gap-3">
-              <Icon name="spinner" className="animate-spin text-2xl" />
-              <span className="text-sm font-bold">加载中...</span>
-            </div>
-          </div>
-        }
-      >
-        <JokesList currentPage={page} author={username} />
-      </Suspense>
+      {/* 文章流（限阅读宽）+ 报纸侧栏（lg+ 出现），与 /jokes 版式一致 */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-12">
+        <div className="min-w-0">
+          {/* 该作者的文案列表（复用站点统一列表/卡片/分页） */}
+          <Suspense
+            fallback={
+              <div className="border-news-rule flex h-64 items-center justify-center border-y">
+                <div className="text-news-gray flex flex-col items-center gap-3">
+                  <Icon name="spinner" className="animate-spin text-2xl" />
+                  <span className="text-sm font-bold">加载中...</span>
+                </div>
+              </div>
+            }
+          >
+            <JokesList currentPage={page} author={username} />
+          </Suspense>
+        </div>
+        <JokesSidebar topTags={topTags} />
+      </div>
 
       <div className="mt-16 text-center">
         <NeoButton href="/leaderboard" variant="secondary" icon="trophy">
