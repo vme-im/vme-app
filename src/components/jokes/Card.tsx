@@ -93,7 +93,7 @@ const JokeCard = memo(function JokeCard({
         // 条目左边缘保持与栏目眉/分页对齐；配合正文 group-hover:text-kfc-red。
         // 列表级不做卡片化——不给背景色变化。
         'group border-news-rule relative border-b py-7 transition-colors',
-        "before:bg-kfc-red before:absolute before:-left-2 before:top-6 before:bottom-6 before:w-1 before:opacity-0 before:transition-opacity before:content-['']",
+        "before:bg-kfc-red before:absolute before:-left-4 before:top-6 before:bottom-6 before:w-1 before:opacity-0 before:transition-opacity before:content-['']",
         'hover:before:opacity-100',
         className,
       )}

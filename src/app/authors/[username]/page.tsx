@@ -41,7 +41,7 @@ export default async function AuthorPage(props: PageProps) {
   const githubUrl = items[0].author.url
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-8">
       {/* 记者档案：紧凑一行，横贯版面 */}
       <header className="mb-10 flex flex-wrap items-center gap-4 border-b-4 border-black pb-6">
         <div className="border-3 border-black shrink-0">

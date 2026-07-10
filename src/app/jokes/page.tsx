@@ -77,7 +77,7 @@ export default async function JokesPage(props: PageProps) {
   )
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-8">
       {/* 栏目眉 + 当前过滤状态（横贯版面的栏目 header） */}
       <header className="mb-6 border-b-4 border-black pb-4">
         <div className="text-kfc-red text-xs font-black tracking-wide">栏目 · 文案仓库</div>
